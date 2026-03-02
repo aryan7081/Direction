@@ -1,5 +1,5 @@
 """
-Base settings for Career Discovery Platform.
+Base settings for Direction Platform.
 """
 import os
 from pathlib import Path
@@ -107,8 +107,8 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Career Discovery Platform API",
-    "DESCRIPTION": "AI-powered Career Discovery for Class 9-10 students",
+    "TITLE": "Direction Platform API",
+    "DESCRIPTION": "AI-powered career discovery for Class 9-10 students",
     "VERSION": "1.0.0",
 }
 

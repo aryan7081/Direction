@@ -1,5 +1,5 @@
 """
-URL configuration for Career Discovery Platform.
+URL configuration for Direction Platform.
 """
 from django.contrib import admin
 from django.urls import path, include

@@ -1,5 +1,5 @@
 """
-WSGI config for Career Discovery Platform.
+WSGI config for Direction Platform.
 """
 import os
 

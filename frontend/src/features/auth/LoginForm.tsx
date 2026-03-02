@@ -37,18 +37,18 @@ export function LoginForm() {
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder="you@example.com"
         required
         fullWidth
+        InputLabelProps={{ shrink: true }}
       />
       <TextField
         label="Password"
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        placeholder="••••••••"
         required
         fullWidth
+        InputLabelProps={{ shrink: true }}
       />
       <Button type="submit" variant="contained" color="primary" size="large" fullWidth disabled={loading}>
         {loading ? 'Signing in...' : 'Sign in'}

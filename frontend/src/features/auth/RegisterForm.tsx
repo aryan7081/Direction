@@ -58,17 +58,53 @@ export function RegisterForm() {
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {error && <Alert severity="error">{error}</Alert>}
-      <TextField label="Email" type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="you@example.com" required fullWidth />
-      <TextField label="Username" value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} placeholder="johndoe" required fullWidth />
+      <TextField
+        label="Email"
+        type="email"
+        value={form.email}
+        onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+        required
+        fullWidth
+        InputLabelProps={{ shrink: true }}
+      />
+      <TextField
+        label="Username"
+        value={form.username}
+        onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+        required
+        fullWidth
+        InputLabelProps={{ shrink: true }}
+      />
       <Grid container spacing={2}>
         <Grid item xs={6}>
-          <TextField label="First name" value={form.first_name} onChange={(e) => setForm((f) => ({ ...f, first_name: e.target.value }))} fullWidth />
+          <TextField
+            label="First name"
+            value={form.first_name}
+            onChange={(e) => setForm((f) => ({ ...f, first_name: e.target.value }))}
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+          />
         </Grid>
         <Grid item xs={6}>
-          <TextField label="Last name" value={form.last_name} onChange={(e) => setForm((f) => ({ ...f, last_name: e.target.value }))} fullWidth />
+          <TextField
+            label="Last name"
+            value={form.last_name}
+            onChange={(e) => setForm((f) => ({ ...f, last_name: e.target.value }))}
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+          />
         </Grid>
       </Grid>
-      <TextField label="Password" type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} placeholder="••••••••" required fullWidth inputProps={{ minLength: 8 }} />
+      <TextField
+        label="Password"
+        type="password"
+        value={form.password}
+        onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+        required
+        fullWidth
+        inputProps={{ minLength: 8 }}
+        InputLabelProps={{ shrink: true }}
+      />
       <Button type="submit" variant="contained" color="primary" size="large" fullWidth disabled={loading}>
         {loading ? 'Creating account...' : 'Create account'}
       </Button>

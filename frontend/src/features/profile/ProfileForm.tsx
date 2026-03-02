@@ -193,7 +193,7 @@ export function ProfileForm({ profile, onSuccess }: { profile: Profile | null; o
                 inputProps={{ min: 0, max: 100, step: 0.5 }}
                 value={marks[s.slug] ?? ''}
                 onChange={(e) => setMarks((prev) => ({ ...prev, [s.slug]: e.target.value }))}
-                placeholder="0–100"
+                InputLabelProps={{ shrink: true }}
               />
             ))}
           </Box>

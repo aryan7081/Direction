@@ -67,7 +67,7 @@ class PDFReportService:
         story = []
 
         user = self.attempt.user
-        story.append(Paragraph("Career Discovery Report", title_style))
+        story.append(Paragraph("Direction Report", title_style))
         story.append(Paragraph(f"Student: {user.email}", styles["Normal"]))
         story.append(Spacer(1, 0.5 * inch))
 

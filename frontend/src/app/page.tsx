@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 
@@ -5,7 +7,7 @@ export default function LandingPage() {
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.paper' }}>
       <Box component="header" sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}>
-        <Typography variant="h6" fontWeight={600}>Career Discovery</Typography>
+        <Typography variant="h6" fontWeight={600}>Direction</Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Link href="/login" style={{ textDecoration: 'none', color: 'inherit' }}>
             <Button color="inherit">Sign in</Button>
@@ -21,7 +23,7 @@ export default function LandingPage() {
           Find Your Path. Not By Chance.
         </Typography>
         <Typography color="text.secondary" sx={{ maxWidth: 500, mb: 4 }}>
-          Career discovery for Class 9–10 students. Discover careers that match your interests and aptitude.
+          Direction helps Class 9–10 students discover careers that match their interests and aptitude.
         </Typography>
         <Link href="/register" style={{ textDecoration: 'none' }}>
           <Button variant="contained" color="primary" size="large">

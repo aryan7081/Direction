@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { Box, Card, CardContent, Typography } from '@mui/material';
 import { LoginForm } from '@/features/auth/LoginForm';
