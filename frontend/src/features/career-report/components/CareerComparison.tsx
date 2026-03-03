@@ -16,7 +16,13 @@ import type { ReportCareer } from '../types';
 
 const COLORS = ['#16a34a', '#3b82f6', '#f59e0b'];
 
-export function CareerComparison({ careers }: { careers: ReportCareer[] }) {
+export function CareerComparison({
+  careers,
+  comparisonText,
+}: {
+  careers: ReportCareer[];
+  comparisonText?: string;
+}) {
   const data = careers.map((c) => ({
     name: c.career_name,
     match: c.score_percent,
@@ -33,9 +39,15 @@ export function CareerComparison({ careers }: { careers: ReportCareer[] }) {
           <Typography variant="h6" fontWeight={700} gutterBottom>
             Career Comparison
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Side-by-side comparison of your top career matches by compatibility percentage.
-          </Typography>
+          {comparisonText ? (
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.7 }}>
+              {comparisonText}
+            </Typography>
+          ) : (
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Side-by-side comparison of your top career matches by compatibility percentage.
+            </Typography>
+          )}
 
           <Box sx={{ width: '100%', height: 220 }}>
             <ResponsiveContainer>

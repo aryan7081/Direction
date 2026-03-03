@@ -28,7 +28,7 @@
     color: #1f2937;
   }
 
-  /* ── Header banner (replaces full-page cover) ── */
+  /* ── Header banner ── */
   .report-header {
     background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0f9ff 100%);
     border: 1px solid #d1fae5;
@@ -62,27 +62,15 @@
     flex: 1;
   }
   .header-student .student-name {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     color: #16a34a;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
-  .header-student table {
-    border-collapse: collapse;
-  }
-  .header-student table td {
-    padding: 2px 0;
+  .header-student .student-details {
     font-size: 10px;
-    vertical-align: top;
-  }
-  .header-student table td:first-child {
     color: #6b7280;
-    font-weight: 500;
-    padding-right: 12px;
-    white-space: nowrap;
-  }
-  .header-student table td:last-child {
-    color: #374151;
+    line-height: 1.7;
   }
   .header-meta {
     text-align: right;
@@ -105,23 +93,30 @@
 
   /* ── Section headers ── */
   h2 {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     color: #111827;
-    margin: 24px 0 12px 0;
+    margin: 28px 0 10px 0;
     padding-bottom: 6px;
     border-bottom: 2px solid #e5e7eb;
   }
   h3 {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: #374151;
-    margin: 16px 0 6px 0;
+    margin: 14px 0 5px 0;
+  }
+  .section-intro {
+    font-size: 10px;
+    color: #6b7280;
+    margin-bottom: 12px;
+    line-height: 1.6;
   }
 
   /* ── Trait bars ── */
   .trait-row {
-    margin-bottom: 14px;
+    margin-bottom: 16px;
+    page-break-inside: avoid;
   }
   .trait-header {
     display: flex;
@@ -139,10 +134,11 @@
     color: #16a34a;
   }
   .trait-bar-bg {
-    height: 8px;
+    height: 7px;
     background: #f3f4f6;
     border-radius: 4px;
     overflow: hidden;
+    margin-bottom: 5px;
   }
   .trait-bar-fill {
     height: 100%;
@@ -152,8 +148,7 @@
   .trait-desc {
     font-size: 10px;
     color: #6b7280;
-    margin-top: 4px;
-    line-height: 1.5;
+    line-height: 1.55;
   }
 
   /* ── Career card ── */
@@ -205,24 +200,57 @@
     margin-top: 6px;
   }
 
-  /* ── Stream ── */
-  .stream-box {
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
+  /* ── Info boxes ── */
+  .info-box {
     border-radius: 8px;
     padding: 14px 16px;
-    margin: 12px 0;
+    margin-bottom: 12px;
+    page-break-inside: avoid;
   }
-  .stream-box .stream-label {
-    font-size: 18px;
-    font-weight: 700;
-    color: #16a34a;
+  .info-box-green {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+  }
+  .info-box-blue {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+  }
+  .info-box-amber {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+  }
+  .info-box-gray {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+  }
+  .info-box .box-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     margin-bottom: 6px;
   }
-  .stream-box .stream-reason {
-    font-size: 11px;
+  .info-box .box-heading {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .info-box .box-text {
+    font-size: 10.5px;
+    line-height: 1.6;
+    color: #374151;
+  }
+
+  /* ── Bullet list inside cards ── */
+  .step-list {
+    margin: 6px 0 0 0;
+    padding-left: 16px;
+  }
+  .step-list li {
+    font-size: 10px;
     color: #374151;
     line-height: 1.6;
+    margin-bottom: 2px;
   }
 
   /* ── Roadmap ── */
@@ -230,6 +258,7 @@
     border-left: 3px solid #16a34a;
     padding: 8px 0 8px 14px;
     margin-bottom: 10px;
+    page-break-inside: avoid;
   }
   .roadmap-step h4 {
     font-size: 12px;
@@ -249,7 +278,7 @@
     border: 1px solid #fde68a;
     border-radius: 6px;
     padding: 10px 14px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     page-break-inside: avoid;
   }
   .improve-item .improve-label {
@@ -262,40 +291,13 @@
     font-size: 10.5px;
     color: #78350f;
     line-height: 1.5;
+    margin-bottom: 4px;
   }
 
   /* ── Chart containers ── */
   .chart-container {
     text-align: center;
     margin: 16px 0;
-  }
-
-  /* ── Hero section ── */
-  .hero-box {
-    text-align: center;
-    padding: 18px 0;
-    margin: 0 0 8px 0;
-  }
-  .hero-box .hero-career {
-    font-size: 24px;
-    font-weight: 700;
-    color: #111827;
-  }
-  .hero-box .hero-pct {
-    font-size: 32px;
-    font-weight: 700;
-    color: #16a34a;
-    margin: 6px 0;
-  }
-  .hero-box .hero-badge {
-    display: inline-block;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: 12px;
-    padding: 3px 14px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #16a34a;
   }
 
   /* ── Disclaimer ── */
@@ -317,7 +319,7 @@
 </head>
 <body>
 
-<!-- ═══ COMPACT HEADER (replaces full-page cover) ═══ -->
+<!-- ═══ COMPACT HEADER ═══ -->
 <div class="report-header">
   <div class="header-top">
     {% if logo_uri %}<img src="{{ logo_uri }}" alt="Direction" style="width:36px; height:36px; margin-bottom:8px;">{% endif %}
@@ -327,12 +329,11 @@
   <div class="header-body">
     <div class="header-student">
       <div class="student-name">{{ report.student.name|default:"Student" }}</div>
-      <table>
-        {% if report.student.age %}<tr><td>Age</td><td>{{ report.student.age }} years</td></tr>{% endif %}
-        {% if report.student.grade %}<tr><td>Class / Grade</td><td>{{ report.student.grade }}</td></tr>{% endif %}
-        {% if report.student.school %}<tr><td>School</td><td>{{ report.student.school }}</td></tr>{% endif %}
-        {% if report.student.email %}<tr><td>Email</td><td>{{ report.student.email }}</td></tr>{% endif %}
-      </table>
+      <div class="student-details">
+        {% if report.student.age %}Age: {{ report.student.age }} years{% endif %}
+        {% if report.student.grade %} &nbsp;·&nbsp; Class {{ report.student.grade }}{% endif %}
+        {% if report.student.school %}<br>{{ report.student.school }}{% endif %}
+      </div>
     </div>
     <div class="header-meta">
       <div class="assessment-id">ID: {{ report.session_id }}</div>
@@ -361,9 +362,26 @@
   </tr>
 </table>
 
+<!-- ═══ CONFIDENCE EXPLANATION ═══ -->
+{% if report.hero.confidence_explanation %}
+<div class="info-box info-box-green">
+  <div class="box-title" style="color:#15803d;">What "{{ report.hero.confidence }} Confidence" Means</div>
+  <div class="box-text">{{ report.hero.confidence_explanation }}</div>
+</div>
+{% endif %}
+
+<!-- ═══ DOMINANT PATTERN ═══ -->
+{% if report.dominant_pattern %}
+<div class="info-box info-box-blue">
+  <div class="box-title" style="color:#1d4ed8;">Your Dominant Pattern</div>
+  <div class="box-heading" style="color:#1e40af;">{{ report.dominant_pattern.name }}</div>
+  <div class="box-text">{{ report.dominant_pattern.description }}</div>
+</div>
+{% endif %}
+
 <!-- ═══ RADAR CHART ═══ -->
 <h2>Your 8-Trait Profile</h2>
-<p style="font-size:10px; color:#6b7280; margin-bottom:12px;">
+<p class="section-intro">
   This radar chart shows how your natural abilities spread across 8 core traits.
   The further a point extends outward, the stronger that trait.
 </p>
@@ -374,6 +392,10 @@
 <!-- ═══ TRAIT BREAKDOWN ═══ -->
 <div class="page-break"></div>
 <h2>Trait Breakdown</h2>
+<p class="section-intro">
+  Each trait is scored on a 0–10 scale based on your gameplay behaviour.
+  Scores above 7 indicate strong natural ability; 4–7 show developing potential.
+</p>
 {% for t in report.traits %}
 <div class="trait-row">
   <div class="trait-header">
@@ -392,6 +414,10 @@
 <!-- ═══ CAREER CARDS ═══ -->
 <div class="page-break"></div>
 <h2>Top 3 Career Matches</h2>
+<p class="section-intro">
+  These careers are ranked by how closely your trait profile aligns with the demands of each role.
+  Each explanation is specific to your scores.
+</p>
 {% for c in report.careers %}
 <div class="career-card">
   <div class="career-card-header">
@@ -413,15 +439,36 @@
 </div>
 {% endfor %}
 
-<!-- ═══ BAR CHART ═══ -->
+<!-- ═══ CAREER COMPARISON ═══ -->
 <h2>Career Comparison</h2>
+{% if report.career_comparison_text %}
+<p class="section-intro">{{ report.career_comparison_text }}</p>
+{% endif %}
 <div class="chart-container">
   {{ bar_chart_svg|safe }}
 </div>
 
+<!-- ═══ CAREERS THAT MAY FEEL LESS NATURAL ═══ -->
+{% if report.less_natural_careers %}
+<h2>Careers That May Need Extra Effort</h2>
+<p class="section-intro">
+  These are not closed doors — they are areas where deliberate skill-building would be needed.
+  Understanding this helps you make informed decisions.
+</p>
+{% for item in report.less_natural_careers %}
+<div class="info-box info-box-gray">
+  <div style="font-size:11px; font-weight:600; color:#374151; margin-bottom:3px;">{{ item.domain }}</div>
+  <div class="box-text">{{ item.note }}</div>
+</div>
+{% endfor %}
+{% endif %}
+
 <!-- ═══ ROADMAP ═══ -->
 <div class="page-break"></div>
 <h2>Development Roadmap</h2>
+<p class="section-intro">
+  A step-by-step guide tailored to your top career match and current trait profile.
+</p>
 
 {% if report.roadmap.class_10 %}
 <div class="roadmap-step">
@@ -444,25 +491,32 @@
 </div>
 {% endif %}
 
-<!-- ═══ AREAS TO IMPROVE ═══ -->
+<!-- ═══ AREAS TO DEVELOP ═══ -->
 <h2>Areas to Develop</h2>
-<p style="font-size:10px; color:#6b7280; margin-bottom:10px;">
+<p class="section-intro">
   These are not weaknesses — they are growth opportunities. Even small effort here can expand your career options.
 </p>
 {% for area in report.areas_to_improve %}
 <div class="improve-item">
   <div class="improve-label">{{ area.label }} ({{ area.score }}/10)</div>
   <div class="improve-tip">{{ area.tip }}</div>
+  {% if area.steps %}
+  <ul class="step-list">
+    {% for step in area.steps %}
+    <li>{{ step }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
 </div>
 {% endfor %}
 
 <p class="disclaimer">{{ report.disclaimer }}</p>
 
 <!-- ═══ BRANDED FOOTER ═══ -->
-<div style="margin-top:30px; padding-top:16px; border-top:1px solid #e5e7eb; display:flex; align-items:center; justify-content:center; gap:8px; page-break-inside:avoid;">
-  {% if logo_uri %}<img src="{{ logo_uri }}" alt="Direction" style="width:22px; height:22px;">{% endif %}
-  <span style="font-size:11px; font-weight:700; color:#111827; letter-spacing:-0.3px;">Direction</span>
-  <span style="font-size:9px; color:#9ca3af; margin-left:4px;">— Find Your Path. Not By Chance.</span>
+<div style="margin-top:30px; padding-top:16px; border-top:1px solid #e5e7eb; text-align:center; page-break-inside:avoid;">
+  {% if logo_uri %}<img src="{{ logo_uri }}" alt="Direction" style="width:22px; height:22px; vertical-align:middle; margin-right:6px;">{% endif %}
+  <span style="font-size:11px; font-weight:700; color:#111827; letter-spacing:-0.3px; vertical-align:middle;">Direction</span>
+  <span style="font-size:9px; color:#9ca3af; margin-left:4px; vertical-align:middle;">— Find Your Path. Not By Chance.</span>
 </div>
 
 </body>
