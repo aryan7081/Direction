@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm 25mm 18mm;
+    @top-left { content: "Direction"; font-size: 9px; color: #9ca3af; }
+    @top-right { content: "Career Intelligence Report"; font-size: 9px; color: #9ca3af; }
+    @bottom-left { content: "Assessment {{ report.session_id|truncatechars:12 }}"; font-size: 8px; color: #9ca3af; }
+    @bottom-center { content: counter(page) " / " counter(pages); font-size: 8px; color: #9ca3af; }
+    @bottom-right { content: "Confidential"; font-size: 8px; color: #9ca3af; }
+  }
+
+  @page :first {
+    margin-top: 14mm;
+    @top-left { content: ""; }
+    @top-right { content: ""; }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    font-size: 11px;
+    line-height: 1.6;
+    color: #1f2937;
+  }
+
+  /* ── Header banner (replaces full-page cover) ── */
+  .report-header {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0f9ff 100%);
+    border: 1px solid #d1fae5;
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+  }
+  .header-top {
+    text-align: center;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #d1fae5;
+  }
+  .header-top h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.3px;
+    margin-bottom: 3px;
+  }
+  .header-top .subtitle {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 400;
+  }
+  .header-body {
+    display: flex;
+    justify-content: space-between;
+  }
+  .header-student {
+    flex: 1;
+  }
+  .header-student .student-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #16a34a;
+    margin-bottom: 6px;
+  }
+  .header-student table {
+    border-collapse: collapse;
+  }
+  .header-student table td {
+    padding: 2px 0;
+    font-size: 10px;
+    vertical-align: top;
+  }
+  .header-student table td:first-child {
+    color: #6b7280;
+    font-weight: 500;
+    padding-right: 12px;
+    white-space: nowrap;
+  }
+  .header-student table td:last-child {
+    color: #374151;
+  }
+  .header-meta {
+    text-align: right;
+    flex-shrink: 0;
+    padding-left: 20px;
+  }
+  .header-meta .assessment-id {
+    font-size: 9px;
+    color: #9ca3af;
+    word-break: break-all;
+    max-width: 180px;
+    margin-left: auto;
+    margin-bottom: 6px;
+  }
+  .header-meta .dates {
+    font-size: 10px;
+    color: #6b7280;
+    line-height: 1.7;
+  }
+
+  /* ── Section headers ── */
+  h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    margin: 24px 0 12px 0;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin: 16px 0 6px 0;
+  }
+
+  /* ── Trait bars ── */
+  .trait-row {
+    margin-bottom: 14px;
+  }
+  .trait-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 3px;
+  }
+  .trait-label {
+    font-weight: 600;
+    font-size: 11px;
+    color: #374151;
+  }
+  .trait-score {
+    font-weight: 600;
+    font-size: 11px;
+    color: #16a34a;
+  }
+  .trait-bar-bg {
+    height: 8px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .trait-bar-fill {
+    height: 100%;
+    background: #16a34a;
+    border-radius: 4px;
+  }
+  .trait-desc {
+    font-size: 10px;
+    color: #6b7280;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  /* ── Career card ── */
+  .career-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    page-break-inside: avoid;
+  }
+  .career-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .career-rank {
+    display: inline-block;
+    background: #16a34a;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-right: 8px;
+  }
+  .career-rank.r2 { background: #3b82f6; }
+  .career-rank.r3 { background: #f59e0b; }
+  .career-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+  }
+  .career-pct {
+    font-size: 18px;
+    font-weight: 700;
+    color: #16a34a;
+  }
+  .career-meta {
+    font-size: 10px;
+    color: #6b7280;
+    margin-bottom: 6px;
+  }
+  .career-meta strong { color: #374151; }
+  .career-why {
+    font-size: 10.5px;
+    color: #374151;
+    line-height: 1.6;
+    margin-top: 6px;
+  }
+
+  /* ── Stream ── */
+  .stream-box {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 12px 0;
+  }
+  .stream-box .stream-label {
+    font-size: 18px;
+    font-weight: 700;
+    color: #16a34a;
+    margin-bottom: 6px;
+  }
+  .stream-box .stream-reason {
+    font-size: 11px;
+    color: #374151;
+    line-height: 1.6;
+  }
+
+  /* ── Roadmap ── */
+  .roadmap-step {
+    border-left: 3px solid #16a34a;
+    padding: 8px 0 8px 14px;
+    margin-bottom: 10px;
+  }
+  .roadmap-step h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: #16a34a;
+    margin-bottom: 2px;
+  }
+  .roadmap-step p {
+    font-size: 10.5px;
+    color: #374151;
+    line-height: 1.6;
+  }
+
+  /* ── Improvement ── */
+  .improve-item {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    page-break-inside: avoid;
+  }
+  .improve-item .improve-label {
+    font-weight: 600;
+    font-size: 11px;
+    color: #92400e;
+    margin-bottom: 2px;
+  }
+  .improve-item .improve-tip {
+    font-size: 10.5px;
+    color: #78350f;
+    line-height: 1.5;
+  }
+
+  /* ── Chart containers ── */
+  .chart-container {
+    text-align: center;
+    margin: 16px 0;
+  }
+
+  /* ── Hero section ── */
+  .hero-box {
+    text-align: center;
+    padding: 18px 0;
+    margin: 0 0 8px 0;
+  }
+  .hero-box .hero-career {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+  }
+  .hero-box .hero-pct {
+    font-size: 32px;
+    font-weight: 700;
+    color: #16a34a;
+    margin: 6px 0;
+  }
+  .hero-box .hero-badge {
+    display: inline-block;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    padding: 3px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #16a34a;
+  }
+
+  /* ── Disclaimer ── */
+  .disclaimer {
+    margin-top: 20px;
+    padding: 10px 14px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 9px;
+    color: #9ca3af;
+    font-style: italic;
+    line-height: 1.5;
+    page-break-inside: avoid;
+  }
+
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<!-- ═══ COMPACT HEADER (replaces full-page cover) ═══ -->
+<div class="report-header">
+  <div class="header-top">
+    <h1>Career Intelligence Report</h1>
+    <p class="subtitle">Behavioral &amp; Trait-Based Analysis</p>
+  </div>
+  <div class="header-body">
+    <div class="header-student">
+      <div class="student-name">{{ report.student.name|default:"Student" }}</div>
+      <table>
+        {% if report.student.age %}<tr><td>Age</td><td>{{ report.student.age }} years</td></tr>{% endif %}
+        {% if report.student.grade %}<tr><td>Class / Grade</td><td>{{ report.student.grade }}</td></tr>{% endif %}
+        {% if report.student.school %}<tr><td>School</td><td>{{ report.student.school }}</td></tr>{% endif %}
+        {% if report.student.email %}<tr><td>Email</td><td>{{ report.student.email }}</td></tr>{% endif %}
+      </table>
+    </div>
+    <div class="header-meta">
+      <div class="assessment-id">ID: {{ report.session_id }}</div>
+      <div class="dates">
+        {% if report.completed_at %}Assessed: {{ report.completed_at }}<br>{% endif %}
+        Generated: {{ report.generated_at }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STREAM + HERO (side by side) ═══ -->
+<table style="width:100%; border-collapse:separate; border-spacing:12px 0; margin-top:12px; margin-bottom:18px;">
+  <tr>
+    <td style="width:50%; vertical-align:top; border:1px solid #bbf7d0; border-radius:10px; padding:18px 16px; background:#f0fdf4;">
+      <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Recommended Stream</div>
+      <div style="font-size:20px; font-weight:700; color:#16a34a; margin-bottom:8px;">{{ report.stream_recommendation.stream }}</div>
+      <div style="font-size:10px; color:#374151; line-height:1.5;">{{ report.stream_recommendation.reasoning }}</div>
+    </td>
+    <td style="width:50%; vertical-align:top; border:1px solid #d1fae5; border-radius:10px; padding:18px 16px; background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 60%, #f0f9ff 100%); text-align:center;">
+      <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Top Career Match</div>
+      <div style="font-size:20px; font-weight:700; color:#111827; margin-bottom:4px;">{{ report.hero.career_name }}</div>
+      <div style="font-size:28px; font-weight:700; color:#16a34a; margin:4px 0;">{{ report.hero.score_percent }}%</div>
+      <span style="display:inline-block; background:#fff; border:1px solid #bbf7d0; border-radius:12px; padding:3px 14px; font-size:10px; font-weight:600; color:#16a34a;">{{ report.hero.confidence }} Confidence</span>
+    </td>
+  </tr>
+</table>
+
+<!-- ═══ RADAR CHART ═══ -->
+<h2>Your 8-Trait Profile</h2>
+<p style="font-size:10px; color:#6b7280; margin-bottom:12px;">
+  This radar chart shows how your natural abilities spread across 8 core traits.
+  The further a point extends outward, the stronger that trait.
+</p>
+<div class="chart-container">
+  {{ radar_svg|safe }}
+</div>
+
+<!-- ═══ TRAIT BREAKDOWN ═══ -->
+<div class="page-break"></div>
+<h2>Trait Breakdown</h2>
+{% for t in report.traits %}
+<div class="trait-row">
+  <div class="trait-header">
+    <span class="trait-label">{{ t.label }}</span>
+    <span class="trait-score">{{ t.score }} / {{ t.max }}</span>
+  </div>
+  <div class="trait-bar-bg">
+    <div class="trait-bar-fill" style="width: {{ t.score|floatformat:0 }}0%;"></div>
+  </div>
+  <div class="trait-desc">{{ t.description }}</div>
+</div>
+{% endfor %}
+
+<p class="disclaimer">{{ report.disclaimer }}</p>
+
+<!-- ═══ CAREER CARDS ═══ -->
+<div class="page-break"></div>
+<h2>Top 3 Career Matches</h2>
+{% for c in report.careers %}
+<div class="career-card">
+  <div class="career-card-header">
+    <div>
+      <span class="career-rank{% if c.rank == 2 %} r2{% elif c.rank == 3 %} r3{% endif %}">#{{ c.rank }}</span>
+      <span class="career-name">{{ c.career_name }}</span>
+    </div>
+    <span class="career-pct">{{ c.score_percent }}%</span>
+  </div>
+  <div class="career-meta">
+    <strong>Stream:</strong> {{ c.stream }} &nbsp;|&nbsp;
+    <strong>Confidence:</strong> {{ c.confidence }} &nbsp;|&nbsp;
+    <strong>Work Style:</strong> {{ c.work_style }}
+  </div>
+  <div class="career-meta">
+    <strong>Education Path:</strong> {{ c.education_path }}
+  </div>
+  <div class="career-why">{{ c.why_match }}</div>
+</div>
+{% endfor %}
+
+<!-- ═══ BAR CHART ═══ -->
+<h2>Career Comparison</h2>
+<div class="chart-container">
+  {{ bar_chart_svg|safe }}
+</div>
+
+<!-- ═══ ROADMAP ═══ -->
+<div class="page-break"></div>
+<h2>Development Roadmap</h2>
+
+{% if report.roadmap.class_10 %}
+<div class="roadmap-step">
+  <h4>Class 10 — Build Your Foundation</h4>
+  <p>{{ report.roadmap.class_10 }}</p>
+</div>
+{% endif %}
+
+{% if report.roadmap.class_11_12 %}
+<div class="roadmap-step">
+  <h4>Class 11–12 — Choose Your Stream</h4>
+  <p>{{ report.roadmap.class_11_12 }}</p>
+</div>
+{% endif %}
+
+{% if report.roadmap.after_12th %}
+<div class="roadmap-step">
+  <h4>After 12th — Launch Your Career</h4>
+  <p>{{ report.roadmap.after_12th }}</p>
+</div>
+{% endif %}
+
+<!-- ═══ AREAS TO IMPROVE ═══ -->
+<h2>Areas to Develop</h2>
+<p style="font-size:10px; color:#6b7280; margin-bottom:10px;">
+  These are not weaknesses — they are growth opportunities. Even small effort here can expand your career options.
+</p>
+{% for area in report.areas_to_improve %}
+<div class="improve-item">
+  <div class="improve-label">{{ area.label }} ({{ area.score }}/10)</div>
+  <div class="improve-tip">{{ area.tip }}</div>
+</div>
+{% endfor %}
+
+<p class="disclaimer">{{ report.disclaimer }}</p>
+
+</body>
+</html>

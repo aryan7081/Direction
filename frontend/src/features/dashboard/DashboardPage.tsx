@@ -75,13 +75,23 @@ export function DashboardPage() {
             <CardContent>
               <Typography variant="h6" fontWeight={600} gutterBottom>Your Latest Results</Typography>
               <Typography color="text.secondary" sx={{ mb: 2 }}>View your most recent career recommendations.</Typography>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={() => router.push(`/game-assessment?view=${latestSessionId}`)}
-              >
-                View Results
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => router.push(`/game-assessment?view=${latestSessionId}`)}
+                >
+                  Quick View
+                </Button>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={() => router.push(`/report?session=${latestSessionId}`)}
+                  sx={{ fontWeight: 600 }}
+                >
+                  Full Career Report
+                </Button>
+              </Box>
             </CardContent>
           </Card>
         )}
@@ -121,13 +131,23 @@ export function DashboardPage() {
                       )}
                     </Box>
                     {a.is_complete ? (
-                      <Button
-                        color="primary"
-                        size="small"
-                        onClick={() => router.push(`/game-assessment?view=${a.id}`)}
-                      >
-                        View
-                      </Button>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <Button
+                          color="primary"
+                          size="small"
+                          onClick={() => router.push(`/game-assessment?view=${a.id}`)}
+                        >
+                          View
+                        </Button>
+                        <Button
+                          color="success"
+                          size="small"
+                          variant="outlined"
+                          onClick={() => router.push(`/report?session=${a.id}`)}
+                        >
+                          Report
+                        </Button>
+                      </Box>
                     ) : (
                       <Button
                         color="warning"
