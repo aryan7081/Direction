@@ -33,6 +33,27 @@ export interface ReportStudent {
   date_of_birth?: string;
 }
 
+export interface DominantPattern {
+  name: string;
+  description: string;
+}
+
+export interface LessNaturalCareer {
+  domain: string;
+  examples: string;
+  trait: string;
+  score: number;
+  note: string;
+}
+
+export interface AreaToImprove {
+  trait: string;
+  label: string;
+  score: number;
+  tip: string;
+  steps: string[];
+}
+
 export interface CareerReport {
   session_id: string;
   completed_at: string | null;
@@ -42,9 +63,13 @@ export interface CareerReport {
     career_name: string;
     score_percent: number;
     confidence: string;
+    confidence_explanation: string;
   };
   traits: ReportTrait[];
   careers: ReportCareer[];
+  career_comparison_text: string;
+  dominant_pattern: DominantPattern;
+  less_natural_careers: LessNaturalCareer[];
   stream_recommendation: {
     stream: string;
     reasoning: string;
@@ -54,11 +79,6 @@ export interface CareerReport {
     class_11_12: string;
     after_12th: string;
   };
-  areas_to_improve: {
-    trait: string;
-    label: string;
-    score: number;
-    tip: string;
-  }[];
+  areas_to_improve: AreaToImprove[];
   disclaimer: string;
 }

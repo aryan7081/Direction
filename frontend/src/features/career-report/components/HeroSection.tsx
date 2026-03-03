@@ -29,11 +29,11 @@ export function HeroSection({
         sx={{
           display: 'flex',
           gap: { xs: 2, sm: 3 },
-          mb: 4,
+          mb: 3,
           flexDirection: { xs: 'column', sm: 'row' },
         }}
       >
-        {/* Recommended Stream — left */}
+        {/* Recommended Stream */}
         <Box
           sx={{
             flex: 1,
@@ -69,7 +69,7 @@ export function HeroSection({
           </Typography>
         </Box>
 
-        {/* Top Career Match — right */}
+        {/* Top Career Match */}
         <Box
           sx={{
             flex: 1,
@@ -149,6 +149,26 @@ export function HeroSection({
           />
         </Box>
       </Box>
+
+      {/* Confidence Explanation */}
+      {hero.confidence_explanation && (
+        <Box
+          sx={{
+            p: 2.5,
+            borderRadius: 2,
+            bgcolor: badge.bg,
+            border: `1px solid ${badge.border}`,
+            mb: 3,
+          }}
+        >
+          <Typography variant="caption" sx={{ fontWeight: 700, color: badge.text, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            What &ldquo;{hero.confidence} Confidence&rdquo; means
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#374151', mt: 0.5, lineHeight: 1.7 }}>
+            {hero.confidence_explanation}
+          </Typography>
+        </Box>
+      )}
     </motion.div>
   );
 }

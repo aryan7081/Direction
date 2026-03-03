@@ -2,12 +2,12 @@
 
 import { Box, Card, CardContent, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
-import type { CareerReport } from '../types';
+import type { AreaToImprove } from '../types';
 
 export function AreasToImprove({
   areas,
 }: {
-  areas: CareerReport['areas_to_improve'];
+  areas: AreaToImprove[];
 }) {
   if (!areas || areas.length === 0) return null;
 
@@ -17,7 +17,7 @@ export function AreasToImprove({
         <Typography variant="h6" fontWeight={700} gutterBottom>
           Areas to Develop
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.7 }}>
           These are not weaknesses — they are growth opportunities. Even small effort here can expand your career options.
         </Typography>
 
@@ -45,9 +45,27 @@ export function AreasToImprove({
                     {area.score}/10
                   </Typography>
                 </Box>
-                <Typography variant="body2" sx={{ color: '#78350f', lineHeight: 1.7 }}>
+                <Typography variant="body2" sx={{ color: '#78350f', lineHeight: 1.7, mb: area.steps?.length ? 1 : 0 }}>
                   {area.tip}
                 </Typography>
+                {area.steps && area.steps.length > 0 && (
+                  <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+                    {area.steps.map((step, j) => (
+                      <Box
+                        component="li"
+                        key={j}
+                        sx={{
+                          fontSize: '0.82rem',
+                          color: '#92400e',
+                          lineHeight: 1.7,
+                          '&::marker': { color: '#d97706' },
+                        }}
+                      >
+                        {step}
+                      </Box>
+                    ))}
+                  </Box>
+                )}
               </Box>
             </motion.div>
           ))}

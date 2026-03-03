@@ -3,15 +3,17 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Box, Button, Container, Divider, Typography } from '@mui/material';
+import { Box, Button, Container, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import { PageLoader, ButtonSpinner } from '@/components/ui/Loaders';
 import { fetchCareerReport, downloadReportPdf } from './api';
 import { HeroSection } from './components/HeroSection';
+import { DominantPattern } from './components/DominantPattern';
 import { TraitRadarChart } from './components/TraitRadarChart';
 import { TraitBreakdown } from './components/TraitBreakdown';
 import { CareerCards } from './components/CareerCards';
 import { CareerComparison } from './components/CareerComparison';
+import { LessNaturalCareers } from './components/LessNaturalCareers';
 import { DevelopmentRoadmap } from './components/DevelopmentRoadmap';
 import { AreasToImprove } from './components/AreasToImprove';
 
@@ -97,8 +99,13 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
         )}
       </motion.div>
 
-      {/* Hero + Stream */}
+      {/* Hero + Stream + Confidence explanation */}
       <HeroSection hero={report.hero} streamRecommendation={report.stream_recommendation} />
+
+      {/* Dominant Pattern */}
+      {report.dominant_pattern && (
+        <DominantPattern pattern={report.dominant_pattern} />
+      )}
 
       {/* Radar */}
       <TraitRadarChart traits={report.traits} />
@@ -109,13 +116,18 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
       {/* Career cards */}
       <CareerCards careers={report.careers} />
 
-      {/* Comparison bar chart */}
-      <CareerComparison careers={report.careers} />
+      {/* Comparison bar chart with analysis */}
+      <CareerComparison careers={report.careers} comparisonText={report.career_comparison_text} />
+
+      {/* Careers that may need extra effort */}
+      {report.less_natural_careers && report.less_natural_careers.length > 0 && (
+        <LessNaturalCareers items={report.less_natural_careers} />
+      )}
 
       {/* Roadmap */}
       <DevelopmentRoadmap roadmap={report.roadmap} />
 
-      {/* Improvement areas */}
+      {/* Improvement areas with practical steps */}
       <AreasToImprove areas={report.areas_to_improve} />
 
       {/* Disclaimer */}
