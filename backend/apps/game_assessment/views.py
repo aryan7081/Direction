@@ -1,5 +1,6 @@
 import datetime
 
+from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
@@ -15,6 +16,7 @@ from .serializers import (
     CareerMatchSerializer,
 )
 from .services import run_scoring_pipeline
+from .services.report_builder import build_report
 from .content.logic_game import get_logic_tasks
 from .content.risk_game import get_risk_scenarios
 from .content.planner_game import get_planner_config
@@ -282,3 +284,69 @@ class ResumeSessionView(GenericAPIView):
                 }
             }
         )
+
+
+class CareerReportView(GenericAPIView):
+    """GET — returns the full career report JSON for a completed session."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, session_id):
+        try:
+            session = GameSession.objects.get(id=session_id, user=request.user)
+        except GameSession.DoesNotExist:
+            return Response(
+                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not session.is_complete:
+            return Response(
+                {"detail": "Session not yet completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        report = build_report(session)
+        return Response(report)
+
+
+class CareerReportPDFView(GenericAPIView):
+    """GET — returns a downloadable A4 PDF career report."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, session_id):
+        try:
+            session = GameSession.objects.get(id=session_id, user=request.user)
+        except GameSession.DoesNotExist:
+            return Response(
+                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not session.is_complete:
+            return Response(
+                {"detail": "Session not yet completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        report = build_report(session)
+
+        try:
+            from .services.pdf_renderer import render_report_pdf
+
+            pdf_bytes = render_report_pdf(report)
+        except (ImportError, OSError) as e:
+            return Response(
+                {"detail": f"PDF generation is not available: {e}"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        except Exception as e:
+            return Response(
+                {"detail": f"PDF generation failed: {e}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="career-report-{session_id}.pdf"'
+        )
+        return response

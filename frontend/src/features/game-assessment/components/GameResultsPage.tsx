@@ -174,7 +174,15 @@ export function GameResultsPage({ result }: { result: SessionResult }) {
         <Button variant="outlined" onClick={() => router.push('/dashboard')}>
           Go to Dashboard
         </Button>
-        <Button variant="contained" onClick={() => router.push('/careers')}>
+        <Button
+          variant="contained"
+          color="success"
+          onClick={() => router.push(`/report?session=${result.session_id}`)}
+          sx={{ fontWeight: 600 }}
+        >
+          View Full Career Report
+        </Button>
+        <Button variant="outlined" onClick={() => router.push('/careers')}>
           Explore All Careers
         </Button>
       </Box>

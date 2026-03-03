@@ -14,4 +14,14 @@ urlpatterns = [
     ),
     path("game/dashboard/", views.GameDashboardView.as_view(), name="game-dashboard"),
     path("game/resume/", views.ResumeSessionView.as_view(), name="game-resume"),
+    path(
+        "game/report/<uuid:session_id>/",
+        views.CareerReportView.as_view(),
+        name="game-report",
+    ),
+    path(
+        "game/report/<uuid:session_id>/pdf/",
+        views.CareerReportPDFView.as_view(),
+        name="game-report-pdf",
+    ),
 ]
