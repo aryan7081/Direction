@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
+import { PageLoader } from '@/components/ui/Loaders';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const access = useAuthStore((s) => s.access);
@@ -18,11 +19,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (access === null && typeof window !== 'undefined') {
     const token = localStorage.getItem('access');
     if (!token) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="animate-pulse text-gray-500">Loading...</div>
-        </div>
-      );
+      return <PageLoader message="Checking authentication..." />;
     }
   }
 

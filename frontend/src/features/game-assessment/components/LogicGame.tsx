@@ -6,7 +6,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store';
 import type { LogicTask } from '../types';
 
-export function LogicGame({ tasks, onComplete }: { tasks: LogicTask[]; onComplete: () => void }) {
+export function LogicGame({
+  tasks,
+  onComplete,
+  onProgress,
+}: {
+  tasks: LogicTask[];
+  onComplete: () => void;
+  onProgress?: (fraction: number) => void;
+}) {
   const pushEvent = useGameStore((s) => s.pushEvent);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
@@ -56,15 +64,18 @@ export function LogicGame({ tasks, onComplete }: { tasks: LogicTask[]; onComplet
         timestamp: Date.now(),
       });
 
+      const next = current + 1;
+      onProgress?.(next / tasks.length);
+
       setTimeout(() => {
-        if (current < tasks.length - 1) {
-          setCurrent((c) => c + 1);
+        if (next < tasks.length) {
+          setCurrent(next);
         } else {
           onComplete();
         }
       }, 600);
     },
-    [answered, startTime, pushEvent, task, current, tasks.length, onComplete]
+    [answered, startTime, pushEvent, task, current, tasks.length, onComplete, onProgress]
   );
 
   if (!task) return null;

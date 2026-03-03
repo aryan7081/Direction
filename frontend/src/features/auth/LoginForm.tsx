@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { login } from './api';
+import { ButtonSpinner } from '@/components/ui/Loaders';
 import { Box, Button, TextField, Alert } from '@mui/material';
 
 export function LoginForm() {
@@ -51,7 +52,7 @@ export function LoginForm() {
         InputLabelProps={{ shrink: true }}
       />
       <Button type="submit" variant="contained" color="primary" size="large" fullWidth disabled={loading}>
-        {loading ? 'Signing in...' : 'Sign in'}
+        {loading ? <><ButtonSpinner /> Signing in...</> : 'Sign in'}
       </Button>
     </Box>
   );

@@ -1,10 +1,18 @@
 'use client';
 
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { Box, Alert, Container } from '@mui/material';
+import { PageLoader } from '@/components/ui/Loaders';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGameStore } from '../store';
-import { fetchGameContent, startGameSession, logEvents, submitSession } from '../api';
+import {
+  fetchGameContent,
+  startGameSession,
+  logEvents,
+  submitSession,
+  fetchSessionResult,
+  fetchResumeSession,
+} from '../api';
 import { GameProgressBar } from './GameProgressBar';
 import { IntroScreen } from './IntroScreen';
 import { LogicGame } from './LogicGame';
@@ -17,7 +25,12 @@ import type { GamePhase } from '../types';
 
 const GAME_PHASES: GamePhase[] = ['logic', 'risk', 'planner', 'scenario'];
 
-export function GameEngine() {
+interface GameEngineProps {
+  resumeSessionId?: string | null;
+  viewSessionId?: string | null;
+}
+
+export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) {
   const {
     sessionId,
     phase,
@@ -34,12 +47,49 @@ export function GameEngine() {
   } = useGameStore();
 
   const [subProgress, setSubProgress] = useState(0);
+  const [initializing, setInitializing] = useState(true);
+  const initRef = useRef(false);
 
   useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+
     reset();
-    fetchGameContent()
-      .then(setContent)
-      .catch(() => setError('Failed to load game content'));
+
+    (async () => {
+      try {
+        if (viewSessionId) {
+          const res = await fetchSessionResult(viewSessionId);
+          setResult(res);
+          setPhase('results');
+          setInitializing(false);
+          return;
+        }
+
+        const contentData = await fetchGameContent();
+        setContent(contentData);
+
+        if (resumeSessionId) {
+          setSessionId(resumeSessionId);
+          try {
+            const resumeInfo = await fetchResumeSession();
+            if (resumeInfo.session && resumeInfo.session.session_id === resumeSessionId) {
+              const rp = resumeInfo.session.resume_phase;
+              const validPhases: GamePhase[] = ['logic', 'risk', 'planner', 'scenario', 'processing'];
+              setPhase(validPhases.includes(rp) ? rp : 'logic');
+            } else {
+              setPhase('logic');
+            }
+          } catch {
+            setPhase('logic');
+          }
+        }
+      } catch {
+        setError('Failed to load. Please try again.');
+      } finally {
+        setInitializing(false);
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -89,12 +139,8 @@ export function GameEngine() {
     }
   }, [sessionId, flushEvents, setResult, setPhase, setError]);
 
-  if (!content && phase === 'intro') {
-    return (
-      <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
-        Loading games...
-      </Box>
-    );
+  if (initializing) {
+    return <PageLoader message="Preparing your assessment..." />;
   }
 
   return (
@@ -112,27 +158,27 @@ export function GameEngine() {
       <AnimatePresence mode="wait">
         <motion.div
           key={phase}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.35 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.18 }}
         >
           {phase === 'intro' && <IntroScreen onStart={handleStart} />}
 
           {phase === 'logic' && content && (
-            <LogicGame tasks={content.logic_tasks} onComplete={advancePhase} />
+            <LogicGame tasks={content.logic_tasks} onComplete={advancePhase} onProgress={setSubProgress} />
           )}
 
           {phase === 'risk' && content && (
-            <RiskSimulator scenarios={content.risk_scenarios} onComplete={advancePhase} />
+            <RiskSimulator scenarios={content.risk_scenarios} onComplete={advancePhase} onProgress={setSubProgress} />
           )}
 
           {phase === 'planner' && content && (
-            <PlannerGame config={content.planner_config} onComplete={advancePhase} />
+            <PlannerGame config={content.planner_config} onComplete={advancePhase} onProgress={setSubProgress} />
           )}
 
           {phase === 'scenario' && content && (
-            <ScenarioSection questions={content.scenario_questions} onComplete={advancePhase} />
+            <ScenarioSection questions={content.scenario_questions} onComplete={advancePhase} onProgress={setSubProgress} />
           )}
 
           {phase === 'processing' && <ProcessingScreen onDone={handleProcessingDone} />}

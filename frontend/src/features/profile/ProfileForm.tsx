@@ -17,6 +17,7 @@ import {
   FormHelperText,
 } from '@mui/material';
 import { updateProfile, type Profile, type ProfileUpdate } from './api';
+import { ButtonSpinner } from '@/components/ui/Loaders';
 
 const FINANCIAL_TIERS = [
   { value: '', label: 'Not specified' },
@@ -205,7 +206,7 @@ export function ProfileForm({ profile, onSuccess }: { profile: Profile | null; o
             disabled={mutation.isPending}
             sx={{ alignSelf: 'flex-start' }}
           >
-            {mutation.isPending ? 'Saving...' : 'Save profile'}
+            {mutation.isPending ? <><ButtonSpinner /> Saving...</> : 'Save profile'}
           </Button>
         </Box>
       </CardContent>

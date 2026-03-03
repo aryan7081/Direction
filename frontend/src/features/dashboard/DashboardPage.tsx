@@ -1,28 +1,42 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { getDashboard } from '@/features/assessment/api';
+import { fetchGameDashboard } from '@/features/game-assessment/api';
 import { getProfile } from '@/features/profile/api';
 import { ProfileForm } from '@/features/profile/ProfileForm';
-import { Box, Button, Card, CardContent, Typography } from '@mui/material';
+import { DashboardSkeleton } from '@/components/ui/Loaders';
+import { Box, Button, Card, CardContent, Chip, Typography } from '@mui/material';
+
+const PHASE_LABELS: Record<string, string> = {
+  logic: 'Logic Challenge',
+  risk: 'Risk Simulator',
+  planner: 'Weekly Planner',
+  scenario: 'Scenarios',
+  processing: 'Ready to Submit',
+};
 
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const router = useRouter();
 
-  const { data } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: getDashboard,
+  const { data, isLoading: dashLoading } = useQuery({
+    queryKey: ['game-dashboard'],
+    queryFn: fetchGameDashboard,
   });
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: getProfile,
   });
 
-  const latestId = data?.latest_result_attempt_id;
+  if (dashLoading && profileLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  const latestSessionId = data?.latest_result_session_id;
   const attempts = Array.isArray(data?.attempts) ? data.attempts : [];
 
   return (
@@ -44,18 +58,28 @@ export function DashboardPage() {
             <Typography color="text.secondary" sx={{ mb: 3 }}>
               Take the career assessment to discover careers that match your interests and aptitude.
             </Typography>
-            <Button component={Link} href="/game-assessment" variant="contained" color="primary" size="large" fullWidth>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              fullWidth
+              onClick={() => router.push('/game-assessment')}
+            >
               Start Career Assessment
             </Button>
           </CardContent>
         </Card>
 
-        {latestId && (
+        {latestSessionId && (
           <Card>
             <CardContent>
               <Typography variant="h6" fontWeight={600} gutterBottom>Your Latest Results</Typography>
               <Typography color="text.secondary" sx={{ mb: 2 }}>View your most recent career recommendations.</Typography>
-              <Button component={Link} href={`/result?attempt=${latestId}`} variant="outlined" color="primary">
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => router.push(`/game-assessment?view=${latestSessionId}`)}
+              >
                 View Results
               </Button>
             </CardContent>
@@ -65,7 +89,7 @@ export function DashboardPage() {
         {attempts.length > 0 && (
           <Card>
             <CardContent>
-              <Typography variant="h6" fontWeight={600} gutterBottom>Past Attempts</Typography>
+              <Typography variant="h6" fontWeight={600} gutterBottom>Past Assessments</Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {attempts.slice(0, 5).map((a) => (
                   <Box
@@ -80,12 +104,38 @@ export function DashboardPage() {
                       '&:last-child': { borderBottom: 0 },
                     }}
                   >
-                    <Typography color="text.secondary">
-                      {new Date(a.created_at).toLocaleDateString()} – {a.is_complete ? 'Completed' : 'Incomplete'}
-                    </Typography>
-                    {a.is_complete && (
-                      <Button component={Link} href={`/result?attempt=${a.id}`} color="primary" size="small">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography color="text.secondary">
+                        {new Date(a.created_at).toLocaleDateString()}
+                      </Typography>
+                      <Chip
+                        label={a.is_complete ? 'Completed' : 'In Progress'}
+                        size="small"
+                        color={a.is_complete ? 'success' : 'warning'}
+                        variant="outlined"
+                      />
+                      {!a.is_complete && a.resume_phase && (
+                        <Typography variant="caption" color="text.secondary">
+                          — {PHASE_LABELS[a.resume_phase] ?? a.resume_phase}
+                        </Typography>
+                      )}
+                    </Box>
+                    {a.is_complete ? (
+                      <Button
+                        color="primary"
+                        size="small"
+                        onClick={() => router.push(`/game-assessment?view=${a.id}`)}
+                      >
                         View
+                      </Button>
+                    ) : (
+                      <Button
+                        color="warning"
+                        size="small"
+                        variant="outlined"
+                        onClick={() => router.push(`/game-assessment?resume=${a.id}`)}
+                      >
+                        Continue
                       </Button>
                     )}
                   </Box>
@@ -99,7 +149,11 @@ export function DashboardPage() {
           <CardContent>
             <Typography variant="h6" fontWeight={600} gutterBottom>Explore Careers</Typography>
             <Typography color="text.secondary" sx={{ mb: 2 }}>Browse our database of career options.</Typography>
-            <Button component={Link} href="/careers" variant="outlined" color="primary">
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => router.push('/careers')}
+            >
               Browse Careers
             </Button>
           </CardContent>

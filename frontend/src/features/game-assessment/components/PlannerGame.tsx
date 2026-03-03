@@ -97,13 +97,18 @@ function DroppableSlot({
 export function PlannerGame({
   config,
   onComplete,
+  onProgress,
 }: {
   config: PlannerConfig;
   onComplete: () => void;
+  onProgress?: (fraction: number) => void;
 }) {
   const pushEvent = useGameStore((s) => s.pushEvent);
   const [schedule, setSchedule] = useState<Record<string, string | null>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  const totalSlots = config.days.length * config.time_slots.length;
+  const filledSlots = Object.values(schedule).filter(Boolean).length;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -122,7 +127,12 @@ export function PlannerGame({
     const slotId = over.id as string;
     const activityId = active.id as string;
 
-    setSchedule((prev) => ({ ...prev, [slotId]: activityId }));
+    setSchedule((prev) => {
+      const next = { ...prev, [slotId]: activityId };
+      const filled = Object.values(next).filter(Boolean).length;
+      onProgress?.(Math.min(filled / totalSlots, 1));
+      return next;
+    });
 
     pushEvent({
       game: 'planner',
@@ -131,9 +141,6 @@ export function PlannerGame({
       timestamp: Date.now(),
     });
   };
-
-  const filledSlots = Object.values(schedule).filter(Boolean).length;
-  const totalSlots = config.days.length * config.time_slots.length;
 
   const handleSubmit = useCallback(() => {
     pushEvent({

@@ -9,9 +9,11 @@ import type { RiskScenario } from '../types';
 export function RiskSimulator({
   scenarios,
   onComplete,
+  onProgress,
 }: {
   scenarios: RiskScenario[];
   onComplete: () => void;
+  onProgress?: (fraction: number) => void;
 }) {
   const pushEvent = useGameStore((s) => s.pushEvent);
   const [current, setCurrent] = useState(0);
@@ -45,15 +47,18 @@ export function RiskSimulator({
         timestamp: Date.now(),
       });
 
+      const next = current + 1;
+      onProgress?.(next / scenarios.length);
+
       setTimeout(() => {
-        if (current < scenarios.length - 1) {
-          setCurrent((c) => c + 1);
+        if (next < scenarios.length) {
+          setCurrent(next);
         } else {
           onComplete();
         }
       }, 600);
     },
-    [answered, startTime, pushEvent, scenario, current, scenarios.length, onComplete]
+    [answered, startTime, pushEvent, scenario, current, scenarios.length, onComplete, onProgress]
   );
 
   if (!scenario) return null;

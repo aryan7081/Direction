@@ -3,7 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { getCareers } from './api';
-import { Box, Card, CardContent, Typography, Alert } from '@mui/material';
+import { ListSkeleton } from '@/components/ui/Loaders';
+import { Box, Card, CardContent, Typography, Alert, Skeleton } from '@mui/material';
 
 export function CareersListPage() {
   const { data, isLoading, error } = useQuery({
@@ -16,7 +17,8 @@ export function CareersListPage() {
   if (isLoading) {
     return (
       <Box sx={{ maxWidth: 720, mx: 'auto', p: 2 }}>
-        <Typography color="text.secondary">Loading careers...</Typography>
+        <Skeleton variant="text" width={180} height={36} sx={{ mb: 2 }} />
+        <ListSkeleton count={6} />
       </Box>
     );
   }

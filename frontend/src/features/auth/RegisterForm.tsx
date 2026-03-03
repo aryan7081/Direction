@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { register } from './api';
 import { Box, Button, TextField, Alert, Grid } from '@mui/material';
+import { ButtonSpinner } from '@/components/ui/Loaders';
 
 export function RegisterForm() {
   const [form, setForm] = useState({
@@ -106,7 +107,7 @@ export function RegisterForm() {
         InputLabelProps={{ shrink: true }}
       />
       <Button type="submit" variant="contained" color="primary" size="large" fullWidth disabled={loading}>
-        {loading ? 'Creating account...' : 'Create account'}
+        {loading ? <><ButtonSpinner /> Creating account...</> : 'Create account'}
       </Button>
     </Box>
   );

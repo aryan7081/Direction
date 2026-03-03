@@ -1,14 +1,15 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { getCareerBySlug } from './api';
+import { DetailSkeleton } from '@/components/ui/Loaders';
 import { Box, Button, Card, CardContent, Chip, Typography } from '@mui/material';
 
 export function CareerDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const router = useRouter();
 
   const { data: career, isLoading, error } = useQuery({
     queryKey: ['career', slug],
@@ -20,7 +21,7 @@ export function CareerDetailPage() {
     return (
       <Box sx={{ maxWidth: 640, mx: 'auto', p: 2, textAlign: 'center' }}>
         <Typography color="error">Career not found.</Typography>
-        <Button component={Link} href="/careers" color="primary" sx={{ mt: 2 }}>
+        <Button color="primary" sx={{ mt: 2 }} onClick={() => router.push('/careers')}>
           Back to Careers
         </Button>
       </Box>
@@ -28,16 +29,12 @@ export function CareerDetailPage() {
   }
 
   if (isLoading || !career) {
-    return (
-      <Box sx={{ maxWidth: 640, mx: 'auto', p: 2 }}>
-        <Typography color="text.secondary">Loading...</Typography>
-      </Box>
-    );
+    return <DetailSkeleton />;
   }
 
   return (
     <Box sx={{ maxWidth: 640, mx: 'auto', p: 2 }}>
-      <Button component={Link} href="/careers" size="small" sx={{ mb: 2 }}>
+      <Button size="small" sx={{ mb: 2 }} onClick={() => router.push('/careers')}>
         ← Back to Careers
       </Button>
       <Card>
@@ -62,7 +59,7 @@ export function CareerDetailPage() {
               </Typography>
             )}
           </Box>
-          <Button component={Link} href="/assessment" variant="contained" color="primary" sx={{ mt: 3 }}>
+          <Button variant="contained" color="primary" sx={{ mt: 3 }} onClick={() => router.push('/game-assessment')}>
             Take Assessment to See Match
           </Button>
         </CardContent>

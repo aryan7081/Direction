@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Button,
@@ -32,6 +32,8 @@ function fireConfetti() {
 }
 
 export function GameResultsPage({ result }: { result: SessionResult }) {
+  const router = useRouter();
+
   useEffect(() => {
     const timer = setTimeout(fireConfetti, 400);
     return () => clearTimeout(timer);
@@ -169,12 +171,12 @@ export function GameResultsPage({ result }: { result: SessionResult }) {
 
       {/* CTA */}
       <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-        <Link href="/dashboard" style={{ textDecoration: 'none' }}>
-          <Button variant="outlined">Go to Dashboard</Button>
-        </Link>
-        <Link href="/careers" style={{ textDecoration: 'none' }}>
-          <Button variant="contained">Explore All Careers</Button>
-        </Link>
+        <Button variant="outlined" onClick={() => router.push('/dashboard')}>
+          Go to Dashboard
+        </Button>
+        <Button variant="contained" onClick={() => router.push('/careers')}>
+          Explore All Careers
+        </Button>
       </Box>
     </motion.div>
   );

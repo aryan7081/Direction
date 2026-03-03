@@ -1,18 +1,25 @@
 'use client';
 
-import { Box, LinearProgress, Typography } from '@mui/material';
+import { Box, LinearProgress, Typography, Chip } from '@mui/material';
 import { motion } from 'framer-motion';
-import { PHASE_ORDER, type GamePhase } from '../types';
+import type { GamePhase } from '../types';
+
+const ACTIVE_PHASES: GamePhase[] = ['logic', 'risk', 'planner', 'scenario'];
 
 const GAME_LABELS: Record<string, string> = {
-  intro: 'Get Ready',
   logic: 'Logic Challenge',
   risk: 'Decision Maker',
   planner: 'Weekly Planner',
   scenario: 'Situations',
   processing: 'Analyzing...',
-  results: 'Your Results',
 };
+
+const STEP_LABELS: { phase: GamePhase; label: string }[] = [
+  { phase: 'logic', label: 'Logic' },
+  { phase: 'risk', label: 'Risk' },
+  { phase: 'planner', label: 'Planner' },
+  { phase: 'scenario', label: 'Scenarios' },
+];
 
 export function GameProgressBar({
   phase,
@@ -21,28 +28,71 @@ export function GameProgressBar({
   phase: GamePhase;
   subProgress: number;
 }) {
-  const phaseIdx = PHASE_ORDER.indexOf(phase);
-  const totalPhases = PHASE_ORDER.length - 2; // exclude intro & results
-  const base = Math.max(0, phaseIdx - 1);
-  const overall = ((base + subProgress) / totalPhases) * 100;
+  const phaseIdx = ACTIVE_PHASES.indexOf(phase as GamePhase);
+  const totalPhases = ACTIVE_PHASES.length;
+
+  let overall: number;
+  if (phase === 'processing') {
+    overall = 100;
+  } else if (phaseIdx >= 0) {
+    overall = ((phaseIdx + subProgress) / totalPhases) * 100;
+  } else {
+    overall = 0;
+  }
 
   return (
     <Box sx={{ mb: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
         <Typography variant="caption" color="text.secondary" fontWeight={600}>
           {GAME_LABELS[phase] ?? ''}
         </Typography>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" fontWeight={600}>
           {Math.round(overall)}%
         </Typography>
       </Box>
-      <motion.div layout>
+
+      <motion.div
+        initial={false}
+        animate={{ opacity: 1 }}
+      >
         <LinearProgress
           variant="determinate"
           value={Math.min(100, overall)}
-          sx={{ height: 8, borderRadius: 4 }}
+          sx={{
+            height: 8,
+            borderRadius: 4,
+            bgcolor: 'grey.200',
+            '& .MuiLinearProgress-bar': {
+              borderRadius: 4,
+              transition: 'transform 0.4s ease',
+            },
+          }}
         />
       </motion.div>
+
+      <Box sx={{ display: 'flex', gap: 0.75, mt: 1.5 }}>
+        {STEP_LABELS.map((step, i) => {
+          const stepIdx = ACTIVE_PHASES.indexOf(step.phase);
+          const isDone = phaseIdx > stepIdx || phase === 'processing';
+          const isCurrent = phaseIdx === stepIdx && phase !== 'processing';
+
+          return (
+            <Chip
+              key={step.phase}
+              label={step.label}
+              size="small"
+              variant={isDone || isCurrent ? 'filled' : 'outlined'}
+              color={isDone ? 'success' : isCurrent ? 'primary' : 'default'}
+              sx={{
+                fontSize: '0.7rem',
+                height: 24,
+                fontWeight: isCurrent ? 700 : 500,
+                opacity: isDone || isCurrent ? 1 : 0.5,
+              }}
+            />
+          );
+        })}
+      </Box>
     </Box>
   );
 }

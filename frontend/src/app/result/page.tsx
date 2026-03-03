@@ -3,13 +3,14 @@ import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
 import { Layout } from '@/components/Layout';
 import { ResultPage } from '@/features/assessment/ResultPage';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ResultSkeleton } from '@/components/ui/Loaders';
 
 export default function Result() {
   return (
     <ProtectedRoute>
       <Layout>
         <ErrorBoundary>
-          <Suspense fallback={<div className="p-6 text-center text-gray-500">Loading...</div>}>
+          <Suspense fallback={<ResultSkeleton />}>
             <ResultPage />
           </Suspense>
         </ErrorBoundary>

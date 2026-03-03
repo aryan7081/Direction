@@ -9,9 +9,11 @@ import type { ScenarioQuestion } from '../types';
 export function ScenarioSection({
   questions,
   onComplete,
+  onProgress,
 }: {
   questions: ScenarioQuestion[];
   onComplete: () => void;
+  onProgress?: (fraction: number) => void;
 }) {
   const pushEvent = useGameStore((s) => s.pushEvent);
   const [current, setCurrent] = useState(0);
@@ -41,15 +43,18 @@ export function ScenarioSection({
         timestamp: Date.now(),
       });
 
+      const next = current + 1;
+      onProgress?.(next / questions.length);
+
       setTimeout(() => {
-        if (current < questions.length - 1) {
-          setCurrent((c) => c + 1);
+        if (next < questions.length) {
+          setCurrent(next);
         } else {
           onComplete();
         }
       }, 500);
     },
-    [answered, pushEvent, question, current, questions.length, onComplete]
+    [answered, pushEvent, question, current, questions.length, onComplete, onProgress]
   );
 
   if (!question) return null;

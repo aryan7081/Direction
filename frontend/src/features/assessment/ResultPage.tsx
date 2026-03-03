@@ -1,16 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { getAssessmentResult } from './api';
 import { downloadReport } from '@/features/reports/api';
 import { Box, Button, Card, CardContent, Chip, Typography, Alert } from '@mui/material';
+import { ResultSkeleton, ButtonSpinner } from '@/components/ui/Loaders';
 import type { AssessmentResult } from '@/types';
 
 export function ResultPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const attemptId = searchParams.get('attempt');
 
   const { data, isLoading, error } = useQuery({
@@ -26,7 +28,7 @@ export function ResultPage() {
     return (
       <Box sx={{ maxWidth: 640, mx: 'auto', p: 2, textAlign: 'center' }}>
         <Typography color="error">Invalid or missing result.</Typography>
-        <Button component={Link} href="/dashboard" color="primary" sx={{ mt: 2 }}>
+        <Button color="primary" sx={{ mt: 2 }} onClick={() => router.push('/dashboard')}>
           Go to Dashboard
         </Button>
       </Box>
@@ -34,11 +36,7 @@ export function ResultPage() {
   }
 
   if (isLoading || !data) {
-    return (
-      <Box sx={{ maxWidth: 640, mx: 'auto', p: 2, textAlign: 'center' }}>
-        <Typography color="text.secondary">Loading your results...</Typography>
-      </Box>
-    );
+    return <ResultSkeleton />;
   }
 
   const result = data as AssessmentResult;
@@ -111,9 +109,9 @@ export function ResultPage() {
           )}
           <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
             <Button variant="outlined" color="primary" fullWidth onClick={handleDownload} disabled={downloading}>
-              {downloading ? 'Downloading...' : 'Download PDF Report'}
+              {downloading ? <><ButtonSpinner size={18} /> Downloading...</> : 'Download PDF Report'}
             </Button>
-            <Button component={Link} href="/dashboard" fullWidth>
+            <Button fullWidth onClick={() => router.push('/dashboard')}>
               Dashboard
             </Button>
           </Box>

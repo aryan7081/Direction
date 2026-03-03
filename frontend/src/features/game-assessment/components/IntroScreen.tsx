@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
+import { ButtonSpinner } from '@/components/ui/Loaders';
 
 const GAMES = [
   { icon: '🧩', title: 'Logic Challenge', desc: '5 brain teasers to test your reasoning' },
@@ -11,6 +13,16 @@ const GAMES = [
 ];
 
 export function IntroScreen({ onStart }: { onStart: () => void }) {
+  const [starting, setStarting] = useState(false);
+
+  const handleClick = async () => {
+    setStarting(true);
+    try {
+      await onStart();
+    } finally {
+      setStarting(false);
+    }
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -62,8 +74,14 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
           Takes about 10–15 minutes. Your answers are private.
         </Typography>
         <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-          <Button variant="contained" size="large" onClick={onStart} sx={{ px: 5, py: 1.5 }}>
-            Let&apos;s Go
+          <Button
+            variant="contained"
+            size="large"
+            onClick={handleClick}
+            disabled={starting}
+            sx={{ px: 5, py: 1.5 }}
+          >
+            {starting ? <><ButtonSpinner /> Starting...</> : "Let\u0027s Go"}
           </Button>
         </motion.div>
       </Box>

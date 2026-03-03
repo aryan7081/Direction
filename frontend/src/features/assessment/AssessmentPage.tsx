@@ -9,6 +9,7 @@ import {
   submitAssessment,
 } from './api';
 import { Box, Button, Card, CardContent, Typography, RadioGroup, FormControlLabel, Radio, LinearProgress } from '@mui/material';
+import { PageLoader, ButtonSpinner } from '@/components/ui/Loaders';
 import type { Question } from '@/types';
 
 export function AssessmentPage() {
@@ -75,7 +76,11 @@ export function AssessmentPage() {
   const answeredCount = Object.keys(responses).length;
   const canSubmit = answeredCount === questions.length && questions.length > 0;
 
-  if (questionsLoading || !started) {
+  if (questionsLoading) {
+    return <PageLoader message="Loading assessment..." />;
+  }
+
+  if (!started) {
     return (
       <Box sx={{ maxWidth: 640, mx: 'auto', p: 2 }}>
         <Card>
@@ -85,7 +90,7 @@ export function AssessmentPage() {
               Answer {questions.length} questions to discover careers that match your interests.
             </Typography>
             <Button variant="contained" color="primary" size="large" fullWidth onClick={handleStart} disabled={startMutation.isPending}>
-              {startMutation.isPending ? 'Starting...' : 'Start Assessment'}
+              {startMutation.isPending ? <><ButtonSpinner /> Starting...</> : 'Start Assessment'}
             </Button>
           </CardContent>
         </Card>
@@ -144,8 +149,8 @@ export function AssessmentPage() {
             {currentIndex < questions.length - 1 ? (
               <Button variant="contained" color="primary" onClick={handleNext}>Next</Button>
             ) : (
-              <Button variant="contained" color="primary" onClick={handleSubmit} disabled={!canSubmit}>
-                {submitMutation.isPending ? 'Submitting...' : 'Submit & See Results'}
+              <Button variant="contained" color="primary" onClick={handleSubmit} disabled={!canSubmit || submitMutation.isPending}>
+                {submitMutation.isPending ? <><ButtonSpinner /> Submitting...</> : 'Submit & See Results'}
               </Button>
             )}
           </Box>
