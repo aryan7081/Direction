@@ -12,4 +12,6 @@ urlpatterns = [
         views.SessionResultView.as_view(),
         name="game-results",
     ),
+    path("game/dashboard/", views.GameDashboardView.as_view(), name="game-dashboard"),
+    path("game/resume/", views.ResumeSessionView.as_view(), name="game-resume"),
 ]

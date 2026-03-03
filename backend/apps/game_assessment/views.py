@@ -199,3 +199,86 @@ class SessionResultView(GenericAPIView):
                 "career_matches": career_data,
             }
         )
+
+
+GAME_PHASE_ORDER = ["logic", "risk", "planner", "scenario"]
+
+
+def _detect_resume_phase(session):
+    """Determine which phase the user should resume from based on logged events."""
+    logged_games = set(
+        GameEventLog.objects.filter(session=session)
+        .values_list("game_name", flat=True)
+        .distinct()
+    )
+    for phase in GAME_PHASE_ORDER:
+        if phase not in logged_games:
+            return phase
+    return "processing"
+
+
+class GameDashboardView(GenericAPIView):
+    """GET — returns game sessions for the dashboard (replaces old assessment attempts)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        sessions = (
+            GameSession.objects.filter(user=request.user)
+            .order_by("-started_at")[:10]
+        )
+
+        attempts = []
+        for s in sessions:
+            entry = {
+                "id": str(s.id),
+                "is_complete": s.is_complete,
+                "started_at": s.started_at,
+                "completed_at": s.completed_at,
+                "created_at": s.started_at,
+            }
+            if not s.is_complete:
+                entry["resume_phase"] = _detect_resume_phase(s)
+            attempts.append(entry)
+
+        latest_complete = (
+            GameSession.objects.filter(user=request.user, is_complete=True)
+            .order_by("-completed_at")
+            .first()
+        )
+
+        return Response(
+            {
+                "attempts": attempts,
+                "latest_result_session_id": (
+                    str(latest_complete.id) if latest_complete else None
+                ),
+            }
+        )
+
+
+class ResumeSessionView(GenericAPIView):
+    """GET — returns the latest incomplete session with its resume phase."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        session = (
+            GameSession.objects.filter(user=request.user, is_complete=False)
+            .order_by("-started_at")
+            .first()
+        )
+        if not session:
+            return Response({"session": None})
+
+        resume_phase = _detect_resume_phase(session)
+
+        return Response(
+            {
+                "session": {
+                    "session_id": str(session.id),
+                    "started_at": session.started_at,
+                    "resume_phase": resume_phase,
+                }
+            }
+        )
