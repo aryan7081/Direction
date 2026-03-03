@@ -106,7 +106,23 @@ export function RegisterForm() {
         inputProps={{ minLength: 8 }}
         InputLabelProps={{ shrink: true }}
       />
-      <Button type="submit" variant="contained" color="primary" size="large" fullWidth disabled={loading}>
+      <Button
+        type="submit"
+        variant="contained"
+        size="large"
+        fullWidth
+        disabled={loading}
+        sx={{
+          background: 'linear-gradient(135deg, #16a34a, #15803d)',
+          textTransform: 'none',
+          fontWeight: 600,
+          borderRadius: 2,
+          py: 1.3,
+          fontSize: '0.95rem',
+          boxShadow: '0 4px 14px rgba(22,163,74,0.25)',
+          '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)', boxShadow: '0 6px 20px rgba(22,163,74,0.35)' },
+        }}
+      >
         {loading ? <><ButtonSpinner /> Creating account...</> : 'Create account'}
       </Button>
     </Box>

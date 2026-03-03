@@ -5,8 +5,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Button,
-  Card,
-  CardContent,
   Typography,
   TextField,
   FormControl,
@@ -125,91 +123,116 @@ export function ProfileForm({ profile, onSuccess }: { profile: Profile | null; o
 
   if (!showForm) {
     return (
-      <Card>
-        <CardContent>
-          {successMessage && (
-            <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(false)}>
-              Saved successfully!
-            </Alert>
-          )}
-          <Typography variant="h6" fontWeight={600} gutterBottom>
-            Your Profile
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {profileHasData
-              ? 'Your profile is saved. Recommendations will use your financial situation and subject marks.'
-              : 'Your profile has been saved.'}
-          </Typography>
-          <Button variant="outlined" size="small" onClick={() => setShowForm(true)}>
-            Edit profile
-          </Button>
-        </CardContent>
-      </Card>
+      <Box
+        sx={{
+          bgcolor: 'rgba(255,255,255,0.7)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: 3,
+          border: '1px solid rgba(0,0,0,0.06)',
+          p: { xs: 2.5, sm: 3.5 },
+        }}
+      >
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setSuccessMessage(false)}>
+            Saved successfully!
+          </Alert>
+        )}
+        <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#111827', mb: 0.5 }}>
+          Your Profile
+        </Typography>
+        <Typography sx={{ color: '#6b7280', mb: 2, fontSize: '0.9rem' }}>
+          {profileHasData
+            ? 'Your profile is saved. Recommendations will use your financial situation and subject marks.'
+            : 'Your profile has been saved.'}
+        </Typography>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => setShowForm(true)}
+          sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2, borderColor: 'rgba(0,0,0,0.15)', color: '#374151' }}
+        >
+          Edit profile
+        </Button>
+      </Box>
     );
   }
 
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" fontWeight={600} gutterBottom>
-          Your Profile (for better recommendations)
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Add your financial situation and latest subject marks. This helps us suggest careers that fit your academic strengths and family situation.
-        </Typography>
+    <Box
+      sx={{
+        bgcolor: 'rgba(255,255,255,0.7)',
+        backdropFilter: 'blur(12px)',
+        borderRadius: 3,
+        border: '1px solid rgba(0,0,0,0.06)',
+        p: { xs: 2.5, sm: 3.5 },
+      }}
+    >
+      <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#111827', mb: 0.5 }}>
+        Your Profile
+      </Typography>
+      <Typography sx={{ color: '#6b7280', mb: 2, fontSize: '0.9rem' }}>
+        Add your financial situation and latest subject marks for better recommendations.
+      </Typography>
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {error && (
+          <Alert severity="error" sx={{ borderRadius: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-          <FormControl size="small">
-            <InputLabel>Family financial situation</InputLabel>
-            <Select
-              value={financialTier}
-              label="Family financial situation"
-              onChange={(e) => setFinancialTier(e.target.value)}
-            >
-              {FINANCIAL_TIERS.map((t) => (
-                <MenuItem key={t.value || 'none'} value={t.value}>
-                  {t.label}
-                </MenuItem>
-              ))}
-            </Select>
-            <FormHelperText>Affects which careers we recommend (e.g. affordable options)</FormHelperText>
-          </FormControl>
-
-          <Typography variant="subtitle2" sx={{ mt: 1 }}>
-            Latest subject marks (% – leave blank if unknown)
-          </Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-            {SUBJECTS.map((s) => (
-              <TextField
-                key={s.slug}
-                size="small"
-                label={s.label}
-                type="number"
-                inputProps={{ min: 0, max: 100, step: 0.5 }}
-                value={marks[s.slug] ?? ''}
-                onChange={(e) => setMarks((prev) => ({ ...prev, [s.slug]: e.target.value }))}
-                InputLabelProps={{ shrink: true }}
-              />
-            ))}
-          </Box>
-
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            disabled={mutation.isPending}
-            sx={{ alignSelf: 'flex-start' }}
+        <FormControl size="small">
+          <InputLabel>Family financial situation</InputLabel>
+          <Select
+            value={financialTier}
+            label="Family financial situation"
+            onChange={(e) => setFinancialTier(e.target.value)}
           >
-            {mutation.isPending ? <><ButtonSpinner /> Saving...</> : 'Save profile'}
-          </Button>
+            {FINANCIAL_TIERS.map((t) => (
+              <MenuItem key={t.value || 'none'} value={t.value}>
+                {t.label}
+              </MenuItem>
+            ))}
+          </Select>
+          <FormHelperText>Affects which careers we recommend</FormHelperText>
+        </FormControl>
+
+        <Typography sx={{ fontWeight: 600, fontSize: '0.88rem', color: '#374151', mt: 1 }}>
+          Latest subject marks (% – leave blank if unknown)
+        </Typography>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+          {SUBJECTS.map((s) => (
+            <TextField
+              key={s.slug}
+              size="small"
+              label={s.label}
+              type="number"
+              inputProps={{ min: 0, max: 100, step: 0.5 }}
+              value={marks[s.slug] ?? ''}
+              onChange={(e) => setMarks((prev) => ({ ...prev, [s.slug]: e.target.value }))}
+              InputLabelProps={{ shrink: true }}
+            />
+          ))}
         </Box>
-      </CardContent>
-    </Card>
+
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={mutation.isPending}
+          sx={{
+            alignSelf: 'flex-start',
+            background: 'linear-gradient(135deg, #16a34a, #15803d)',
+            textTransform: 'none',
+            fontWeight: 600,
+            borderRadius: 2,
+            px: 3,
+            boxShadow: '0 4px 14px rgba(22,163,74,0.2)',
+            '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)' },
+          }}
+        >
+          {mutation.isPending ? <><ButtonSpinner /> Saving...</> : 'Save profile'}
+        </Button>
+      </Box>
+    </Box>
   );
 }

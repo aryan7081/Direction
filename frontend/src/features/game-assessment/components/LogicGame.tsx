@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Box, Button, Card, CardContent, Typography, Chip } from '@mui/material';
+import { Box, Button, Typography, Chip } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store';
 import type { LogicTask } from '../types';
@@ -89,24 +89,21 @@ export function LogicGame({
         exit={{ opacity: 0, x: -40 }}
         transition={{ duration: 0.3 }}
       >
-        <Card elevation={0} sx={{ border: 1, borderColor: 'divider' }}>
-          <CardContent sx={{ p: 3 }}>
+        <Box sx={{ bgcolor: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(16px)', borderRadius: 3, border: '1px solid rgba(0,0,0,0.06)', p: { xs: 2.5, sm: 3.5 } }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
               <Chip
                 label={`${current + 1} / ${tasks.length}`}
                 size="small"
-                color="primary"
-                variant="outlined"
+                sx={{ fontWeight: 600, bgcolor: 'rgba(139,92,246,0.08)', color: '#7c3aed', border: '1px solid rgba(139,92,246,0.2)' }}
               />
               <Chip
                 label={`${timeLeft}s`}
                 size="small"
-                color={timeLeft <= 5 ? 'error' : 'default'}
-                sx={{ fontWeight: 600, minWidth: 50 }}
+                sx={{ fontWeight: 700, minWidth: 50, bgcolor: timeLeft <= 5 ? 'rgba(239,68,68,0.1)' : 'rgba(0,0,0,0.04)', color: timeLeft <= 5 ? '#dc2626' : '#374151', border: timeLeft <= 5 ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(0,0,0,0.06)' }}
               />
             </Box>
 
-            <Typography variant="h6" fontWeight={600} sx={{ mb: 3, whiteSpace: 'pre-line' }}>
+            <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#111827', mb: 3, whiteSpace: 'pre-line', lineHeight: 1.6 }}>
               {task.prompt}
             </Typography>
 
@@ -115,7 +112,6 @@ export function LogicGame({
                 <Button
                   key={opt}
                   variant={selected === opt ? 'contained' : 'outlined'}
-                  color={selected === opt ? 'primary' : 'inherit'}
                   fullWidth
                   sx={{
                     justifyContent: 'flex-start',
@@ -123,19 +119,20 @@ export function LogicGame({
                     py: 1.5,
                     px: 2,
                     fontSize: '0.95rem',
+                    borderRadius: 2,
+                    borderColor: selected === opt ? undefined : 'rgba(0,0,0,0.1)',
+                    color: selected === opt ? '#fff' : '#374151',
+                    ...(selected === opt && { background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', '&:hover': { background: 'linear-gradient(135deg, #6d28d9, #5b21b6)' } }),
+                    ...(!selected && { '&:hover': { borderColor: '#7c3aed', color: '#7c3aed', bgcolor: 'rgba(139,92,246,0.04)' } }),
                   }}
-                  onClick={() => {
-                    setSelected(opt);
-                    handleSubmit(opt);
-                  }}
+                  onClick={() => { setSelected(opt); handleSubmit(opt); }}
                   disabled={answered}
                 >
                   {opt}
                 </Button>
               ))}
             </Box>
-          </CardContent>
-        </Card>
+        </Box>
       </motion.div>
     </AnimatePresence>
   );

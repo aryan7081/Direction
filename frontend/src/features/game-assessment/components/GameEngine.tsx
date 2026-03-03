@@ -3,6 +3,7 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { Box, Alert, Container } from '@mui/material';
 import { PageLoader } from '@/components/ui/Loaders';
+import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGameStore } from '../store';
 import {
@@ -143,49 +144,59 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
     return <PageLoader message="Preparing your assessment..." />;
   }
 
+  const bgTheme =
+    phase === 'logic' ? 'logic'
+    : phase === 'risk' ? 'risk'
+    : phase === 'planner' ? 'planner'
+    : phase === 'scenario' ? 'scenario'
+    : 'dashboard';
+
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      {error && (
-        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+    <Box sx={{ position: 'relative', minHeight: '80vh' }}>
+      <AnimatedBackground theme={bgTheme} />
+      <Container maxWidth="md" sx={{ py: 4, position: 'relative', zIndex: 1 }}>
+        {error && (
+          <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2, borderRadius: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-      {phase !== 'intro' && phase !== 'results' && (
-        <GameProgressBar phase={phase} subProgress={subProgress} />
-      )}
+        {phase !== 'intro' && phase !== 'results' && (
+          <GameProgressBar phase={phase} subProgress={subProgress} />
+        )}
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={phase}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.18 }}
-        >
-          {phase === 'intro' && <IntroScreen onStart={handleStart} />}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={phase}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.18 }}
+          >
+            {phase === 'intro' && <IntroScreen onStart={handleStart} />}
 
-          {phase === 'logic' && content && (
-            <LogicGame tasks={content.logic_tasks} onComplete={advancePhase} onProgress={setSubProgress} />
-          )}
+            {phase === 'logic' && content && (
+              <LogicGame tasks={content.logic_tasks} onComplete={advancePhase} onProgress={setSubProgress} />
+            )}
 
-          {phase === 'risk' && content && (
-            <RiskSimulator scenarios={content.risk_scenarios} onComplete={advancePhase} onProgress={setSubProgress} />
-          )}
+            {phase === 'risk' && content && (
+              <RiskSimulator scenarios={content.risk_scenarios} onComplete={advancePhase} onProgress={setSubProgress} />
+            )}
 
-          {phase === 'planner' && content && (
-            <PlannerGame config={content.planner_config} onComplete={advancePhase} onProgress={setSubProgress} />
-          )}
+            {phase === 'planner' && content && (
+              <PlannerGame config={content.planner_config} onComplete={advancePhase} onProgress={setSubProgress} />
+            )}
 
-          {phase === 'scenario' && content && (
-            <ScenarioSection questions={content.scenario_questions} onComplete={advancePhase} onProgress={setSubProgress} />
-          )}
+            {phase === 'scenario' && content && (
+              <ScenarioSection questions={content.scenario_questions} onComplete={advancePhase} onProgress={setSubProgress} />
+            )}
 
-          {phase === 'processing' && <ProcessingScreen onDone={handleProcessingDone} />}
+            {phase === 'processing' && <ProcessingScreen onDone={handleProcessingDone} />}
 
-          {phase === 'results' && result && <GameResultsPage result={result} />}
-        </motion.div>
-      </AnimatePresence>
-    </Container>
+            {phase === 'results' && result && <GameResultsPage result={result} />}
+          </motion.div>
+        </AnimatePresence>
+      </Container>
+    </Box>
   );
 }
