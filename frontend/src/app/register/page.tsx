@@ -53,22 +53,7 @@ export default function RegisterPage() {
         style={{ width: '100%', maxWidth: 440, position: 'relative', zIndex: 1 }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center', mb: 4 }}>
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: 2,
-              background: 'linear-gradient(135deg, #16a34a, #15803d)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 800,
-              fontSize: 18,
-            }}
-          >
-            D
-          </Box>
+          <Box component="img" src="/logo.png" alt="Direction" sx={{ width: 44, height: 44 }} />
           <Typography sx={{ fontWeight: 700, fontSize: '1.3rem', color: '#111827', letterSpacing: -0.5 }}>
             Direction
           </Typography>

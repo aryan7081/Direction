@@ -21,22 +21,7 @@ export function Layout({ children, bgTheme = 'dashboard' }: { children: React.Re
       >
         <Toolbar sx={{ maxWidth: 960, mx: 'auto', width: '100%' }}>
           <Link href="/dashboard" style={{ flexGrow: 1, textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Box
-              sx={{
-                width: 30,
-                height: 30,
-                borderRadius: 1.5,
-                background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontWeight: 800,
-                fontSize: 14,
-              }}
-            >
-              D
-            </Box>
+            <Box component="img" src="/logo.png" alt="Direction" sx={{ width: 38, height: 38 }} />
             <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
               Direction
             </Typography>

@@ -281,22 +281,7 @@ export default function LandingPage() {
       >
         <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box
-              sx={{
-                width: 32,
-                height: 32,
-                borderRadius: 2,
-                background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontWeight: 800,
-                fontSize: 16,
-              }}
-            >
-              D
-            </Box>
+            <Box component="img" src="/logo.png" alt="Direction" sx={{ width: 40, height: 40 }} />
             <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827', letterSpacing: -0.5 }}>
               Direction
             </Typography>

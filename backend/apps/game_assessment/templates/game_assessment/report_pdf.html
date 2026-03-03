@@ -320,6 +320,7 @@
 <!-- ═══ COMPACT HEADER (replaces full-page cover) ═══ -->
 <div class="report-header">
   <div class="header-top">
+    {% if logo_uri %}<img src="{{ logo_uri }}" alt="Direction" style="width:36px; height:36px; margin-bottom:8px;">{% endif %}
     <h1>Career Intelligence Report</h1>
     <p class="subtitle">Behavioral &amp; Trait-Based Analysis</p>
   </div>
@@ -456,6 +457,13 @@
 {% endfor %}
 
 <p class="disclaimer">{{ report.disclaimer }}</p>
+
+<!-- ═══ BRANDED FOOTER ═══ -->
+<div style="margin-top:30px; padding-top:16px; border-top:1px solid #e5e7eb; display:flex; align-items:center; justify-content:center; gap:8px; page-break-inside:avoid;">
+  {% if logo_uri %}<img src="{{ logo_uri }}" alt="Direction" style="width:22px; height:22px;">{% endif %}
+  <span style="font-size:11px; font-weight:700; color:#111827; letter-spacing:-0.3px;">Direction</span>
+  <span style="font-size:9px; color:#9ca3af; margin-left:4px;">— Find Your Path. Not By Chance.</span>
+</div>
 
 </body>
 </html>

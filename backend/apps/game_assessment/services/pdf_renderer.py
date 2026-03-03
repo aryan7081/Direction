@@ -4,7 +4,9 @@ Falls back gracefully if WeasyPrint is not installed.
 """
 from __future__ import annotations
 
+import base64
 import math
+import os
 from django.template.loader import render_to_string
 
 
@@ -107,12 +109,27 @@ def _generate_svg_bar_chart(careers: list) -> str:
     )
 
 
+def _get_logo_data_uri() -> str:
+    """Read the logo file and return a base64 data URI for embedding in HTML."""
+    logo_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
+        "..", "frontend", "public", "logo.png",
+    )
+    try:
+        with open(logo_path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode()
+        return f"data:image/png;base64,{b64}"
+    except FileNotFoundError:
+        return ""
+
+
 def render_report_pdf(report: dict) -> bytes:
     """Render the report dict to a PDF byte string."""
     from weasyprint import HTML
 
     radar_svg = _generate_svg_radar(report.get("traits", []))
     bar_svg = _generate_svg_bar_chart(report.get("careers", []))
+    logo_uri = _get_logo_data_uri()
 
     html_string = render_to_string(
         "game_assessment/report_pdf.html",
@@ -120,6 +137,7 @@ def render_report_pdf(report: dict) -> bytes:
             "report": report,
             "radar_svg": radar_svg,
             "bar_chart_svg": bar_svg,
+            "logo_uri": logo_uri,
         },
     )
 
