@@ -12,7 +12,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             Direction
           </Typography>
           <Button component={Link} href="/dashboard" color="inherit">Dashboard</Button>
-          <Button component={Link} href="/assessment" color="inherit">Assessment</Button>
+          <Button component={Link} href="/game-assessment" color="inherit">Assessment</Button>
           <Button component={Link} href="/careers" color="inherit">Careers</Button>
         </Toolbar>
       </AppBar>
