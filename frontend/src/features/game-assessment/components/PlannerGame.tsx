@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Box, Button, Card, CardContent, Chip, Typography } from '@mui/material';
+import { Box, Button, Chip, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import {
   DndContext,
   DragEndEvent,
   DragStartEvent,
-  DragOverlay,
   closestCenter,
   PointerSensor,
   TouchSensor,
@@ -27,12 +26,17 @@ function DraggableActivity({
   label: string;
   color: string;
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id });
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
+  const style: React.CSSProperties = transform
+    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, zIndex: isDragging ? 999 : 'auto' }
+    : {};
+
   return (
     <Box
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      style={style}
       sx={{
         px: 1.5,
         py: 0.75,
@@ -41,12 +45,14 @@ function DraggableActivity({
         color: '#fff',
         fontSize: '0.8rem',
         fontWeight: 600,
-        cursor: 'grab',
-        opacity: isDragging ? 0.4 : 1,
+        cursor: isDragging ? 'grabbing' : 'grab',
+        opacity: isDragging ? 0.85 : 1,
+        boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.2)' : 'none',
         userSelect: 'none',
         touchAction: 'none',
         textAlign: 'center',
         minWidth: 80,
+        transition: isDragging ? 'none' : 'box-shadow 0.2s, opacity 0.2s',
       }}
     >
       {label}
@@ -105,7 +111,7 @@ export function PlannerGame({
 }) {
   const pushEvent = useGameStore((s) => s.pushEvent);
   const [schedule, setSchedule] = useState<Record<string, string | null>>({});
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [, setActiveId] = useState<string | null>(null);
 
   const totalSlots = config.days.length * config.time_slots.length;
   const filledSlots = Object.values(schedule).filter(Boolean).length;
@@ -152,15 +158,12 @@ export function PlannerGame({
     onComplete();
   }, [pushEvent, schedule, onComplete]);
 
-  const activeActivity = config.activities.find((a) => a.id === activeId);
-
   return (
-    <Card elevation={0} sx={{ border: 1, borderColor: 'divider' }}>
-      <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-        <Typography variant="h6" fontWeight={600} gutterBottom>
+    <Box sx={{ bgcolor: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(16px)', borderRadius: 3, border: '1px solid rgba(0,0,0,0.06)', p: { xs: 2.5, sm: 3.5 } }}>
+        <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#111827', mb: 0.5 }}>
           Plan Your Ideal Week
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Typography sx={{ color: '#6b7280', mb: 2, fontSize: '0.9rem' }}>
           {config.instructions}
         </Typography>
 
@@ -238,24 +241,6 @@ export function PlannerGame({
               </Box>
             </Box>
 
-            <DragOverlay>
-              {activeActivity ? (
-                <Box
-                  sx={{
-                    px: 1.5,
-                    py: 0.75,
-                    borderRadius: 2,
-                    bgcolor: activeActivity.color,
-                    color: '#fff',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    boxShadow: 3,
-                  }}
-                >
-                  {activeActivity.label}
-                </Box>
-              ) : null}
-            </DragOverlay>
           </DndContext>
         </Box>
 
@@ -263,19 +248,26 @@ export function PlannerGame({
           <Chip
             label={`${filledSlots} / ${totalSlots} slots filled`}
             size="small"
-            variant="outlined"
+            sx={{ fontWeight: 600, bgcolor: 'rgba(22,163,74,0.08)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.2)' }}
           />
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button
               variant="contained"
               onClick={handleSubmit}
               disabled={filledSlots < 5}
+              sx={{
+                background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                textTransform: 'none',
+                fontWeight: 600,
+                borderRadius: 2,
+                px: 3,
+                '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)' },
+              }}
             >
               Submit Schedule
             </Button>
           </motion.div>
         </Box>
-      </CardContent>
-    </Card>
+    </Box>
   );
 }

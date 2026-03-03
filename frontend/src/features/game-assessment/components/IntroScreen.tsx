@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Box, Button, Card, CardContent, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import { ButtonSpinner } from '@/components/ui/Loaders';
 
@@ -30,10 +30,10 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
       transition={{ duration: 0.5 }}
     >
       <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
+        <Typography variant="h4" sx={{ fontWeight: 800, color: '#111827', letterSpacing: -0.5, mb: 1 }}>
           Discover Your Career DNA
         </Typography>
-        <Typography color="text.secondary" sx={{ maxWidth: 480, mx: 'auto' }}>
+        <Typography sx={{ color: '#6b7280', maxWidth: 480, mx: 'auto', fontSize: '0.95rem', lineHeight: 1.7 }}>
           Play 4 quick activities. No textbooks, no stress — just be yourself.
           We&apos;ll map your natural strengths across 8 traits.
         </Typography>
@@ -54,23 +54,33 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 * i }}
           >
-            <Card variant="outlined" sx={{ height: '100%' }}>
-              <CardContent sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-                <Typography fontSize={28}>{g.icon}</Typography>
-                <Box>
-                  <Typography fontWeight={600}>{g.title}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {g.desc}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
+            <Box
+              sx={{
+                bgcolor: 'rgba(255,255,255,0.7)',
+                backdropFilter: 'blur(12px)',
+                borderRadius: 2.5,
+                border: '1px solid rgba(0,0,0,0.06)',
+                p: 2.5,
+                height: '100%',
+                display: 'flex',
+                gap: 2,
+                alignItems: 'flex-start',
+                transition: 'all 0.25s ease',
+                '&:hover': { boxShadow: '0 6px 24px rgba(0,0,0,0.06)', transform: 'translateY(-2px)' },
+              }}
+            >
+              <Box sx={{ fontSize: 28, lineHeight: 1 }}>{g.icon}</Box>
+              <Box>
+                <Typography sx={{ fontWeight: 700, color: '#111827', fontSize: '0.95rem' }}>{g.title}</Typography>
+                <Typography sx={{ color: '#6b7280', fontSize: '0.85rem', lineHeight: 1.5 }}>{g.desc}</Typography>
+              </Box>
+            </Box>
           </motion.div>
         ))}
       </Box>
 
       <Box sx={{ textAlign: 'center' }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Typography sx={{ color: '#9ca3af', mb: 2, fontSize: '0.88rem' }}>
           Takes about 10–15 minutes. Your answers are private.
         </Typography>
         <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
@@ -79,9 +89,19 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
             size="large"
             onClick={handleClick}
             disabled={starting}
-            sx={{ px: 5, py: 1.5 }}
+            sx={{
+              px: 5,
+              py: 1.5,
+              background: 'linear-gradient(135deg, #16a34a, #15803d)',
+              textTransform: 'none',
+              fontWeight: 700,
+              borderRadius: 2.5,
+              fontSize: '1rem',
+              boxShadow: '0 8px 24px rgba(22,163,74,0.3)',
+              '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)', boxShadow: '0 12px 32px rgba(22,163,74,0.4)' },
+            }}
           >
-            {starting ? <><ButtonSpinner /> Starting...</> : "Let\u0027s Go"}
+            {starting ? <><ButtonSpinner /> Starting...</> : "Let\u0027s Go →"}
           </Button>
         </motion.div>
       </Box>
