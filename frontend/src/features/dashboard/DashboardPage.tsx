@@ -68,7 +68,7 @@ export function DashboardPage() {
             </Typography>
           </Box>
           <Button
-            onClick={logout}
+            onClick={() => { logout(); router.replace('/login'); }}
             sx={{
               color: '#6b7280',
               textTransform: 'none',

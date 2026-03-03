@@ -1,10 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { AppBar, Box, Toolbar, Typography, Button } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { AppBar, Box, Toolbar, Typography, Button, IconButton, Tooltip } from '@mui/material';
+import { useAuthStore } from '@/stores/authStore';
 import { AnimatedBackground, type AnimatedBackgroundTheme } from './ui/AnimatedBackground';
 
 export function Layout({ children, bgTheme = 'dashboard' }: { children: React.ReactNode; bgTheme?: AnimatedBackgroundTheme }) {
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
+  const handleLogout = () => {
+    logout();
+    router.replace('/login');
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#fafbfc', position: 'relative' }}>
       <AnimatedBackground theme={bgTheme} />
@@ -46,6 +57,25 @@ export function Layout({ children, bgTheme = 'dashboard' }: { children: React.Re
               </Button>
             </Link>
           ))}
+          {user && (
+            <Tooltip title="Logout">
+              <IconButton
+                onClick={handleLogout}
+                size="small"
+                sx={{
+                  ml: 1,
+                  color: '#9ca3af',
+                  '&:hover': { color: '#ef4444', bgcolor: 'rgba(239,68,68,0.08)' },
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </IconButton>
+            </Tooltip>
+          )}
         </Toolbar>
       </AppBar>
       <Box component="main" sx={{ minHeight: 'calc(100vh - 64px)', py: 4, position: 'relative', zIndex: 1 }}>

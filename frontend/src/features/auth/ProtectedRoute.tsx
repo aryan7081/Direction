@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { PageLoader } from '@/components/ui/Loaders';
@@ -8,19 +8,19 @@ import { PageLoader } from '@/components/ui/Loaders';
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const access = useAuthStore((s) => s.access);
   const router = useRouter();
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    if (access === null && typeof window !== 'undefined') {
-      const token = localStorage.getItem('access');
-      if (!token) router.replace('/login');
+    const token = access ?? localStorage.getItem('access');
+    if (!token) {
+      router.replace('/login');
+    } else {
+      setChecked(true);
     }
   }, [access, router]);
 
-  if (access === null && typeof window !== 'undefined') {
-    const token = localStorage.getItem('access');
-    if (!token) {
-      return <PageLoader message="Checking authentication..." />;
-    }
+  if (!checked) {
+    return <PageLoader message="Checking authentication..." />;
   }
 
   return <>{children}</>;
