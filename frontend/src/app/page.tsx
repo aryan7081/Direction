@@ -31,23 +31,29 @@ export default function LandingPage() {
           </Button>
         </Link>
 
-        <Box sx={{ mt: 8, display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, maxWidth: 700 }}>
+        <Box sx={{ mt: 8, display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 3, maxWidth: 900 }}>
           <Card variant="outlined">
             <CardContent>
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>Smart Assessment</Typography>
-              <Typography variant="body2" color="text.secondary">Questions on interests, aptitude & personality</Typography>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>🧩 Logic Games</Typography>
+              <Typography variant="body2" color="text.secondary">Brain teasers that reveal your reasoning style</Typography>
             </CardContent>
           </Card>
           <Card variant="outlined">
             <CardContent>
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>Career Matching</Typography>
-              <Typography variant="body2" color="text.secondary">Matches you to 20+ careers</Typography>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>🎯 Decision Sims</Typography>
+              <Typography variant="body2" color="text.secondary">Scenarios that uncover your leadership & risk style</Typography>
             </CardContent>
           </Card>
           <Card variant="outlined">
             <CardContent>
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>PDF Reports</Typography>
-              <Typography variant="body2" color="text.secondary">Download your career report</Typography>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>📅 Weekly Planner</Typography>
+              <Typography variant="body2" color="text.secondary">Drag-and-drop your ideal week</Typography>
+            </CardContent>
+          </Card>
+          <Card variant="outlined">
+            <CardContent>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>💬 Situations</Typography>
+              <Typography variant="body2" color="text.secondary">Real-life scenarios — no right or wrong</Typography>
             </CardContent>
           </Card>
         </Box>

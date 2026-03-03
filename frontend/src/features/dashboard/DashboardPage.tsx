@@ -44,7 +44,7 @@ export function DashboardPage() {
             <Typography color="text.secondary" sx={{ mb: 3 }}>
               Take the career assessment to discover careers that match your interests and aptitude.
             </Typography>
-            <Button component={Link} href="/assessment" variant="contained" color="primary" size="large" fullWidth>
+            <Button component={Link} href="/game-assessment" variant="contained" color="primary" size="large" fullWidth>
               Start Career Assessment
             </Button>
           </CardContent>

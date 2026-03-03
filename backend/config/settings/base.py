@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "apps.careers",
     "apps.recommendations",
     "apps.reports",
+    "apps.game_assessment",
 ]
 
 MIDDLEWARE = [
