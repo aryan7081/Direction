@@ -119,3 +119,41 @@ class GameCareerTraitWeight(TimeStampedModel):
 
     def __str__(self):
         return f"{self.career.name} / {self.trait_name}: {self.weight}"
+
+
+PAYMENT_STATUS_CHOICES = [
+    ("pending", "Pending"),
+    ("paid", "Paid"),
+    ("failed", "Failed"),
+]
+
+
+class ReportOrder(TimeStampedModel):
+    """Tracks payment for a career report."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="report_orders",
+    )
+    session = models.ForeignKey(
+        GameSession,
+        on_delete=models.CASCADE,
+        related_name="report_orders",
+    )
+    amount = models.PositiveIntegerField(default=299, help_text="Amount in INR")
+    status = models.CharField(
+        max_length=10, choices=PAYMENT_STATUS_CHOICES, default="pending"
+    )
+    razorpay_order_id = models.CharField(max_length=100, blank=True, default="")
+    razorpay_payment_id = models.CharField(max_length=100, blank=True, default="")
+    razorpay_signature = models.CharField(max_length=200, blank=True, default="")
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        unique_together = ("user", "session")
+
+    def __str__(self):
+        return f"Order {self.id} ({self.status}) — {self.user.email}"

@@ -2,11 +2,14 @@
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
 import { Layout } from '@/components/Layout';
 import { CareerReportPage } from '@/features/career-report/CareerReportPage';
+import { ReportTeaserPage } from '@/features/career-report/ReportTeaserPage';
+import { fetchReportTeaser } from '@/features/career-report/api';
 import { PageLoader } from '@/components/ui/Loaders';
-import { Box, Container, Typography, Button } from '@mui/material';
+import { Container, Typography, Button } from '@mui/material';
 
 function ReportInner() {
   const params = useSearchParams();
@@ -23,7 +26,23 @@ function ReportInner() {
     );
   }
 
-  return <CareerReportPage sessionId={sessionId} />;
+  return <ReportGate sessionId={sessionId} />;
+}
+
+function ReportGate({ sessionId }: { sessionId: string }) {
+  const { data: teaser, isLoading } = useQuery({
+    queryKey: ['report-teaser', sessionId],
+    queryFn: () => fetchReportTeaser(sessionId),
+    enabled: !!sessionId,
+  });
+
+  if (isLoading) return <PageLoader message="Loading report..." />;
+
+  if (teaser?.is_paid) {
+    return <CareerReportPage sessionId={sessionId} />;
+  }
+
+  return <ReportTeaserPage sessionId={sessionId} />;
 }
 
 export default function ReportPage() {

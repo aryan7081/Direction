@@ -132,7 +132,9 @@ export function DashboardPage() {
                 Your Latest Results
               </Typography>
               <Typography sx={{ color: '#6b7280', mb: 2, fontSize: '0.9rem' }}>
-                View your most recent career recommendations.
+                {data?.latest_report_paid
+                  ? 'View your career report and detailed analysis.'
+                  : 'Your results are ready — unlock your premium career report.'}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
                 <Button
@@ -148,13 +150,13 @@ export function DashboardPage() {
                   sx={{
                     background: 'linear-gradient(135deg, #16a34a, #15803d)',
                     textTransform: 'none',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     borderRadius: 2,
                     boxShadow: '0 4px 14px rgba(22,163,74,0.2)',
                     '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)' },
                   }}
                 >
-                  Full Career Report
+                  {data?.latest_report_paid ? '📊 View Career Report' : '🔓 Unlock Career Report'}
                 </Button>
               </Box>
             </Box>
@@ -217,7 +219,7 @@ export function DashboardPage() {
                           onClick={() => router.push(`/report?session=${a.id}`)}
                           sx={{ textTransform: 'none', fontWeight: 600, color: '#16a34a', fontSize: '0.82rem' }}
                         >
-                          Report
+                          {a.is_report_paid ? '📊 Report' : '🔓 Unlock'}
                         </Button>
                       </Box>
                     ) : (

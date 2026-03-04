@@ -196,7 +196,7 @@ export function GameResultsPage({ result }: { result: SessionResult }) {
               '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)' },
             }}
           >
-            Full Career Report
+            🔓 Unlock Full Career Report
           </Button>
           <Button
             variant="outlined"
