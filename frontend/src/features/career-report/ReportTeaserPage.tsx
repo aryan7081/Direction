@@ -34,36 +34,26 @@ const WHAT_YOU_GET = [
 
 const SOCIAL_PROOF_COUNT = 12847;
 
-function BlurredBar({ score, max }: { score: number; max: number }) {
+function LockedTraitBar() {
   return (
-    <Box sx={{ position: 'relative' }}>
+    <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 1 }}>
       <LinearProgress
         variant="determinate"
-        value={(score / max) * 100}
+        value={50}
         sx={{
+          flex: 1,
           height: 8,
           borderRadius: 4,
           bgcolor: '#f3f4f6',
           '& .MuiLinearProgress-bar': {
             borderRadius: 4,
-            background: 'linear-gradient(90deg, #16a34a, #22c55e)',
+            bgcolor: '#e5e7eb',
           },
-          filter: 'blur(4px)',
         }}
       />
-      <Box
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Typography sx={{ fontSize: '0.65rem', color: '#9ca3af', fontWeight: 600 }}>
-          🔒
-        </Typography>
-      </Box>
+      <Typography sx={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600, minWidth: 28 }}>
+        🔒
+      </Typography>
     </Box>
   );
 }
@@ -288,17 +278,17 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
             Your 8-Trait Profile
           </Typography>
 
-          {teaser.trait_preview.map((t, i) => (
+          {teaser.trait_preview.map((t) => (
             <Box key={t.label} sx={{ mb: 1.5 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
                 <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>
                   {t.label}
                 </Typography>
-                <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#d1d5db' }}>
-                  🔒 ?/10
+                <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#9ca3af' }}>
+                  —
                 </Typography>
               </Box>
-              <BlurredBar score={t.score} max={t.max} />
+              <LockedTraitBar />
             </Box>
           ))}
 
@@ -325,7 +315,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
         </Box>
       </motion.div>
 
-      {/* CAREER PREVIEW */}
+      {/* CAREER PREVIEW — no names shown, only teaser to unlock */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
         <Box
           sx={{
@@ -337,52 +327,51 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
             mb: 3,
           }}
         >
-          <Typography sx={{ fontWeight: 700, color: '#111827', fontSize: '1rem', mb: 2 }}>
+          <Typography sx={{ fontWeight: 700, color: '#111827', fontSize: '1rem', mb: 1 }}>
             Your Top 3 Career Matches
           </Typography>
+          <Typography sx={{ color: '#6b7280', fontSize: '0.88rem', mb: 2 }}>
+            Unlock your full report to see which careers fit you best — with match %, stream, and education paths.
+          </Typography>
 
-          {teaser.career_preview.map((c, i) => {
-            const colors = ['#16a34a', '#3b82f6', '#f59e0b'];
-            return (
-              <Box
-                key={c.rank}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  py: 1.5,
-                  borderBottom: i < 2 ? '1px solid rgba(0,0,0,0.05)' : 'none',
-                }}
-              >
-                <Chip
-                  label={`#${c.rank}`}
-                  size="small"
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {teaser.career_preview.map((c, i) => {
+              const colors = ['#16a34a', '#3b82f6', '#f59e0b'];
+              return (
+                <Box
+                  key={c.rank}
                   sx={{
-                    bgcolor: `${colors[i]}14`,
-                    color: colors[i],
-                    fontWeight: 700,
-                    border: `1px solid ${colors[i]}33`,
-                    height: 24,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    py: 1.5,
+                    px: 2,
+                    borderRadius: 2,
+                    bgcolor: '#f9fafb',
+                    border: '1px solid #e5e7eb',
                   }}
-                />
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontWeight: 700, color: '#111827', fontSize: '0.95rem' }}>
-                    {c.career_name}
+                >
+                  <Chip
+                    label={`#${c.rank}`}
+                    size="small"
+                    sx={{
+                      bgcolor: `${colors[i]}18`,
+                      color: colors[i],
+                      fontWeight: 700,
+                      border: `1px solid ${colors[i]}40`,
+                      height: 24,
+                    }}
+                  />
+                  <Typography sx={{ flex: 1, color: '#9ca3af', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                    Unlock to reveal
                   </Typography>
-                  <Typography sx={{ fontSize: '0.78rem', color: '#9ca3af' }}>
-                    {c.stream}
+                  <Typography sx={{ fontSize: '0.8rem', color: '#9ca3af' }}>
+                    🔒
                   </Typography>
                 </Box>
-                <Typography sx={{ fontWeight: 700, color: '#d1d5db', fontSize: '1.1rem' }}>
-                  ??%
-                </Typography>
-              </Box>
-            );
-          })}
-
-          <Typography sx={{ color: '#9ca3af', fontSize: '0.8rem', mt: 1.5, textAlign: 'center' }}>
-            🔒 Match percentages, explanations & education paths hidden
-          </Typography>
+              );
+            })}
+          </Box>
         </Box>
       </motion.div>
 

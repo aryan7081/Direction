@@ -7,8 +7,8 @@ export interface ReportTeaser {
   hero_career: string;
   hero_confidence: string;
   dominant_pattern: string;
-  trait_preview: { label: string; icon: string; score: number; max: number }[];
-  career_preview: { rank: number; career_name: string; stream: string; confidence: string }[];
+  trait_preview: { label: string; icon: string }[];
+  career_preview: { rank: number }[];
   total_traits: number;
   total_sections: number;
   is_paid: boolean;
