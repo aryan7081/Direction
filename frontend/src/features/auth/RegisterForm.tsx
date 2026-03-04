@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { register } from './api';
-import { Box, Button, TextField, Alert, Grid } from '@mui/material';
+import { Box, Button, TextField, Alert } from '@mui/material';
 import { ButtonSpinner } from '@/components/ui/Loaders';
 
 export function RegisterForm() {
@@ -76,26 +76,22 @@ export function RegisterForm() {
         fullWidth
         InputLabelProps={{ shrink: true }}
       />
-      <Grid container spacing={2}>
-        <Grid item xs={6}>
-          <TextField
-            label="First name"
-            value={form.first_name}
-            onChange={(e) => setForm((f) => ({ ...f, first_name: e.target.value }))}
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-          />
-        </Grid>
-        <Grid item xs={6}>
-          <TextField
-            label="Last name"
-            value={form.last_name}
-            onChange={(e) => setForm((f) => ({ ...f, last_name: e.target.value }))}
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-          />
-        </Grid>
-      </Grid>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+        <TextField
+          label="First name"
+          value={form.first_name}
+          onChange={(e) => setForm((f) => ({ ...f, first_name: e.target.value }))}
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+        />
+        <TextField
+          label="Last name"
+          value={form.last_name}
+          onChange={(e) => setForm((f) => ({ ...f, last_name: e.target.value }))}
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+        />
+      </Box>
       <TextField
         label="Password"
         type="password"

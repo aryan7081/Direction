@@ -137,7 +137,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const price = teaser.price ?? 299;
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 }, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+    <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 }, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -147,8 +147,8 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
         <Box
           sx={{
             textAlign: 'center',
-            py: { xs: 4, sm: 5 },
-            px: 3,
+            py: { xs: 3, sm: 5 },
+            px: { xs: 2, sm: 3 },
             borderRadius: 4,
             background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0f9ff 100%)',
             border: '1px solid #d1fae5',
@@ -237,12 +237,13 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
           onClick={handlePurchase}
           disabled={paying}
           sx={{
-            py: 2.2,
+            py: { xs: 2, sm: 2.2 },
+            minHeight: 52,
             borderRadius: 3,
             background: 'linear-gradient(135deg, #16a34a, #15803d)',
             textTransform: 'none',
             fontWeight: 800,
-            fontSize: '1.12rem',
+            fontSize: { xs: '1rem', sm: '1.12rem' },
             letterSpacing: '-0.02em',
             boxShadow: '0 10px 32px rgba(22,163,74,0.4)',
             '&:hover': {

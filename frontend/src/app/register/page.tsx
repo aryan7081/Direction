@@ -7,13 +7,14 @@ import { RegisterForm } from '@/features/auth/RegisterForm';
 
 export default function RegisterPage() {
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 2,
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: { xs: 2, sm: 3 },
+          py: { xs: 3, sm: 4 },
         bgcolor: '#fafbfc',
         position: 'relative',
         overflow: 'hidden',

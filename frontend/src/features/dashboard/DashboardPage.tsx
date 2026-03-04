@@ -55,15 +55,15 @@ export function DashboardPage() {
   const attempts = Array.isArray(data?.attempts) ? data.attempts : [];
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 1, sm: 2 } }}>
+    <Container maxWidth="sm" sx={{ py: { xs: 1, sm: 2 }, px: { xs: 2, sm: 3 } }}>
       {/* Header */}
       <motion.div {...fadeUp()}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1, mb: 4 }}>
           <Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: '#111827', letterSpacing: -0.5 }}>
+            <Typography variant="h4" sx={{ fontWeight: 800, color: '#111827', letterSpacing: -0.5, fontSize: { xs: '1.5rem', sm: '2rem' } }}>
               Dashboard
             </Typography>
-            <Typography sx={{ color: '#6b7280', mt: 0.5 }}>
+            <Typography sx={{ color: '#6b7280', mt: 0.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
               Welcome back, {user?.first_name || user?.email}
             </Typography>
           </Box>
@@ -136,11 +136,12 @@ export function DashboardPage() {
                   ? 'View your career report and detailed analysis.'
                   : 'Your results are ready — unlock your premium career report.'}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, flexWrap: 'wrap' }}>
                 <Button
                   variant="outlined"
+                  fullWidth={false}
                   onClick={() => router.push(`/game-assessment?view=${latestSessionId}`)}
-                  sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2, borderColor: 'rgba(0,0,0,0.15)', color: '#374151' }}
+                  sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2, borderColor: 'rgba(0,0,0,0.15)', color: '#374151', minHeight: 44 }}
                 >
                   Quick View
                 </Button>
@@ -152,6 +153,7 @@ export function DashboardPage() {
                     textTransform: 'none',
                     fontWeight: 700,
                     borderRadius: 2,
+                    minHeight: 44,
                     boxShadow: '0 4px 14px rgba(22,163,74,0.2)',
                     '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)' },
                   }}
@@ -176,8 +178,10 @@ export function DashboardPage() {
                     key={a.id}
                     sx={{
                       display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
                       justifyContent: 'space-between',
-                      alignItems: 'center',
+                      alignItems: { xs: 'flex-start', sm: 'center' },
+                      gap: 1,
                       py: 1.5,
                       borderBottom: '1px solid rgba(0,0,0,0.05)',
                       '&:last-child': { borderBottom: 0, pb: 0 },

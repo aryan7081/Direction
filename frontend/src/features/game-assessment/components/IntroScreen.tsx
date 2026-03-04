@@ -29,11 +29,11 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800, color: '#111827', letterSpacing: -0.5, mb: 1 }}>
+      <Box sx={{ textAlign: 'center', mb: { xs: 3, sm: 4 } }}>
+        <Typography variant="h4" sx={{ fontWeight: 800, color: '#111827', letterSpacing: -0.5, mb: 1, fontSize: { xs: '1.5rem', sm: '2rem' } }}>
           Discover Your Career DNA
         </Typography>
-        <Typography sx={{ color: '#6b7280', maxWidth: 480, mx: 'auto', fontSize: '0.95rem', lineHeight: 1.7 }}>
+        <Typography sx={{ color: '#6b7280', maxWidth: 480, mx: 'auto', fontSize: { xs: '0.9rem', sm: '0.95rem' }, lineHeight: 1.7, px: 1 }}>
           Play 4 quick activities. No textbooks, no stress — just be yourself.
           We&apos;ll map your natural strengths across 8 traits.
         </Typography>
@@ -83,15 +83,17 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
         <Typography sx={{ color: '#9ca3af', mb: 2, fontSize: '0.88rem' }}>
           Takes about 10–15 minutes. Your answers are private.
         </Typography>
-        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} style={{ width: '100%', maxWidth: 320, margin: '0 auto' }}>
           <Button
             variant="contained"
             size="large"
+            fullWidth
             onClick={handleClick}
             disabled={starting}
             sx={{
               px: 5,
-              py: 1.5,
+              py: { xs: 1.75, sm: 1.5 },
+              minHeight: 48,
               background: 'linear-gradient(135deg, #16a34a, #15803d)',
               textTransform: 'none',
               fontWeight: 700,

@@ -38,7 +38,7 @@ export function CareerDetailPage() {
   ].filter((i) => i.value);
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 1, sm: 2 } }}>
+    <Container maxWidth="sm" sx={{ py: { xs: 1, sm: 2 }, px: { xs: 2, sm: 3 } }}>
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
         <Button
           size="small"

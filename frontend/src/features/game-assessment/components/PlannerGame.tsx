@@ -38,12 +38,13 @@ function DraggableActivity({
       {...attributes}
       style={style}
       sx={{
-        px: 1.5,
-        py: 0.75,
+        px: { xs: 1.5, sm: 1.5 },
+        py: { xs: 1, sm: 0.75 },
+        minHeight: 40,
         borderRadius: 2,
         bgcolor: color,
         color: '#fff',
-        fontSize: '0.8rem',
+        fontSize: { xs: '0.75rem', sm: '0.8rem' },
         fontWeight: 600,
         cursor: isDragging ? 'grabbing' : 'grab',
         opacity: isDragging ? 0.85 : 1,
@@ -186,19 +187,23 @@ export function PlannerGame({
               ))}
             </Box>
 
-            {/* Weekly grid */}
+            {/* Weekly grid — horizontal scroll on mobile */}
             <Box
               sx={{
                 width: '100%',
                 overflowX: 'auto',
+                overflowY: 'hidden',
+                WebkitOverflowScrolling: 'touch',
+                mx: { xs: -1, sm: 0 },
+                px: { xs: 1, sm: 0 },
               }}
             >
               <Box
                 sx={{
                   display: 'grid',
-                  gridTemplateColumns: `80px repeat(${config.days.length}, 1fr)`,
+                  gridTemplateColumns: `70px repeat(${config.days.length}, minmax(72px, 1fr))`,
                   gap: 0.5,
-                  minWidth: 600,
+                  minWidth: { xs: 380, sm: 560 },
                 }}
               >
                 {/* Header row */}
@@ -244,7 +249,7 @@ export function PlannerGame({
           </DndContext>
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' } }}>
           <Chip
             label={`${filledSlots} / ${totalSlots} slots filled`}
             size="small"

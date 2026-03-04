@@ -200,7 +200,7 @@ export function ProfileForm({ profile, onSuccess }: { profile: Profile | null; o
         <Typography sx={{ fontWeight: 600, fontSize: '0.88rem', color: '#374151', mt: 1 }}>
           Latest subject marks (% – leave blank if unknown)
         </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
           {SUBJECTS.map((s) => (
             <TextField
               key={s.slug}
