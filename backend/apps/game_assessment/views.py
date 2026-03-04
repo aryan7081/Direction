@@ -55,8 +55,18 @@ def _build_teaser(session) -> dict:
         for t in report["traits"]
     ]
 
-    career_count = min(3, len(report["careers"]))
-    career_preview = [{"rank": i + 1} for i in range(career_count)]
+    careers = report["careers"]
+    career_count = min(3, len(careers))
+    career_preview = []
+    for i in range(career_count):
+        if i == 0 and careers:
+            career_preview.append({
+                "rank": 1,
+                "career_name": careers[0].get("career_name", ""),
+                "stream": careers[0].get("stream", ""),
+            })
+        else:
+            career_preview.append({"rank": i + 1})
 
     return {
         "session_id": report["session_id"],

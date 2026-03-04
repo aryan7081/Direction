@@ -77,11 +77,21 @@ function CountUp({ target, duration = 2000 }: { target: number; duration?: numbe
   return <>{count.toLocaleString('en-IN')}</>;
 }
 
+const STICKY_BAR_SCROLL_THRESHOLD = 120;
+
 export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [paying, setPaying] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowStickyBar(window.scrollY > STICKY_BAR_SCROLL_THRESHOLD);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const { data: teaser, isLoading, error } = useQuery({
     queryKey: ['report-teaser', sessionId],
@@ -178,7 +188,8 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const price = teaser.price ?? 299;
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 1, sm: 2 } }}>
+    <>
+    <Container maxWidth="sm" sx={{ py: { xs: 1, sm: 2 }, pb: showStickyBar ? 12 : 4 }}>
       {/* HERO: reveal the top career to hook them */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <Box
@@ -258,6 +269,30 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
               Your personality pattern: <strong style={{ color: '#1e40af' }}>{teaser.dominant_pattern}</strong>
             </Typography>
           )}
+
+          <Button
+            variant="contained"
+            size="large"
+            fullWidth
+            onClick={handlePurchase}
+            disabled={paying}
+            sx={{
+              mt: 3,
+              background: 'linear-gradient(135deg, #16a34a, #15803d)',
+              textTransform: 'none',
+              fontWeight: 800,
+              borderRadius: 2.5,
+              py: 1.8,
+              fontSize: '1rem',
+              boxShadow: '0 6px 24px rgba(22,163,74,0.3)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #15803d, #166534)',
+                boxShadow: '0 8px 32px rgba(22,163,74,0.4)',
+              },
+            }}
+          >
+            {paying ? <><ButtonSpinner size={20} /> Processing...</> : <>🔓 Unlock full report — ₹{price}</>}
+          </Button>
         </Box>
       </motion.div>
 
@@ -337,6 +372,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {teaser.career_preview.map((c, i) => {
               const colors = ['#16a34a', '#3b82f6', '#f59e0b'];
+              const isRevealed = 'career_name' in c && c.career_name;
               return (
                 <Box
                   key={c.rank}
@@ -347,8 +383,8 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                     py: 1.5,
                     px: 2,
                     borderRadius: 2,
-                    bgcolor: '#f9fafb',
-                    border: '1px solid #e5e7eb',
+                    bgcolor: isRevealed ? '#f0fdf4' : '#f9fafb',
+                    border: `1px solid ${isRevealed ? '#bbf7d0' : '#e5e7eb'}`,
                   }}
                 >
                   <Chip
@@ -362,12 +398,29 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                       height: 24,
                     }}
                   />
-                  <Typography sx={{ flex: 1, color: '#9ca3af', fontSize: '0.9rem', fontStyle: 'italic' }}>
-                    Unlock to reveal
-                  </Typography>
-                  <Typography sx={{ fontSize: '0.8rem', color: '#9ca3af' }}>
-                    🔒
-                  </Typography>
+                  {isRevealed ? (
+                    <>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography sx={{ fontWeight: 700, color: '#111827', fontSize: '0.95rem' }}>
+                          {c.career_name}
+                        </Typography>
+                        {c.stream && (
+                          <Typography sx={{ fontSize: '0.78rem', color: '#6b7280' }}>
+                            {c.stream}
+                          </Typography>
+                        )}
+                      </Box>
+                    </>
+                  ) : (
+                    <>
+                      <Typography sx={{ flex: 1, color: '#9ca3af', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                        Unlock to reveal
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.8rem', color: '#9ca3af' }}>
+                        🔒
+                      </Typography>
+                    </>
+                  )}
                 </Box>
               );
             })}
@@ -628,5 +681,54 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
         </Button>
       </Box>
     </Container>
+
+      {/* Sticky bottom CTA — visible on scroll so user can unlock without scrolling back up */}
+      {showStickyBar && (
+        <Box
+          sx={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1100,
+            px: 2,
+            py: 1.5,
+            bgcolor: 'rgba(255,255,255,0.98)',
+            backdropFilter: 'blur(12px)',
+            borderTop: '1px solid #e5e7eb',
+            boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
+            pb: 'max(12px, env(safe-area-inset-bottom))',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+            flexWrap: 'wrap',
+          }}
+        >
+          <Typography sx={{ fontWeight: 700, color: '#111827', fontSize: '1rem' }}>
+            Unlock full report — ₹{price}
+          </Typography>
+          <Button
+            variant="contained"
+            size="medium"
+            onClick={handlePurchase}
+            disabled={paying}
+            sx={{
+              background: 'linear-gradient(135deg, #16a34a, #15803d)',
+              textTransform: 'none',
+              fontWeight: 800,
+              borderRadius: 2.5,
+              px: 3,
+              py: 1.2,
+              fontSize: '0.95rem',
+              boxShadow: '0 4px 16px rgba(22,163,74,0.3)',
+              '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)' },
+            }}
+          >
+            {paying ? <><ButtonSpinner size={18} /> Processing...</> : '🔓 Unlock now'}
+          </Button>
+        </Box>
+      )}
+    </>
   );
 }
