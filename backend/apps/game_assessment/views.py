@@ -68,6 +68,12 @@ def _build_teaser(session) -> dict:
         else:
             career_preview.append({"rank": i + 1})
 
+    top_two_gap = None
+    if len(careers) >= 2:
+        p1 = careers[0].get("score_percent") or 0
+        p2 = careers[1].get("score_percent") or 0
+        top_two_gap = round(abs(float(p1) - float(p2)), 1)
+
     return {
         "session_id": report["session_id"],
         "student_name": report["student"].get("name", "Student"),
@@ -76,6 +82,7 @@ def _build_teaser(session) -> dict:
         "dominant_pattern": pattern.get("name", ""),
         "trait_preview": trait_preview,
         "career_preview": career_preview,
+        "top_two_gap": top_two_gap,
         "total_traits": len(report["traits"]),
         "total_sections": 8,
         "is_paid": False,
