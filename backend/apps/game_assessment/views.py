@@ -1,5 +1,8 @@
 import datetime
+import hashlib
+import hmac
 
+from django.conf import settings
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import status
@@ -7,7 +10,13 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
-from .models import GameSession, GameEventLog, TraitScore, CareerMatchScore
+from .models import (
+    GameSession,
+    GameEventLog,
+    TraitScore,
+    CareerMatchScore,
+    ReportOrder,
+)
 from .serializers import (
     LogEventSerializer,
     SubmitSessionSerializer,
@@ -23,9 +32,57 @@ from .content.planner_game import get_planner_config
 from .content.scenarios import get_scenario_questions
 
 
-class GameContentView(GenericAPIView):
-    """GET — returns all game content (tasks, scenarios, planner config)."""
+# ── Helpers ─────────────────────────────────────────────────────────
 
+def _has_paid(user, session) -> bool:
+    return ReportOrder.objects.filter(
+        user=user, session=session, status="paid"
+    ).exists()
+
+
+def _build_teaser(session) -> dict:
+    """Build a partial report that reveals just enough to create desire."""
+    report = build_report(session)
+
+    top_career = report["hero"]["career_name"]
+    confidence = report["hero"]["confidence"]
+    pattern = report.get("dominant_pattern", {})
+
+    blurred_traits = []
+    for t in report["traits"]:
+        blurred_traits.append({
+            "label": t["label"],
+            "icon": t["icon"],
+            "score": round(t["score"]),
+            "max": t["max"],
+        })
+
+    teaser_careers = []
+    for c in report["careers"]:
+        teaser_careers.append({
+            "rank": c["rank"],
+            "career_name": c["career_name"],
+            "stream": c["stream"],
+            "confidence": c["confidence"],
+        })
+
+    return {
+        "session_id": report["session_id"],
+        "student_name": report["student"].get("name", "Student"),
+        "hero_career": top_career,
+        "hero_confidence": confidence,
+        "dominant_pattern": pattern.get("name", ""),
+        "trait_preview": blurred_traits,
+        "career_preview": teaser_careers,
+        "total_traits": len(report["traits"]),
+        "total_sections": 8,
+        "is_paid": False,
+    }
+
+
+# ── Game content & session views ────────────────────────────────────
+
+class GameContentView(GenericAPIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
@@ -40,8 +97,6 @@ class GameContentView(GenericAPIView):
 
 
 class StartSessionView(GenericAPIView):
-    """POST — creates a new GameSession."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -55,8 +110,6 @@ class StartSessionView(GenericAPIView):
 
 
 class LogEventView(GenericAPIView):
-    """POST — stores a batch of GameEventLog entries."""
-
     permission_classes = [IsAuthenticated]
     serializer_class = LogEventSerializer
 
@@ -100,8 +153,6 @@ class LogEventView(GenericAPIView):
 
 
 class SubmitSessionView(GenericAPIView):
-    """POST — triggers the scoring pipeline for a session."""
-
     permission_classes = [IsAuthenticated]
     serializer_class = SubmitSessionSerializer
 
@@ -153,8 +204,6 @@ class SubmitSessionView(GenericAPIView):
 
 
 class SessionResultView(GenericAPIView):
-    """GET — returns trait scores and career matches for a completed session."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request, session_id):
@@ -207,7 +256,6 @@ GAME_PHASE_ORDER = ["logic", "risk", "planner", "scenario"]
 
 
 def _detect_resume_phase(session):
-    """Determine which phase the user should resume from based on logged events."""
     logged_games = set(
         GameEventLog.objects.filter(session=session)
         .values_list("game_name", flat=True)
@@ -220,14 +268,17 @@ def _detect_resume_phase(session):
 
 
 class GameDashboardView(GenericAPIView):
-    """GET — returns game sessions for the dashboard (replaces old assessment attempts)."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         sessions = (
             GameSession.objects.filter(user=request.user)
             .order_by("-started_at")[:10]
+        )
+
+        paid_session_ids = set(
+            ReportOrder.objects.filter(user=request.user, status="paid")
+            .values_list("session_id", flat=True)
         )
 
         attempts = []
@@ -238,6 +289,7 @@ class GameDashboardView(GenericAPIView):
                 "started_at": s.started_at,
                 "completed_at": s.completed_at,
                 "created_at": s.started_at,
+                "is_report_paid": s.id in paid_session_ids,
             }
             if not s.is_complete:
                 entry["resume_phase"] = _detect_resume_phase(s)
@@ -255,13 +307,14 @@ class GameDashboardView(GenericAPIView):
                 "latest_result_session_id": (
                     str(latest_complete.id) if latest_complete else None
                 ),
+                "latest_report_paid": (
+                    latest_complete.id in paid_session_ids if latest_complete else False
+                ),
             }
         )
 
 
 class ResumeSessionView(GenericAPIView):
-    """GET — returns the latest incomplete session with its resume phase."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -286,8 +339,10 @@ class ResumeSessionView(GenericAPIView):
         )
 
 
-class CareerReportView(GenericAPIView):
-    """GET — returns the full career report JSON for a completed session."""
+# ── Report teaser (free) ───────────────────────────────────────────
+
+class ReportTeaserView(GenericAPIView):
+    """GET — returns a partial report teaser (free, no payment needed)."""
 
     permission_classes = [IsAuthenticated]
 
@@ -303,6 +358,44 @@ class CareerReportView(GenericAPIView):
             return Response(
                 {"detail": "Session not yet completed."},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        paid = _has_paid(request.user, session)
+        if paid:
+            teaser = _build_teaser(session)
+            teaser["is_paid"] = True
+            return Response(teaser)
+
+        teaser = _build_teaser(session)
+        teaser["price"] = settings.REPORT_PRICE_INR
+        return Response(teaser)
+
+
+# ── Gated full report ──────────────────────────────────────────────
+
+class CareerReportView(GenericAPIView):
+    """GET — returns the full career report JSON (paid only)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, session_id):
+        try:
+            session = GameSession.objects.get(id=session_id, user=request.user)
+        except GameSession.DoesNotExist:
+            return Response(
+                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not session.is_complete:
+            return Response(
+                {"detail": "Session not yet completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not _has_paid(request.user, session):
+            return Response(
+                {"detail": "Payment required to access full report.", "code": "PAYMENT_REQUIRED"},
+                status=status.HTTP_402_PAYMENT_REQUIRED,
             )
 
         report = build_report(session)
@@ -310,7 +403,7 @@ class CareerReportView(GenericAPIView):
 
 
 class CareerReportPDFView(GenericAPIView):
-    """GET — returns a downloadable A4 PDF career report."""
+    """GET — returns a downloadable A4 PDF career report (paid only)."""
 
     permission_classes = [IsAuthenticated]
 
@@ -326,6 +419,12 @@ class CareerReportPDFView(GenericAPIView):
             return Response(
                 {"detail": "Session not yet completed."},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not _has_paid(request.user, session):
+            return Response(
+                {"detail": "Payment required to download report.", "code": "PAYMENT_REQUIRED"},
+                status=status.HTTP_402_PAYMENT_REQUIRED,
             )
 
         report = build_report(session)
@@ -350,3 +449,142 @@ class CareerReportPDFView(GenericAPIView):
             f'attachment; filename="career-report-{session_id}.pdf"'
         )
         return response
+
+
+# ── Payment endpoints ──────────────────────────────────────────────
+
+class CreatePaymentOrderView(GenericAPIView):
+    """POST — creates a Razorpay order for a report."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        session_id = request.data.get("session_id")
+        if not session_id:
+            return Response(
+                {"detail": "session_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            session = GameSession.objects.get(id=session_id, user=request.user)
+        except GameSession.DoesNotExist:
+            return Response(
+                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not session.is_complete:
+            return Response(
+                {"detail": "Session not yet completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if _has_paid(request.user, session):
+            return Response(
+                {"detail": "Report already purchased.", "is_paid": True},
+                status=status.HTTP_200_OK,
+            )
+
+        amount_inr = settings.REPORT_PRICE_INR
+
+        order, created = ReportOrder.objects.get_or_create(
+            user=request.user,
+            session=session,
+            defaults={"amount": amount_inr},
+        )
+
+        if order.status == "paid":
+            return Response({"detail": "Already paid.", "is_paid": True})
+
+        if not settings.RAZORPAY_KEY_ID:
+            order.status = "paid"
+            order.paid_at = timezone.now()
+            order.save()
+            return Response({
+                "is_paid": True,
+                "detail": "Payment gateway not configured — report unlocked for free (dev mode).",
+            })
+
+        import razorpay
+
+        client = razorpay.Client(
+            auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
+        )
+
+        rz_order = client.order.create(
+            {
+                "amount": amount_inr * 100,
+                "currency": "INR",
+                "receipt": str(order.id),
+                "notes": {
+                    "session_id": str(session.id),
+                    "user_email": request.user.email,
+                },
+            }
+        )
+
+        order.razorpay_order_id = rz_order["id"]
+        order.save()
+
+        return Response(
+            {
+                "order_id": rz_order["id"],
+                "amount": amount_inr,
+                "currency": "INR",
+                "key_id": settings.RAZORPAY_KEY_ID,
+                "user_email": request.user.email,
+                "user_name": request.user.get_full_name() or request.user.email,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class VerifyPaymentView(GenericAPIView):
+    """POST — verifies Razorpay payment signature and unlocks the report."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        razorpay_order_id = request.data.get("razorpay_order_id", "")
+        razorpay_payment_id = request.data.get("razorpay_payment_id", "")
+        razorpay_signature = request.data.get("razorpay_signature", "")
+
+        if not all([razorpay_order_id, razorpay_payment_id, razorpay_signature]):
+            return Response(
+                {"detail": "Missing payment details."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            order = ReportOrder.objects.get(
+                razorpay_order_id=razorpay_order_id, user=request.user
+            )
+        except ReportOrder.DoesNotExist:
+            return Response(
+                {"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if order.status == "paid":
+            return Response({"verified": True, "detail": "Already verified."})
+
+        expected_sig = hmac.new(
+            settings.RAZORPAY_KEY_SECRET.encode(),
+            f"{razorpay_order_id}|{razorpay_payment_id}".encode(),
+            hashlib.sha256,
+        ).hexdigest()
+
+        if not hmac.compare_digest(expected_sig, razorpay_signature):
+            order.status = "failed"
+            order.save()
+            return Response(
+                {"detail": "Payment verification failed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        order.status = "paid"
+        order.razorpay_payment_id = razorpay_payment_id
+        order.razorpay_signature = razorpay_signature
+        order.paid_at = timezone.now()
+        order.save()
+
+        return Response({"verified": True, "session_id": str(order.session_id)})

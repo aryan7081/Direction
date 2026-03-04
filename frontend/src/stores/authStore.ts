@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { getQueryClient } from '@/components/Providers';
 
 interface User {
   id: number;
@@ -37,6 +38,8 @@ export const useAuthStore = create<AuthState>()(
           localStorage.removeItem('access');
           localStorage.removeItem('refresh');
         }
+        const qc = getQueryClient();
+        if (qc) qc.clear();
         set({ user: null, access: null, refresh: null });
       },
       setUser: (user) => set({ user }),

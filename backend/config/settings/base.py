@@ -3,8 +3,11 @@ Base settings for Direction Platform.
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-key-change-in-production")
 
@@ -114,3 +117,8 @@ SPECTACULAR_SETTINGS = {
 }
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Razorpay
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+REPORT_PRICE_INR = int(os.environ.get("REPORT_PRICE_INR", "299"))

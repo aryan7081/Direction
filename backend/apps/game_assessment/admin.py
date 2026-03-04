@@ -6,6 +6,7 @@ from .models import (
     TraitScore,
     CareerMatchScore,
     GameCareerTraitWeight,
+    ReportOrder,
 )
 
 
@@ -46,3 +47,10 @@ class GameCareerTraitWeightAdmin(admin.ModelAdmin):
     list_display = ("career", "trait_name", "weight")
     list_filter = ("trait_name",)
     search_fields = ("career__name",)
+
+
+@admin.register(ReportOrder)
+class ReportOrderAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "session", "amount", "status", "paid_at")
+    list_filter = ("status",)
+    search_fields = ("user__email", "razorpay_order_id", "razorpay_payment_id")
