@@ -34,36 +34,26 @@ const WHAT_YOU_GET = [
 
 const SOCIAL_PROOF_COUNT = 12847;
 
-function BlurredBar({ score, max }: { score: number; max: number }) {
+function LockedTraitBar() {
   return (
-    <Box sx={{ position: 'relative' }}>
+    <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 1 }}>
       <LinearProgress
         variant="determinate"
-        value={(score / max) * 100}
+        value={50}
         sx={{
+          flex: 1,
           height: 8,
           borderRadius: 4,
           bgcolor: '#f3f4f6',
           '& .MuiLinearProgress-bar': {
             borderRadius: 4,
-            background: 'linear-gradient(90deg, #16a34a, #22c55e)',
+            bgcolor: '#e5e7eb',
           },
-          filter: 'blur(4px)',
         }}
       />
-      <Box
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Typography sx={{ fontSize: '0.65rem', color: '#9ca3af', fontWeight: 600 }}>
-          🔒
-        </Typography>
-      </Box>
+      <Typography sx={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600, minWidth: 28 }}>
+        🔒
+      </Typography>
     </Box>
   );
 }
@@ -87,11 +77,21 @@ function CountUp({ target, duration = 2000 }: { target: number; duration?: numbe
   return <>{count.toLocaleString('en-IN')}</>;
 }
 
+const STICKY_BAR_SCROLL_THRESHOLD = 120;
+
 export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [paying, setPaying] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowStickyBar(window.scrollY > STICKY_BAR_SCROLL_THRESHOLD);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const { data: teaser, isLoading, error } = useQuery({
     queryKey: ['report-teaser', sessionId],
@@ -188,7 +188,8 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const price = teaser.price ?? 299;
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 1, sm: 2 } }}>
+    <>
+    <Container maxWidth="sm" sx={{ py: { xs: 1, sm: 2 }, pb: showStickyBar ? 12 : 4 }}>
       {/* HERO: reveal the top career to hook them */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <Box
@@ -268,6 +269,30 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
               Your personality pattern: <strong style={{ color: '#1e40af' }}>{teaser.dominant_pattern}</strong>
             </Typography>
           )}
+
+          <Button
+            variant="contained"
+            size="large"
+            fullWidth
+            onClick={handlePurchase}
+            disabled={paying}
+            sx={{
+              mt: 3,
+              background: 'linear-gradient(135deg, #16a34a, #15803d)',
+              textTransform: 'none',
+              fontWeight: 800,
+              borderRadius: 2.5,
+              py: 1.8,
+              fontSize: '1rem',
+              boxShadow: '0 6px 24px rgba(22,163,74,0.3)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #15803d, #166534)',
+                boxShadow: '0 8px 32px rgba(22,163,74,0.4)',
+              },
+            }}
+          >
+            {paying ? <><ButtonSpinner size={20} /> Processing...</> : <>🔓 Unlock full report — ₹{price}</>}
+          </Button>
         </Box>
       </motion.div>
 
@@ -288,17 +313,17 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
             Your 8-Trait Profile
           </Typography>
 
-          {teaser.trait_preview.map((t, i) => (
+          {teaser.trait_preview.map((t) => (
             <Box key={t.label} sx={{ mb: 1.5 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
                 <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>
                   {t.label}
                 </Typography>
-                <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#d1d5db' }}>
-                  🔒 ?/10
+                <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#9ca3af' }}>
+                  —
                 </Typography>
               </Box>
-              <BlurredBar score={t.score} max={t.max} />
+              <LockedTraitBar />
             </Box>
           ))}
 
@@ -325,7 +350,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
         </Box>
       </motion.div>
 
-      {/* CAREER PREVIEW */}
+      {/* CAREER PREVIEW — no names shown, only teaser to unlock */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
         <Box
           sx={{
@@ -337,52 +362,69 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
             mb: 3,
           }}
         >
-          <Typography sx={{ fontWeight: 700, color: '#111827', fontSize: '1rem', mb: 2 }}>
+          <Typography sx={{ fontWeight: 700, color: '#111827', fontSize: '1rem', mb: 1 }}>
             Your Top 3 Career Matches
           </Typography>
-
-          {teaser.career_preview.map((c, i) => {
-            const colors = ['#16a34a', '#3b82f6', '#f59e0b'];
-            return (
-              <Box
-                key={c.rank}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  py: 1.5,
-                  borderBottom: i < 2 ? '1px solid rgba(0,0,0,0.05)' : 'none',
-                }}
-              >
-                <Chip
-                  label={`#${c.rank}`}
-                  size="small"
-                  sx={{
-                    bgcolor: `${colors[i]}14`,
-                    color: colors[i],
-                    fontWeight: 700,
-                    border: `1px solid ${colors[i]}33`,
-                    height: 24,
-                  }}
-                />
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontWeight: 700, color: '#111827', fontSize: '0.95rem' }}>
-                    {c.career_name}
-                  </Typography>
-                  <Typography sx={{ fontSize: '0.78rem', color: '#9ca3af' }}>
-                    {c.stream}
-                  </Typography>
-                </Box>
-                <Typography sx={{ fontWeight: 700, color: '#d1d5db', fontSize: '1.1rem' }}>
-                  ??%
-                </Typography>
-              </Box>
-            );
-          })}
-
-          <Typography sx={{ color: '#9ca3af', fontSize: '0.8rem', mt: 1.5, textAlign: 'center' }}>
-            🔒 Match percentages, explanations & education paths hidden
+          <Typography sx={{ color: '#6b7280', fontSize: '0.88rem', mb: 2 }}>
+            Unlock your full report to see which careers fit you best — with match %, stream, and education paths.
           </Typography>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {teaser.career_preview.map((c, i) => {
+              const colors = ['#16a34a', '#3b82f6', '#f59e0b'];
+              const isRevealed = 'career_name' in c && c.career_name;
+              return (
+                <Box
+                  key={c.rank}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    py: 1.5,
+                    px: 2,
+                    borderRadius: 2,
+                    bgcolor: isRevealed ? '#f0fdf4' : '#f9fafb',
+                    border: `1px solid ${isRevealed ? '#bbf7d0' : '#e5e7eb'}`,
+                  }}
+                >
+                  <Chip
+                    label={`#${c.rank}`}
+                    size="small"
+                    sx={{
+                      bgcolor: `${colors[i]}18`,
+                      color: colors[i],
+                      fontWeight: 700,
+                      border: `1px solid ${colors[i]}40`,
+                      height: 24,
+                    }}
+                  />
+                  {isRevealed ? (
+                    <>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography sx={{ fontWeight: 700, color: '#111827', fontSize: '0.95rem' }}>
+                          {c.career_name}
+                        </Typography>
+                        {c.stream && (
+                          <Typography sx={{ fontSize: '0.78rem', color: '#6b7280' }}>
+                            {c.stream}
+                          </Typography>
+                        )}
+                      </Box>
+                    </>
+                  ) : (
+                    <>
+                      <Typography sx={{ flex: 1, color: '#9ca3af', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                        Unlock to reveal
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.8rem', color: '#9ca3af' }}>
+                        🔒
+                      </Typography>
+                    </>
+                  )}
+                </Box>
+              );
+            })}
+          </Box>
         </Box>
       </motion.div>
 
@@ -639,5 +681,54 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
         </Button>
       </Box>
     </Container>
+
+      {/* Sticky bottom CTA — visible on scroll so user can unlock without scrolling back up */}
+      {showStickyBar && (
+        <Box
+          sx={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1100,
+            px: 2,
+            py: 1.5,
+            bgcolor: 'rgba(255,255,255,0.98)',
+            backdropFilter: 'blur(12px)',
+            borderTop: '1px solid #e5e7eb',
+            boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
+            pb: 'max(12px, env(safe-area-inset-bottom))',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+            flexWrap: 'wrap',
+          }}
+        >
+          <Typography sx={{ fontWeight: 700, color: '#111827', fontSize: '1rem' }}>
+            Unlock full report — ₹{price}
+          </Typography>
+          <Button
+            variant="contained"
+            size="medium"
+            onClick={handlePurchase}
+            disabled={paying}
+            sx={{
+              background: 'linear-gradient(135deg, #16a34a, #15803d)',
+              textTransform: 'none',
+              fontWeight: 800,
+              borderRadius: 2.5,
+              px: 3,
+              py: 1.2,
+              fontSize: '0.95rem',
+              boxShadow: '0 4px 16px rgba(22,163,74,0.3)',
+              '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)' },
+            }}
+          >
+            {paying ? <><ButtonSpinner size={18} /> Processing...</> : '🔓 Unlock now'}
+          </Button>
+        </Box>
+      )}
+    </>
   );
 }

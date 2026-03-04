@@ -41,30 +41,32 @@ def _has_paid(user, session) -> bool:
 
 
 def _build_teaser(session) -> dict:
-    """Build a partial report that reveals just enough to create desire."""
+    """Build a partial report that reveals just enough to create desire.
+    Does NOT expose trait scores or career names — only labels and count.
+    """
     report = build_report(session)
 
     top_career = report["hero"]["career_name"]
     confidence = report["hero"]["confidence"]
     pattern = report.get("dominant_pattern", {})
 
-    blurred_traits = []
-    for t in report["traits"]:
-        blurred_traits.append({
-            "label": t["label"],
-            "icon": t["icon"],
-            "score": round(t["score"]),
-            "max": t["max"],
-        })
+    trait_preview = [
+        {"label": t["label"], "icon": t["icon"]}
+        for t in report["traits"]
+    ]
 
-    teaser_careers = []
-    for c in report["careers"]:
-        teaser_careers.append({
-            "rank": c["rank"],
-            "career_name": c["career_name"],
-            "stream": c["stream"],
-            "confidence": c["confidence"],
-        })
+    careers = report["careers"]
+    career_count = min(3, len(careers))
+    career_preview = []
+    for i in range(career_count):
+        if i == 0 and careers:
+            career_preview.append({
+                "rank": 1,
+                "career_name": careers[0].get("career_name", ""),
+                "stream": careers[0].get("stream", ""),
+            })
+        else:
+            career_preview.append({"rank": i + 1})
 
     return {
         "session_id": report["session_id"],
@@ -72,8 +74,8 @@ def _build_teaser(session) -> dict:
         "hero_career": top_career,
         "hero_confidence": confidence,
         "dominant_pattern": pattern.get("name", ""),
-        "trait_preview": blurred_traits,
-        "career_preview": teaser_careers,
+        "trait_preview": trait_preview,
+        "career_preview": career_preview,
         "total_traits": len(report["traits"]),
         "total_sections": 8,
         "is_paid": False,
