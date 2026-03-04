@@ -5,11 +5,12 @@ import os
 from .base import *
 
 DEBUG = True
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "10.7.11.19"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://10.7.11.19:3000",
 ]
 
 # Use PostgreSQL if DB_HOST is set, else SQLite for quick local dev
