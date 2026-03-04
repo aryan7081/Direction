@@ -136,31 +136,22 @@ export function DashboardPage() {
                   ? 'View your career report and detailed analysis.'
                   : 'Your results are ready — unlock your premium career report.'}
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, flexWrap: 'wrap' }}>
-                <Button
-                  variant="outlined"
-                  fullWidth={false}
-                  onClick={() => router.push(`/game-assessment?view=${latestSessionId}`)}
-                  sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2, borderColor: 'rgba(0,0,0,0.15)', color: '#374151', minHeight: 44 }}
-                >
-                  Quick View
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => router.push(`/report?session=${latestSessionId}`)}
-                  sx={{
-                    background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                    textTransform: 'none',
-                    fontWeight: 700,
-                    borderRadius: 2,
-                    minHeight: 44,
-                    boxShadow: '0 4px 14px rgba(22,163,74,0.2)',
-                    '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)' },
-                  }}
-                >
-                  {data?.latest_report_paid ? '📊 View Career Report' : '🔓 Unlock Career Report'}
-                </Button>
-              </Box>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={() => router.push(`/report?session=${latestSessionId}`)}
+                sx={{
+                  background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  borderRadius: 2,
+                  minHeight: 44,
+                  boxShadow: '0 4px 14px rgba(22,163,74,0.2)',
+                  '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)' },
+                }}
+              >
+                {data?.latest_report_paid ? '📊 View Career Report' : '🔓 View Your Results'}
+              </Button>
             </Box>
           </motion.div>
         )}
@@ -210,22 +201,13 @@ export function DashboardPage() {
                       )}
                     </Box>
                     {a.is_complete ? (
-                      <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        <Button
-                          size="small"
-                          onClick={() => router.push(`/game-assessment?view=${a.id}`)}
-                          sx={{ textTransform: 'none', fontWeight: 600, color: '#374151', fontSize: '0.82rem' }}
-                        >
-                          View
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => router.push(`/report?session=${a.id}`)}
-                          sx={{ textTransform: 'none', fontWeight: 600, color: '#16a34a', fontSize: '0.82rem' }}
-                        >
-                          {a.is_report_paid ? '📊 Report' : '🔓 Unlock'}
-                        </Button>
-                      </Box>
+                      <Button
+                        size="small"
+                        onClick={() => router.push(`/report?session=${a.id}`)}
+                        sx={{ textTransform: 'none', fontWeight: 600, color: '#16a34a', fontSize: '0.82rem' }}
+                      >
+                        {a.is_report_paid ? '📊 View Report' : 'View Results'}
+                      </Button>
                     ) : (
                       <Button
                         size="small"
