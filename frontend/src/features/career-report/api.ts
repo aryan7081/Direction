@@ -9,6 +9,7 @@ export interface ReportTeaser {
   dominant_pattern: string;
   trait_preview: { label: string; icon: string }[];
   career_preview: { rank: number; career_name?: string; stream?: string }[];
+  top_two_gap?: number;
   total_traits: number;
   total_sections: number;
   is_paid: boolean;
