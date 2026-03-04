@@ -97,9 +97,10 @@ export function RiskSimulator({
                     sx={{
                       justifyContent: 'flex-start',
                       textTransform: 'none',
-                      py: 1.5,
+                      py: { xs: 1.75, sm: 1.5 },
                       px: 2,
-                      fontSize: '0.95rem',
+                      fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                      minHeight: 48,
                       textAlign: 'left',
                       borderRadius: 2,
                       borderColor: selected === opt.id ? undefined : 'rgba(0,0,0,0.1)',

@@ -58,7 +58,7 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 } }}>
+    <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
       {/* Action bar */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -68,17 +68,18 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
         <Box
           sx={{
             display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: { xs: 'stretch', sm: 'center' },
             mb: 3,
             flexWrap: 'wrap',
-            gap: 1,
+            gap: 1.5,
           }}
         >
           <Button
             size="small"
             onClick={() => router.push('/dashboard')}
-            sx={{ fontWeight: 500 }}
+            sx={{ fontWeight: 500, alignSelf: { xs: 'flex-start', sm: 'auto' } }}
           >
             ← Back to Dashboard
           </Button>
@@ -86,7 +87,7 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
             variant="contained"
             onClick={handleDownloadPdf}
             disabled={downloading}
-            sx={{ borderRadius: 2 }}
+            sx={{ borderRadius: 2, minHeight: 44 }}
           >
             {downloading ? <><ButtonSpinner size={18} /> Generating PDF...</> : 'Download PDF Report'}
           </Button>

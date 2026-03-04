@@ -70,7 +70,7 @@ export function GameProgressBar({
         />
       </motion.div>
 
-      <Box sx={{ display: 'flex', gap: 0.75, mt: 1.5 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1.5 }}>
         {STEP_LABELS.map((step, i) => {
           const stepIdx = ACTIVE_PHASES.indexOf(step.phase);
           const isDone = phaseIdx > stepIdx || phase === 'processing';
@@ -84,8 +84,8 @@ export function GameProgressBar({
               variant={isDone || isCurrent ? 'filled' : 'outlined'}
               color={isDone ? 'success' : isCurrent ? 'primary' : 'default'}
               sx={{
-                fontSize: '0.7rem',
-                height: 24,
+                fontSize: { xs: '0.65rem', sm: '0.7rem' },
+                height: { xs: 22, sm: 24 },
                 fontWeight: isCurrent ? 700 : 500,
                 opacity: isDone || isCurrent ? 1 : 0.5,
               }}

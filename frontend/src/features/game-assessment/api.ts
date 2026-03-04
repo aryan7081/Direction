@@ -46,8 +46,10 @@ export interface GameDashboardData {
     completed_at: string | null;
     created_at: string;
     resume_phase?: GamePhase;
+    is_report_paid?: boolean;
   }[];
   latest_result_session_id: string | null;
+  latest_report_paid?: boolean;
 }
 
 export async function fetchGameDashboard(): Promise<GameDashboardData> {

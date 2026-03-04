@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useCallback, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Box, Alert, Container } from '@mui/material';
 import { PageLoader } from '@/components/ui/Loaders';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
@@ -11,7 +12,6 @@ import {
   startGameSession,
   logEvents,
   submitSession,
-  fetchSessionResult,
   fetchResumeSession,
 } from '../api';
 import { GameProgressBar } from './GameProgressBar';
@@ -21,7 +21,6 @@ import { RiskSimulator } from './RiskSimulator';
 import { PlannerGame } from './PlannerGame';
 import { ScenarioSection } from './ScenarioSection';
 import { ProcessingScreen } from './ProcessingScreen';
-import { GameResultsPage } from './GameResultsPage';
 import type { GamePhase } from '../types';
 
 const GAME_PHASES: GamePhase[] = ['logic', 'risk', 'planner', 'scenario'];
@@ -32,6 +31,7 @@ interface GameEngineProps {
 }
 
 export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) {
+  const router = useRouter();
   const {
     sessionId,
     phase,
@@ -60,10 +60,8 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
     (async () => {
       try {
         if (viewSessionId) {
-          const res = await fetchSessionResult(viewSessionId);
-          setResult(res);
-          setPhase('results');
           setInitializing(false);
+          router.replace(`/report?session=${viewSessionId}`);
           return;
         }
 
@@ -131,14 +129,13 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
     if (!sessionId) return;
     try {
       await flushEvents();
-      const res = await submitSession(sessionId);
-      setResult(res);
-      setPhase('results');
+      await submitSession(sessionId);
+      router.replace(`/report?session=${sessionId}`);
     } catch {
       setError('Scoring failed. Please try again.');
       setPhase('scenario');
     }
-  }, [sessionId, flushEvents, setResult, setPhase, setError]);
+  }, [sessionId, flushEvents, setPhase, setError, router]);
 
   if (initializing) {
     return <PageLoader message="Preparing your assessment..." />;
@@ -154,7 +151,7 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
   return (
     <Box sx={{ position: 'relative', minHeight: '80vh' }}>
       <AnimatedBackground theme={bgTheme} />
-      <Container maxWidth="md" sx={{ py: 4, position: 'relative', zIndex: 1 }}>
+      <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 }, position: 'relative', zIndex: 1 }}>
         {error && (
           <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2, borderRadius: 2 }}>
             {error}
@@ -192,8 +189,6 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
             )}
 
             {phase === 'processing' && <ProcessingScreen onDone={handleProcessingDone} />}
-
-            {phase === 'results' && result && <GameResultsPage result={result} />}
           </motion.div>
         </AnimatePresence>
       </Container>

@@ -116,9 +116,10 @@ export function LogicGame({
                   sx={{
                     justifyContent: 'flex-start',
                     textTransform: 'none',
-                    py: 1.5,
+                    py: { xs: 1.75, sm: 1.5 },
                     px: 2,
-                    fontSize: '0.95rem',
+                    fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                    minHeight: 48,
                     borderRadius: 2,
                     borderColor: selected === opt ? undefined : 'rgba(0,0,0,0.1)',
                     color: selected === opt ? '#fff' : '#374151',

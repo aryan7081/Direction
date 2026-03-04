@@ -41,7 +41,7 @@ export function GameResultsPage({ result }: { result: SessionResult }) {
   }));
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 1, sm: 2 } }}>
+    <Container maxWidth="sm" sx={{ py: { xs: 1, sm: 2 }, px: { xs: 2, sm: 3 } }}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         {/* Title */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>
@@ -175,9 +175,10 @@ export function GameResultsPage({ result }: { result: SessionResult }) {
         </Box>
 
         {/* CTAs */}
-        <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Button
             variant="outlined"
+            fullWidth
             onClick={() => router.push('/dashboard')}
             sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2, borderColor: 'rgba(0,0,0,0.15)', color: '#374151' }}
           >
@@ -185,6 +186,7 @@ export function GameResultsPage({ result }: { result: SessionResult }) {
           </Button>
           <Button
             variant="contained"
+            fullWidth
             onClick={() => router.push(`/report?session=${result.session_id}`)}
             sx={{
               background: 'linear-gradient(135deg, #16a34a, #15803d)',
@@ -200,6 +202,7 @@ export function GameResultsPage({ result }: { result: SessionResult }) {
           </Button>
           <Button
             variant="outlined"
+            fullWidth
             onClick={() => router.push('/careers')}
             sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2, borderColor: 'rgba(0,0,0,0.15)', color: '#374151' }}
           >

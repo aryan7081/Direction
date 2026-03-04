@@ -165,7 +165,7 @@ function FeatureCard({ icon, title, desc, color, index }: typeof FEATURES[0] & {
     >
       <Box
         sx={{
-          p: 3.5,
+          p: { xs: 2.5, sm: 3.5 },
           borderRadius: 3,
           bgcolor: 'rgba(255,255,255,0.7)',
           backdropFilter: 'blur(12px)',
@@ -273,27 +273,33 @@ export default function LandingPage() {
           right: 0,
           zIndex: 50,
           px: { xs: 2, sm: 4 },
-          py: 1.5,
-          bgcolor: 'rgba(250,251,252,0.8)',
+          py: { xs: 1, sm: 1.5 },
+          minHeight: { xs: 56, sm: 64 },
+          display: 'flex',
+          alignItems: 'center',
+          bgcolor: 'rgba(250,251,252,0.9)',
           backdropFilter: 'blur(12px)',
           borderBottom: '1px solid rgba(0,0,0,0.05)',
         }}
       >
-        <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 0, sm: 2 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box component="img" src="/logo.png" alt="Direction" sx={{ width: 40, height: 40 }} />
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827', letterSpacing: -0.5 }}>
+            <Box component="img" src="/logo.png" alt="Direction" sx={{ width: { xs: 34, sm: 40 }, height: { xs: 34, sm: 40 } }} />
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827', letterSpacing: -0.5, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
               Direction
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: { xs: 1, sm: 1.5 }, alignItems: 'center' }}>
             <Link href="/login" style={{ textDecoration: 'none' }}>
               <Button
+                size="small"
                 sx={{
                   color: '#374151',
                   fontWeight: 600,
                   textTransform: 'none',
-                  fontSize: '0.9rem',
+                  fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                  py: { xs: 1, sm: 1.25 },
+                  minHeight: 44,
                   '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' },
                 }}
               >
@@ -303,13 +309,16 @@ export default function LandingPage() {
             <Link href="/register" style={{ textDecoration: 'none' }}>
               <Button
                 variant="contained"
+                size="small"
                 sx={{
                   background: 'linear-gradient(135deg, #16a34a, #15803d)',
                   textTransform: 'none',
                   fontWeight: 600,
                   borderRadius: 2,
-                  px: 3,
-                  fontSize: '0.9rem',
+                  px: { xs: 2, sm: 3 },
+                  py: { xs: 1, sm: 1.25 },
+                  fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                  minHeight: 44,
                   boxShadow: '0 4px 14px rgba(22,163,74,0.3)',
                   '&:hover': {
                     background: 'linear-gradient(135deg, #15803d, #166534)',
@@ -334,7 +343,8 @@ export default function LandingPage() {
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',
-          pt: 8,
+          pt: { xs: 10, sm: 12 },
+          pb: { xs: 6, sm: 8 },
         }}
       >
         <GridPattern />
@@ -420,19 +430,21 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
             >
-              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <Link href="/register" style={{ textDecoration: 'none' }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, justifyContent: 'center', alignItems: 'stretch', width: '100%', maxWidth: { xs: 320, sm: 'none' }, mx: 'auto' }}>
+                <Link href="/register" style={{ textDecoration: 'none', width: '100%' }}>
                   <Button
                     variant="contained"
                     size="large"
+                    fullWidth
                     sx={{
                       background: 'linear-gradient(135deg, #16a34a, #15803d)',
                       textTransform: 'none',
                       fontWeight: 700,
                       borderRadius: 2.5,
                       px: 4,
-                      py: 1.5,
-                      fontSize: '1rem',
+                      py: { xs: 1.75, sm: 1.5 },
+                      fontSize: { xs: '0.95rem', sm: '1rem' },
+                      minHeight: 48,
                       boxShadow: '0 8px 24px rgba(22,163,74,0.3)',
                       '&:hover': {
                         background: 'linear-gradient(135deg, #15803d, #166534)',
@@ -445,10 +457,11 @@ export default function LandingPage() {
                     Start Free Assessment →
                   </Button>
                 </Link>
-                <Link href="/login" style={{ textDecoration: 'none' }}>
+                <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
                   <Button
                     variant="outlined"
                     size="large"
+                    fullWidth
                     sx={{
                       borderColor: 'rgba(0,0,0,0.15)',
                       color: '#374151',
@@ -456,8 +469,9 @@ export default function LandingPage() {
                       fontWeight: 600,
                       borderRadius: 2.5,
                       px: 4,
-                      py: 1.5,
-                      fontSize: '1rem',
+                      py: { xs: 1.75, sm: 1.5 },
+                      fontSize: { xs: '0.95rem', sm: '1rem' },
+                      minHeight: 48,
                       '&:hover': {
                         borderColor: 'rgba(0,0,0,0.3)',
                         bgcolor: 'rgba(0,0,0,0.02)',
@@ -484,7 +498,7 @@ export default function LandingPage() {
 
         {/* Scroll indicator */}
         <motion.div
-          style={{ position: 'absolute', bottom: 32, left: '50%', marginLeft: -12, zIndex: 1 }}
+          style={{ position: 'absolute', bottom: 24, left: '50%', marginLeft: -12, zIndex: 1 }}
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
