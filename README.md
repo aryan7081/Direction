@@ -106,12 +106,22 @@ To test on your phone (same Wi‑Fi as your Mac):
 
 The app will auto-detect the host and call the API on the same IP at port 8000.
 
+### Google Sign-In (Required for Assessment)
+
+1. Create a project in [Google Cloud Console](https://console.cloud.google.com/).
+2. Enable the **Google+ API** (or **Google Identity Services**).
+3. Create OAuth 2.0 credentials (Web application).
+4. Add authorized JavaScript origins: `http://localhost:3000`, `http://127.0.0.1:3000`, and your production URL.
+5. Add to **frontend/.env**: `NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com`
+6. Add to **backend/.env**: `GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com`
+
 ## API Endpoints
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | POST | `/api/auth/register/` | No | Register |
 | POST | `/api/auth/login/` | No | Login (JWT) |
+| POST | `/api/auth/google/` | No | Sign in with Google (credential, session_id?) |
 | POST | `/api/auth/refresh/` | No | Refresh token |
 | GET | `/api/auth/profile/` | Yes | Profile |
 | GET | `/api/dashboard/` | Yes | Dashboard |
