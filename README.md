@@ -155,12 +155,30 @@ The app will auto-detect the host and call the API on the same IP at port 8000.
 3. Rank careers by compatibility %
 4. Modular design: swap `BaseRecommendationEngine` for AI later
 
-## Production
+## Production (AWS)
 
-- `DJANGO_ENV=production`
-- Set `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, DB credentials
-- `python manage.py collectstatic`
-- Use gunicorn/uwsgi + nginx
+### Backend on AWS (EC2, Elastic Beanstalk, ECS)
+
+1. **Copy production env** from `backend/.env.production.example` to `backend/.env`
+2. **Set env vars:**
+   - `DJANGO_ENV=production`
+   - `ALLOWED_HOSTS` – API domain(s), comma-separated (e.g. `api.yourdomain.com`)
+   - `CORS_ALLOWED_ORIGINS` – Frontend URL(s): Vercel app, custom domain (e.g. `https://your-app.vercel.app`)
+   - `CSRF_TRUSTED_ORIGINS` – Same as ALLOWED_HOSTS with `https://` prefix
+   - `DB_*` – RDS PostgreSQL connection details; `DB_SSL=true` for RDS
+3. **Run migrations:** `python manage.py migrate`
+4. **Collect static:** `python manage.py collectstatic --noinput`
+5. **Start with gunicorn:** `gunicorn config.wsgi:application --bind 0.0.0.0:8000`
+
+### Frontend (Vercel)
+
+- Set `NEXT_PUBLIC_API_URL` to your AWS API URL (e.g. `https://api.yourdomain.com/api`)
+- Add your Vercel URL to backend `CORS_ALLOWED_ORIGINS`
+
+### Google OAuth
+
+- Add your production API domain to **Authorized JavaScript origins** in Google Cloud Console
+- Add your Vercel/frontend URL as well
 
 ## Future
 

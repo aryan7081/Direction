@@ -12,11 +12,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://direction-iagpards9-gangadhar-yadavs-projects.vercel.app",
+    "https://rochester-horn-researchers-medications.trycloudflare.com",
 ]
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://192\.168\.\d+\.\d+:\d+$",
     r"^http://10\.\d+\.\d+\.\d+:\d+$",
     r"^http://172\.(1[6-9]|2\d|3[01])\.\d+\.\d+:\d+$",
+    r"^https://[a-z0-9-]+\.trycloudflare\.com$",
 ]
 
 # Use PostgreSQL if DB_HOST is set, else SQLite for quick local dev

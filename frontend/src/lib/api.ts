@@ -6,6 +6,11 @@ const DEFAULT_API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80
 function getApiBase(): string {
   if (typeof window === 'undefined') return DEFAULT_API_BASE;
   const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  // Cloudflare tunnel (mobile): use Mac IP so phone can reach backend on same WiFi
+  if (typeof window !== 'undefined' && window.location.hostname?.includes('trycloudflare.com')) {
+    const tunnelUrl = process.env.NEXT_PUBLIC_API_URL_TUNNEL;
+    if (tunnelUrl) return tunnelUrl;
+  }
   // Always use env URL when set (including localhost for deployed frontend + local backend)
   if (envUrl) return envUrl;
   // Vercel: deployed frontend + local backend → use localhost
