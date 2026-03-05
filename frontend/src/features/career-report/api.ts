@@ -14,6 +14,8 @@ export interface ReportTeaser {
   total_sections: number;
   is_paid: boolean;
   price?: number;
+  /** Present when session was anonymous; use for password step before payment */
+  pending_email?: string;
 }
 
 export interface PaymentOrder {

@@ -91,6 +91,7 @@ export interface SessionResult {
 export type GamePhase =
   | 'intro'
   | 'logic'
+  | 'save_progress'
   | 'risk'
   | 'planner'
   | 'scenario'
@@ -100,6 +101,7 @@ export type GamePhase =
 export const PHASE_ORDER: GamePhase[] = [
   'intro',
   'logic',
+  'save_progress',
   'risk',
   'planner',
   'scenario',

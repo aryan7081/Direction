@@ -25,6 +25,17 @@ class SubmitSessionSerializer(serializers.Serializer):
     session_id = serializers.UUIDField()
 
 
+class SaveProgressSerializer(serializers.Serializer):
+    session_id = serializers.UUIDField()
+    email = serializers.EmailField()
+
+
+class CreateAccountFromSessionSerializer(serializers.Serializer):
+    session_id = serializers.UUIDField()
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=8)
+
+
 class TraitScoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = TraitScore

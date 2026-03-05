@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Box, Button, Chip, Collapse, Container, Typography } from '@mui/material';
+import { Box, Button, Chip, Collapse, Container, TextField, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import { PageLoader, ButtonSpinner } from '@/components/ui/Loaders';
+import { useAuthStore } from '@/stores/authStore';
 import { fetchReportTeaser, createPaymentOrder, verifyPayment } from './api';
+import { createAccountFromSession } from '@/features/game-assessment/api';
 import type { ReportTeaser } from './api';
 
 declare global {
@@ -44,8 +46,14 @@ const WHAT_INSIDE = [
 export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const user = useAuthStore((s) => s.user);
   const [paying, setPaying] = useState(false);
   const [showWhatInside, setShowWhatInside] = useState(false);
+  const [showPasswordStep, setShowPasswordStep] = useState(false);
+  const [password, setPassword] = useState('');
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   const { data: teaser, isLoading, error } = useQuery({
     queryKey: ['report-teaser', sessionId],
@@ -67,6 +75,35 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
       router.replace(`/report?session=${sessionId}`);
     }
   }, [teaser, sessionId, router]);
+
+  const needsPasswordStep = teaser?.pending_email && !user;
+
+  const handleUnlockClick = () => {
+    if (needsPasswordStep) {
+      setShowPasswordStep(true);
+    } else {
+      handlePurchase();
+    }
+  };
+
+  const handleCreateAccountAndPurchase = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!teaser?.pending_email || !password.trim()) return;
+    setPasswordError('');
+    setCreatingAccount(true);
+    try {
+      const res = await createAccountFromSession(sessionId, teaser.pending_email, password.trim());
+      setAuth(res.user, res.access, res.refresh);
+      setShowPasswordStep(false);
+      setPassword('');
+      await handlePurchase();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setPasswordError(msg || 'Could not create account. Please try again.');
+    } finally {
+      setCreatingAccount(false);
+    }
+  };
 
   const handlePurchase = async () => {
     setPaying(true);
@@ -135,6 +172,90 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   }
 
   const price = teaser.price ?? 299;
+
+  if (showPasswordStep && teaser?.pending_email) {
+    return (
+      <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 }, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Box sx={{ textAlign: 'center', mb: 3 }}>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: '#111827', mb: 1 }}>
+              One last step
+            </Typography>
+            <Typography sx={{ color: '#6b7280', fontSize: '0.95rem' }}>
+              Create a password to unlock your career report and save it for later.
+            </Typography>
+          </Box>
+          <Box
+            component="form"
+            onSubmit={handleCreateAccountAndPurchase}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              bgcolor: 'rgba(255,255,255,0.9)',
+              border: '1px solid rgba(0,0,0,0.08)',
+            }}
+          >
+            <TextField
+              fullWidth
+              label="Email"
+              value={teaser.pending_email}
+              disabled
+              sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            />
+            <TextField
+              fullWidth
+              type="password"
+              label="Password"
+              placeholder="Create a password (min 8 characters)"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setPasswordError(''); }}
+              error={!!passwordError}
+              helperText={passwordError}
+              disabled={creatingAccount}
+              sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              autoFocus
+              autoComplete="new-password"
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              fullWidth
+              disabled={creatingAccount || password.length < 8}
+              sx={{
+                py: 1.5,
+                minHeight: 52,
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                textTransform: 'none',
+                fontWeight: 800,
+                fontSize: '1rem',
+                boxShadow: '0 10px 32px rgba(22,163,74,0.4)',
+                '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)' },
+              }}
+            >
+              {creatingAccount ? (
+                <><ButtonSpinner size={24} /> Creating account...</>
+              ) : (
+                <>Create account & unlock report — ₹{price}</>
+              )}
+            </Button>
+            <Button
+              size="small"
+              onClick={() => setShowPasswordStep(false)}
+              sx={{ mt: 2, color: '#9ca3af', textTransform: 'none' }}
+            >
+              ← Back
+            </Button>
+          </Box>
+        </motion.div>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 }, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -234,7 +355,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
           variant="contained"
           size="large"
           fullWidth
-          onClick={handlePurchase}
+          onClick={handleUnlockClick}
           disabled={paying}
           sx={{
             py: { xs: 2, sm: 2.2 },

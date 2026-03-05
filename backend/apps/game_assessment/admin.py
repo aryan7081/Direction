@@ -42,7 +42,7 @@ class ReportOrderInline(admin.TabularInline):
 
 @admin.register(GameSession)
 class GameSessionAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "started_at", "is_complete", "completed_at", "report_payment_status")
+    list_display = ("id", "user", "pending_email", "started_at", "is_complete", "completed_at", "report_payment_status")
     list_filter = ("is_complete",)
     search_fields = ("user__email", "id")
     inlines = [TraitScoreInline, CareerMatchScoreInline, ReportOrderInline]

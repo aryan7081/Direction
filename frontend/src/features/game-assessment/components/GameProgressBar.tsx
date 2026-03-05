@@ -8,6 +8,7 @@ const ACTIVE_PHASES: GamePhase[] = ['logic', 'risk', 'planner', 'scenario'];
 
 const GAME_LABELS: Record<string, string> = {
   logic: 'Logic Challenge',
+  save_progress: 'Save Progress',
   risk: 'Decision Maker',
   planner: 'Weekly Planner',
   scenario: 'Situations',
@@ -34,6 +35,8 @@ export function GameProgressBar({
   let overall: number;
   if (phase === 'processing') {
     overall = 100;
+  } else if (phase === 'save_progress') {
+    overall = (1 / totalPhases) * 100;
   } else if (phaseIdx >= 0) {
     overall = ((phaseIdx + subProgress) / totalPhases) * 100;
   } else {

@@ -2,7 +2,6 @@
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
 import { GameEngine } from '@/features/game-assessment/components/GameEngine';
 import { PageLoader } from '@/components/ui/Loaders';
 
@@ -21,10 +20,8 @@ function GameAssessmentInner() {
 
 export default function GameAssessmentPage() {
   return (
-    <ProtectedRoute>
-      <Suspense fallback={<PageLoader message="Loading assessment..." />}>
-        <GameAssessmentInner />
-      </Suspense>
-    </ProtectedRoute>
+    <Suspense fallback={<PageLoader message="Loading assessment..." />}>
+      <GameAssessmentInner />
+    </Suspense>
   );
 }

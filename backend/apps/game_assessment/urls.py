@@ -5,6 +5,8 @@ from . import views
 urlpatterns = [
     path("game/content/", views.GameContentView.as_view(), name="game-content"),
     path("game/start/", views.StartSessionView.as_view(), name="game-start"),
+    path("game/save-progress/", views.SaveProgressView.as_view(), name="game-save-progress"),
+    path("game/create-account/", views.CreateAccountFromSessionView.as_view(), name="game-create-account"),
     path("game/log-event/", views.LogEventView.as_view(), name="game-log-event"),
     path("game/submit/", views.SubmitSessionView.as_view(), name="game-submit"),
     path(
