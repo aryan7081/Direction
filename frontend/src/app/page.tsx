@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Box, Button, Typography, Container, Chip } from '@mui/material';
 import { motion, useInView, useScroll, useTransform } from 'framer-motion';
 import { useAuthStore } from '@/stores/authStore';
@@ -257,8 +258,15 @@ function StatsBar() {
 }
 
 export default function LandingPage() {
+  const router = useRouter();
   const heroRef = useRef(null);
   const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
+  const handleLogout = () => {
+    logout();
+    router.replace('/');
+  };
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
@@ -337,6 +345,22 @@ export default function LandingPage() {
                     Dashboard
                   </Button>
                 </Link>
+                <Button
+                  size="small"
+                  onClick={handleLogout}
+                  sx={{
+                    color: '#6b7280',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                    py: { xs: 0.75, sm: 1.25 },
+                    px: { xs: 1, sm: 1.5 },
+                    minHeight: 40,
+                    '&:hover': { bgcolor: 'rgba(0,0,0,0.04)', color: '#374151' },
+                  }}
+                >
+                  Log out
+                </Button>
               </>
             ) : (
               <>

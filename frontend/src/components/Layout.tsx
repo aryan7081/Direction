@@ -21,7 +21,7 @@ export function Layout({ children, bgTheme = 'dashboard' }: { children: React.Re
 
   const handleLogout = () => {
     logout();
-    router.replace('/login');
+    router.replace('/');
     setMobileOpen(false);
   };
 

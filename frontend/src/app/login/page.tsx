@@ -1,21 +1,20 @@
 'use client';
 
-import { Suspense } from 'react';
 import Link from 'next/link';
 import { Box, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
-import { LoginForm } from '@/features/auth/LoginForm';
+import { GoogleSignInForm } from '@/features/auth/GoogleSignInForm';
 
 export default function LoginPage() {
   return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: { xs: 2, sm: 3 },
-          py: { xs: 3, sm: 4 },
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: { xs: 2, sm: 3 },
+        py: { xs: 3, sm: 4 },
         bgcolor: '#fafbfc',
         position: 'relative',
         overflow: 'hidden',
@@ -78,23 +77,12 @@ export default function LoginPage() {
             Welcome back
           </Typography>
           <Typography sx={{ color: '#6b7280', mb: 3, fontSize: '0.95rem' }}>
-            Sign in to continue your career journey.
+            Sign in with Google to continue your career journey.
           </Typography>
-          <Suspense fallback={null}>
-            <LoginForm />
-          </Suspense>
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-            <Link
-              href="/forgot-password"
-              style={{ fontSize: '0.85rem', color: '#6b7280', textDecoration: 'none' }}
-            >
-              Forgot password?
-            </Link>
-          </Box>
-          <Typography sx={{ mt: 2, textAlign: 'center', fontSize: '0.88rem', color: '#6b7280' }}>
-            Don&apos;t have an account?{' '}
-            <Link href="/register" style={{ color: '#16a34a', fontWeight: 600, textDecoration: 'none' }}>
-              Register
+          <GoogleSignInForm />
+          <Typography sx={{ mt: 3, textAlign: 'center', fontSize: '0.88rem', color: '#9ca3af' }}>
+            <Link href="/" style={{ color: '#16a34a', fontWeight: 600, textDecoration: 'none' }}>
+              ← Back to home
             </Link>
           </Typography>
         </Box>
