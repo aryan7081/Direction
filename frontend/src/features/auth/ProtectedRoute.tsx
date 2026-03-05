@@ -13,7 +13,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = access ?? localStorage.getItem('access');
     if (!token) {
-      router.replace('/login');
+      const returnTo =
+        typeof window !== 'undefined'
+          ? encodeURIComponent(window.location.pathname + window.location.search)
+          : '';
+      router.replace(returnTo ? `/login?redirect=${returnTo}` : '/login');
     } else {
       setChecked(true);
     }
