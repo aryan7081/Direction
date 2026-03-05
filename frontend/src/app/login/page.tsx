@@ -1,9 +1,11 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { Box, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import { GoogleSignInForm } from '@/features/auth/GoogleSignInForm';
+import { ButtonSpinner } from '@/components/ui/Loaders';
 
 export default function LoginPage() {
   return (
@@ -79,7 +81,9 @@ export default function LoginPage() {
           <Typography sx={{ color: '#6b7280', mb: 3, fontSize: '0.95rem' }}>
             Sign in with Google to continue your career journey.
           </Typography>
-          <GoogleSignInForm />
+          <Suspense fallback={<Box sx={{ py: 3, display: 'flex', justifyContent: 'center' }}><ButtonSpinner size={36} /></Box>}>
+            <GoogleSignInForm />
+          </Suspense>
           <Typography sx={{ mt: 3, textAlign: 'center', fontSize: '0.88rem', color: '#9ca3af' }}>
             <Link href="/" style={{ color: '#16a34a', fontWeight: 600, textDecoration: 'none' }}>
               ← Back to home
