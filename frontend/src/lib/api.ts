@@ -8,6 +8,10 @@ function getApiBase(): string {
   const envUrl = process.env.NEXT_PUBLIC_API_URL;
   // Always use env URL when set (including localhost for deployed frontend + local backend)
   if (envUrl) return envUrl;
+  // Vercel: deployed frontend + local backend → use localhost
+  if (window.location.hostname?.includes('vercel.app')) {
+    return 'http://localhost:8000/api';
+  }
   // Fallback: same host as page (for mobile dev when env not set)
   return `${window.location.protocol}//${window.location.hostname}:8000/api`;
 }
