@@ -11,12 +11,12 @@ function getApiBase(): string {
     const tunnelUrl = process.env.NEXT_PUBLIC_API_URL_TUNNEL;
     if (tunnelUrl) return tunnelUrl;
   }
-  // Always use env URL when set (including localhost for deployed frontend + local backend)
-  if (envUrl) return envUrl;
-  // Vercel: deployed frontend + local backend → use localhost
+  // Vercel + HTTP backend: use same-origin proxy to avoid mixed content (HTTPS→HTTP blocked)
   if (window.location.hostname?.includes('vercel.app')) {
-    return 'http://localhost:8000/api';
+    return '/api'; // Next.js rewrites proxy /api/* to backend
   }
+  // Always use env URL when set
+  if (envUrl) return envUrl;
   // Fallback: same host as page (for mobile dev when env not set)
   return `${window.location.protocol}//${window.location.hostname}:8000/api`;
 }
