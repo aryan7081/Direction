@@ -13,6 +13,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "https://direction-iagpards9-gangadhar-yadavs-projects.vercel.app",
     "https://rochester-horn-researchers-medications.trycloudflare.com",
+    "https://direction-rjc4gfxov-gangadhar-yadavs-projects.vercel.app",
 ]
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://192\.168\.\d+\.\d+:\d+$",
