@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import Link from 'next/link';
 import { Box, Button, Typography, Container, Chip } from '@mui/material';
 import { motion, useInView, useScroll, useTransform } from 'framer-motion';
+import { useAuthStore } from '@/stores/authStore';
 
 /* ── Floating icon data (career / education themed) ── */
 const FLOATING_ICONS = [
@@ -257,9 +258,12 @@ function StatsBar() {
 
 export default function LandingPage() {
   const heroRef = useRef(null);
+  const user = useAuthStore((s) => s.user);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+
+  const displayName = user?.first_name || user?.email?.split('@')[0] || 'there';
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#fafbfc', overflow: 'hidden' }}>
@@ -290,48 +294,96 @@ export default function LandingPage() {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: { xs: 1, sm: 1.5 }, alignItems: 'center', flexShrink: 0, ml: 'auto' }}>
-            <Link href="/login" style={{ textDecoration: 'none' }}>
-              <Button
-                size="small"
-                sx={{
-                  color: '#374151',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                  py: { xs: 0.75, sm: 1.25 },
-                  px: { xs: 1, sm: 1.5 },
-                  minHeight: 40,
-                  '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' },
-                }}
-              >
-                Sign in
-              </Button>
-            </Link>
-            <Link href="/game-assessment" style={{ textDecoration: 'none' }}>
-              <Button
-                variant="contained"
-                size="small"
-                sx={{
-                  background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  px: { xs: 1.5, sm: 3 },
-                  py: { xs: 0.75, sm: 1.25 },
-                  fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                  minHeight: 40,
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 14px rgba(22,163,74,0.3)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #15803d, #166534)',
-                    boxShadow: '0 6px 20px rgba(22,163,74,0.4)',
-                  },
-                }}
-              >
-                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Start Free Assessment</Box>
-                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Start Assessment</Box>
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <Link href="/game-assessment" style={{ textDecoration: 'none' }}>
+                  <Button
+                    size="small"
+                    sx={{
+                      color: '#374151',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                      py: { xs: 0.75, sm: 1.25 },
+                      px: { xs: 1, sm: 1.5 },
+                      minHeight: 40,
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' },
+                    }}
+                  >
+                    Assessment
+                  </Button>
+                </Link>
+                <Link href="/dashboard" style={{ textDecoration: 'none' }}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    sx={{
+                      background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      borderRadius: 2,
+                      px: { xs: 1.5, sm: 3 },
+                      py: { xs: 0.75, sm: 1.25 },
+                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                      minHeight: 40,
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 4px 14px rgba(22,163,74,0.3)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #15803d, #166534)',
+                        boxShadow: '0 6px 20px rgba(22,163,74,0.4)',
+                      },
+                    }}
+                  >
+                    Dashboard
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login" style={{ textDecoration: 'none' }}>
+                  <Button
+                    size="small"
+                    sx={{
+                      color: '#374151',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                      py: { xs: 0.75, sm: 1.25 },
+                      px: { xs: 1, sm: 1.5 },
+                      minHeight: 40,
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' },
+                    }}
+                  >
+                    Sign in
+                  </Button>
+                </Link>
+                <Link href="/game-assessment" style={{ textDecoration: 'none' }}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    sx={{
+                      background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      borderRadius: 2,
+                      px: { xs: 1.5, sm: 3 },
+                      py: { xs: 0.75, sm: 1.25 },
+                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                      minHeight: 40,
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 4px 14px rgba(22,163,74,0.3)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #15803d, #166534)',
+                        boxShadow: '0 6px 20px rgba(22,163,74,0.4)',
+                      },
+                    }}
+                  >
+                    <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Start Free Assessment</Box>
+                    <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Start Assessment</Box>
+                  </Button>
+                </Link>
+              </>
+            )}
           </Box>
         </Container>
       </Box>
@@ -364,7 +416,7 @@ export default function LandingPage() {
               transition={{ duration: 0.7 }}
             >
               <Chip
-                label="AI-Powered Career Discovery"
+                label={user ? 'Your Career Dashboard' : 'AI-Powered Career Discovery'}
                 sx={{
                   mb: 3,
                   bgcolor: 'rgba(22,163,74,0.08)',
@@ -393,18 +445,37 @@ export default function LandingPage() {
                   mb: 2.5,
                 }}
               >
-                Find Your Path.
-                <br />
-                <Box
-                  component="span"
-                  sx={{
-                    background: 'linear-gradient(135deg, #16a34a 0%, #3b82f6 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >
-                  Not By Chance.
-                </Box>
+                {user ? (
+                  <>
+                    Welcome back,
+                    <br />
+                    <Box
+                      component="span"
+                      sx={{
+                        background: 'linear-gradient(135deg, #16a34a 0%, #3b82f6 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}
+                    >
+                      {displayName}!
+                    </Box>
+                  </>
+                ) : (
+                  <>
+                    Find Your Path.
+                    <br />
+                    <Box
+                      component="span"
+                      sx={{
+                        background: 'linear-gradient(135deg, #16a34a 0%, #3b82f6 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}
+                    >
+                      Not By Chance.
+                    </Box>
+                  </>
+                )}
               </Typography>
             </motion.div>
 
@@ -423,8 +494,9 @@ export default function LandingPage() {
                   lineHeight: 1.7,
                 }}
               >
-                Direction helps Class 9–12 students discover careers that match their
-                natural abilities through interactive games, not boring questionnaires.
+                {user
+                  ? 'Access your dashboard to view your career report, retake the assessment, or explore career paths.'
+                  : 'Direction helps Class 9–12 students discover careers that match their natural abilities through interactive games, not boring questionnaires.'}
               </Typography>
             </motion.div>
 
@@ -434,56 +506,113 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.5 }}
             >
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, justifyContent: 'center', alignItems: 'stretch', width: '100%', maxWidth: { xs: 320, sm: 'none' }, mx: 'auto' }}>
-                <Link href="/game-assessment" style={{ textDecoration: 'none', width: '100%' }}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    fullWidth
-                    sx={{
-                      background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                      textTransform: 'none',
-                      fontWeight: 700,
-                      borderRadius: 2.5,
-                      px: 4,
-                      py: { xs: 1.75, sm: 1.5 },
-                      fontSize: { xs: '0.95rem', sm: '1rem' },
-                      minHeight: 48,
-                      boxShadow: '0 8px 24px rgba(22,163,74,0.3)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #15803d, #166534)',
-                        boxShadow: '0 12px 32px rgba(22,163,74,0.4)',
-                        transform: 'translateY(-1px)',
-                      },
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    Start Free Assessment →
-                  </Button>
-                </Link>
-                <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
-                  <Button
-                    variant="outlined"
-                    size="large"
-                    fullWidth
-                    sx={{
-                      borderColor: 'rgba(0,0,0,0.15)',
-                      color: '#374151',
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      borderRadius: 2.5,
-                      px: 4,
-                      py: { xs: 1.75, sm: 1.5 },
-                      fontSize: { xs: '0.95rem', sm: '1rem' },
-                      minHeight: 48,
-                      '&:hover': {
-                        borderColor: 'rgba(0,0,0,0.3)',
-                        bgcolor: 'rgba(0,0,0,0.02)',
-                      },
-                    }}
-                  >
-                    I have an account
-                  </Button>
-                </Link>
+                {user ? (
+                  <>
+                    <Link href="/dashboard" style={{ textDecoration: 'none', width: '100%' }}>
+                      <Button
+                        variant="contained"
+                        size="large"
+                        fullWidth
+                        sx={{
+                          background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          borderRadius: 2.5,
+                          px: 4,
+                          py: { xs: 1.75, sm: 1.5 },
+                          fontSize: { xs: '0.95rem', sm: '1rem' },
+                          minHeight: 48,
+                          boxShadow: '0 8px 24px rgba(22,163,74,0.3)',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #15803d, #166534)',
+                            boxShadow: '0 12px 32px rgba(22,163,74,0.4)',
+                            transform: 'translateY(-1px)',
+                          },
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        Go to Dashboard →
+                      </Button>
+                    </Link>
+                    <Link href="/game-assessment" style={{ textDecoration: 'none', width: '100%' }}>
+                      <Button
+                        variant="outlined"
+                        size="large"
+                        fullWidth
+                        sx={{
+                          borderColor: 'rgba(0,0,0,0.15)',
+                          color: '#374151',
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          borderRadius: 2.5,
+                          px: 4,
+                          py: { xs: 1.75, sm: 1.5 },
+                          fontSize: { xs: '0.95rem', sm: '1rem' },
+                          minHeight: 48,
+                          '&:hover': {
+                            borderColor: 'rgba(0,0,0,0.3)',
+                            bgcolor: 'rgba(0,0,0,0.02)',
+                          },
+                        }}
+                      >
+                        Take Another Assessment
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/game-assessment" style={{ textDecoration: 'none', width: '100%' }}>
+                      <Button
+                        variant="contained"
+                        size="large"
+                        fullWidth
+                        sx={{
+                          background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          borderRadius: 2.5,
+                          px: 4,
+                          py: { xs: 1.75, sm: 1.5 },
+                          fontSize: { xs: '0.95rem', sm: '1rem' },
+                          minHeight: 48,
+                          boxShadow: '0 8px 24px rgba(22,163,74,0.3)',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #15803d, #166534)',
+                            boxShadow: '0 12px 32px rgba(22,163,74,0.4)',
+                            transform: 'translateY(-1px)',
+                          },
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        Start Free Assessment →
+                      </Button>
+                    </Link>
+                    <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
+                      <Button
+                        variant="outlined"
+                        size="large"
+                        fullWidth
+                        sx={{
+                          borderColor: 'rgba(0,0,0,0.15)',
+                          color: '#374151',
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          borderRadius: 2.5,
+                          px: 4,
+                          py: { xs: 1.75, sm: 1.5 },
+                          fontSize: { xs: '0.95rem', sm: '1rem' },
+                          minHeight: 48,
+                          '&:hover': {
+                            borderColor: 'rgba(0,0,0,0.3)',
+                            bgcolor: 'rgba(0,0,0,0.02)',
+                          },
+                        }}
+                      >
+                        I have an account
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </Box>
             </motion.div>
 
@@ -493,7 +622,7 @@ export default function LandingPage() {
               transition={{ delay: 0.8, duration: 0.5 }}
             >
               <Typography variant="caption" sx={{ display: 'block', mt: 3, color: '#9ca3af' }}>
-                Free for students · No credit card needed · Takes 10 minutes
+                {user ? 'View your reports, retake the assessment, or explore careers.' : 'Free for students · No credit card needed · Takes 10 minutes'}
               </Typography>
             </motion.div>
           </Container>
@@ -598,10 +727,11 @@ export default function LandingPage() {
               Ready to discover your direction?
             </Typography>
             <Typography sx={{ color: '#6b7280', mb: 4, lineHeight: 1.7 }}>
-              Join students across India who found clarity about their career path
-              through our game-based trait assessment.
+              {user
+                ? 'Your career insights are ready. Access your dashboard to view your report and explore matched careers.'
+                : 'Join students across India who found clarity about their career path through our game-based trait assessment.'}
             </Typography>
-            <Link href="/game-assessment" style={{ textDecoration: 'none' }}>
+            <Link href={user ? '/dashboard' : '/game-assessment'} style={{ textDecoration: 'none' }}>
               <Button
                 variant="contained"
                 size="large"
@@ -620,7 +750,7 @@ export default function LandingPage() {
                   },
                 }}
               >
-                Start Free Assessment →
+                {user ? 'Go to Dashboard →' : 'Start Free Assessment →'}
               </Button>
             </Link>
           </motion.div>
