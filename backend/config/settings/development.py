@@ -5,12 +5,17 @@ import os
 from .base import *
 
 DEBUG = True
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "10.7.11.19"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "*"]
 
+# Allow localhost and local network IPs for mobile testing (phone accesses via Mac's IP)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "http://10.7.11.19:3000",
+]
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://192\.168\.\d+\.\d+:\d+$",
+    r"^http://10\.\d+\.\d+\.\d+:\d+$",
+    r"^http://172\.(1[6-9]|2\d|3[01])\.\d+\.\d+:\d+$",
 ]
 
 # Use PostgreSQL if DB_HOST is set, else SQLite for quick local dev

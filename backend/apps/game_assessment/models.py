@@ -39,6 +39,7 @@ class GameSession(TimeStampedModel):
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     is_complete = models.BooleanField(default=False)
+    pending_email = models.EmailField(blank=True)
 
     class Meta:
         ordering = ["-started_at"]

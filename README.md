@@ -84,6 +84,28 @@ npm run dev
 
 App: http://localhost:3000
 
+### Mobile Testing
+
+To test on your phone (same Wi‑Fi as your Mac):
+
+1. **Backend** – run on all interfaces:
+
+   ```bash
+   cd backend
+   python manage.py runserver 0.0.0.0:8000
+   ```
+
+2. **Frontend** – run with mobile binding:
+
+   ```bash
+   cd frontend
+   npm run dev:mobile
+   ```
+
+3. On your phone, open `http://<YOUR_MAC_IP>:3000` (e.g. `http://192.168.1.100:3000`).
+
+The app will auto-detect the host and call the API on the same IP at port 8000.
+
 ## API Endpoints
 
 | Method | Endpoint | Auth | Description |

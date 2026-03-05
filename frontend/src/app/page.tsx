@@ -282,14 +282,14 @@ export default function LandingPage() {
           borderBottom: '1px solid rgba(0,0,0,0.05)',
         }}
       >
-        <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 0, sm: 2 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box component="img" src="/logo.png" alt="Direction" sx={{ width: { xs: 34, sm: 40 }, height: { xs: 34, sm: 40 } }} />
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827', letterSpacing: -0.5, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+        <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 0, sm: 2 }, gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0, minWidth: 0 }}>
+            <Box component="img" src="/logo.png" alt="Direction" sx={{ width: { xs: 34, sm: 40 }, height: { xs: 34, sm: 40 }, flexShrink: 0 }} />
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827', letterSpacing: -0.5, fontSize: { xs: '1rem', sm: '1.25rem' }, whiteSpace: 'nowrap' }}>
               Direction
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: { xs: 1, sm: 1.5 }, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: { xs: 1, sm: 1.5 }, alignItems: 'center', flexShrink: 0, ml: 'auto' }}>
             <Link href="/login" style={{ textDecoration: 'none' }}>
               <Button
                 size="small"
@@ -297,16 +297,17 @@ export default function LandingPage() {
                   color: '#374151',
                   fontWeight: 600,
                   textTransform: 'none',
-                  fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                  py: { xs: 1, sm: 1.25 },
-                  minHeight: 44,
+                  fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                  py: { xs: 0.75, sm: 1.25 },
+                  px: { xs: 1, sm: 1.5 },
+                  minHeight: 40,
                   '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' },
                 }}
               >
                 Sign in
               </Button>
             </Link>
-            <Link href="/register" style={{ textDecoration: 'none' }}>
+            <Link href="/game-assessment" style={{ textDecoration: 'none' }}>
               <Button
                 variant="contained"
                 size="small"
@@ -315,10 +316,11 @@ export default function LandingPage() {
                   textTransform: 'none',
                   fontWeight: 600,
                   borderRadius: 2,
-                  px: { xs: 2, sm: 3 },
-                  py: { xs: 1, sm: 1.25 },
-                  fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                  minHeight: 44,
+                  px: { xs: 1.5, sm: 3 },
+                  py: { xs: 0.75, sm: 1.25 },
+                  fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                  minHeight: 40,
+                  whiteSpace: 'nowrap',
                   boxShadow: '0 4px 14px rgba(22,163,74,0.3)',
                   '&:hover': {
                     background: 'linear-gradient(135deg, #15803d, #166534)',
@@ -326,7 +328,8 @@ export default function LandingPage() {
                   },
                 }}
               >
-                Get Started
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Start Free Assessment</Box>
+                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Start Assessment</Box>
               </Button>
             </Link>
           </Box>
@@ -431,7 +434,7 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.5 }}
             >
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, justifyContent: 'center', alignItems: 'stretch', width: '100%', maxWidth: { xs: 320, sm: 'none' }, mx: 'auto' }}>
-                <Link href="/register" style={{ textDecoration: 'none', width: '100%' }}>
+                <Link href="/game-assessment" style={{ textDecoration: 'none', width: '100%' }}>
                   <Button
                     variant="contained"
                     size="large"
@@ -598,7 +601,7 @@ export default function LandingPage() {
               Join students across India who found clarity about their career path
               through our game-based trait assessment.
             </Typography>
-            <Link href="/register" style={{ textDecoration: 'none' }}>
+            <Link href="/game-assessment" style={{ textDecoration: 'none' }}>
               <Button
                 variant="contained"
                 size="large"

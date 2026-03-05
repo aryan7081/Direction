@@ -11,6 +11,42 @@ export async function startGameSession(): Promise<{ session_id: string; started_
   return data;
 }
 
+export async function saveProgress(
+  sessionId: string,
+  email: string
+): Promise<void> {
+  await api.post('/game/save-progress/', {
+    session_id: sessionId,
+    email,
+  });
+}
+
+export interface CreateAccountResponse {
+  access: string;
+  refresh: string;
+  user: {
+    id: number;
+    email: string;
+    username: string;
+    first_name: string;
+    last_name: string;
+    role: string;
+  };
+}
+
+export async function createAccountFromSession(
+  sessionId: string,
+  email: string,
+  password: string
+): Promise<CreateAccountResponse> {
+  const { data } = await api.post('/game/create-account/', {
+    session_id: sessionId,
+    email,
+    password,
+  });
+  return data;
+}
+
 export async function logEvents(
   sessionId: string,
   events: GameEvent[]

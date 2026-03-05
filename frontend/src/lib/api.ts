@@ -1,10 +1,19 @@
 import axios, { AxiosError } from 'axios';
 
-// Call backend directly to avoid Next.js proxy redirect loops (trailing slash conflict)
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const DEFAULT_API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+// In browser: use same host as page for mobile dev (phone can't reach localhost)
+function getApiBase(): string {
+  if (typeof window === 'undefined') return DEFAULT_API_BASE;
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    return envUrl;
+  }
+  return `${window.location.protocol}//${window.location.hostname}:8000/api`;
+}
 
 export const api = axios.create({
-  baseURL: API_BASE,
+  baseURL: DEFAULT_API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,6 +22,7 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
+    config.baseURL = getApiBase();
     const token = localStorage.getItem('access');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -30,7 +40,7 @@ api.interceptors.response.use(
       const refresh = localStorage.getItem('refresh');
       if (refresh) {
         try {
-          const refreshUrl = `${API_BASE}/auth/refresh/`;
+          const refreshUrl = `${getApiBase()}/auth/refresh/`;
           const { data } = await axios.post(refreshUrl, {
             refresh,
           });

@@ -3,7 +3,6 @@
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
 import { Layout } from '@/components/Layout';
 import { CareerReportPage } from '@/features/career-report/CareerReportPage';
 import { ReportTeaserPage } from '@/features/career-report/ReportTeaserPage';
@@ -47,12 +46,10 @@ function ReportGate({ sessionId }: { sessionId: string }) {
 
 export default function ReportPage() {
   return (
-    <ProtectedRoute>
-      <Layout>
-        <Suspense fallback={<PageLoader message="Loading report..." />}>
-          <ReportInner />
-        </Suspense>
-      </Layout>
-    </ProtectedRoute>
+    <Layout>
+      <Suspense fallback={<PageLoader message="Loading report..." />}>
+        <ReportInner />
+      </Suspense>
+    </Layout>
   );
 }

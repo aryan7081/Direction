@@ -20,16 +20,23 @@ from .models import (
 from .serializers import (
     LogEventSerializer,
     SubmitSessionSerializer,
+    SaveProgressSerializer,
+    CreateAccountFromSessionSerializer,
     SessionResultSerializer,
     TraitScoreSerializer,
     CareerMatchSerializer,
 )
 from .services import run_scoring_pipeline
 from .services.report_builder import build_report
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from .content.logic_game import get_logic_tasks
 from .content.risk_game import get_risk_scenarios
 from .content.planner_game import get_planner_config
 from .content.scenarios import get_scenario_questions
+from apps.users.models import Profile
+from apps.users.serializers import UserSerializer
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
@@ -74,7 +81,7 @@ def _build_teaser(session) -> dict:
         p2 = careers[1].get("score_percent") or 0
         top_two_gap = round(abs(float(p1) - float(p2)), 1)
 
-    return {
+    result = {
         "session_id": report["session_id"],
         "student_name": report["student"].get("name", "Student"),
         "hero_career": top_career,
@@ -87,6 +94,9 @@ def _build_teaser(session) -> dict:
         "total_sections": 8,
         "is_paid": False,
     }
+    if hasattr(session, "pending_email") and session.pending_email:
+        result["pending_email"] = session.pending_email
+    return result
 
 
 # ── Game content & session views ────────────────────────────────────
@@ -106,7 +116,7 @@ class GameContentView(GenericAPIView):
 
 
 class StartSessionView(GenericAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         session = GameSession.objects.create(
@@ -118,9 +128,11 @@ class StartSessionView(GenericAPIView):
         )
 
 
-class LogEventView(GenericAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = LogEventSerializer
+class SaveProgressView(GenericAPIView):
+    """POST { session_id, email } — save email to pending_email for anonymous sessions."""
+
+    permission_classes = [AllowAny]
+    serializer_class = SaveProgressSerializer
 
     def post(self, request):
         ser = self.get_serializer(data=request.data)
@@ -128,13 +140,108 @@ class LogEventView(GenericAPIView):
         d = ser.validated_data
 
         try:
-            session = GameSession.objects.get(
-                id=d["session_id"], user=request.user
-            )
+            session = GameSession.objects.get(id=d["session_id"])
         except GameSession.DoesNotExist:
             return Response(
                 {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
             )
+
+        if session.is_complete:
+            return Response(
+                {"detail": "Session already completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        session.pending_email = d["email"]
+        session.save(update_fields=["pending_email"])
+
+        return Response({"detail": "Progress saved."}, status=status.HTTP_200_OK)
+
+
+class CreateAccountFromSessionView(GenericAPIView):
+    """POST { session_id, email, password } — create user from anonymous session with pending_email."""
+
+    permission_classes = [AllowAny]
+    serializer_class = CreateAccountFromSessionSerializer
+
+    def post(self, request):
+        ser = self.get_serializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        d = ser.validated_data
+
+        User = get_user_model()
+
+        try:
+            session = GameSession.objects.get(id=d["session_id"])
+        except GameSession.DoesNotExist:
+            return Response(
+                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not session.pending_email or session.pending_email.lower() != d["email"].lower():
+            return Response(
+                {"detail": "Email does not match the email saved for this session."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if User.objects.filter(email__iexact=d["email"]).exists():
+            return Response(
+                {"detail": "A user with this email already exists."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from apps.users.serializers import _make_username_from_email
+
+        username = _make_username_from_email(d["email"])
+        user = User.objects.create_user(
+            email=d["email"],
+            username=username,
+            password=d["password"],
+        )
+        Profile.objects.get_or_create(user=user)
+
+        session.user = user
+        session.pending_email = ""
+        session.save(update_fields=["user", "pending_email"])
+
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                "user": UserSerializer(user).data,
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+def _get_session_for_request(request, session_id):
+    """Resolve session: authenticated user must match session.user; anonymous allowed if session.user is None."""
+    try:
+        session = GameSession.objects.get(id=session_id)
+    except GameSession.DoesNotExist:
+        return None, "Session not found."
+    if request.user.is_authenticated:
+        if session.user_id != request.user.id:
+            return None, "Session not found."
+    else:
+        if session.user_id is not None:
+            return None, "Session not found."
+    return session, None
+
+
+class LogEventView(GenericAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = LogEventSerializer
+
+    def post(self, request):
+        ser = self.get_serializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        d = ser.validated_data
+
+        session, err = _get_session_for_request(request, d["session_id"])
+        if err:
+            return Response({"detail": err}, status=status.HTTP_404_NOT_FOUND)
 
         if session.is_complete:
             return Response(
@@ -162,21 +269,18 @@ class LogEventView(GenericAPIView):
 
 
 class SubmitSessionView(GenericAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     serializer_class = SubmitSessionSerializer
 
     def post(self, request):
         ser = self.get_serializer(data=request.data)
         ser.is_valid(raise_exception=True)
 
-        try:
-            session = GameSession.objects.get(
-                id=ser.validated_data["session_id"], user=request.user
-            )
-        except GameSession.DoesNotExist:
-            return Response(
-                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+        session, err = _get_session_for_request(
+            request, ser.validated_data["session_id"]
+        )
+        if err:
+            return Response({"detail": err}, status=status.HTTP_404_NOT_FOUND)
 
         if session.is_complete:
             return Response(
@@ -353,11 +457,11 @@ class ResumeSessionView(GenericAPIView):
 class ReportTeaserView(GenericAPIView):
     """GET — returns a partial report teaser (free, no payment needed)."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request, session_id):
         try:
-            session = GameSession.objects.get(id=session_id, user=request.user)
+            session = GameSession.objects.get(id=session_id)
         except GameSession.DoesNotExist:
             return Response(
                 {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
@@ -369,7 +473,7 @@ class ReportTeaserView(GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        paid = _has_paid(request.user, session)
+        paid = _has_paid(session.user, session) if session.user else False
         if paid:
             teaser = _build_teaser(session)
             teaser["is_paid"] = True

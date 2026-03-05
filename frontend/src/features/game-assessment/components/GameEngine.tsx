@@ -7,23 +7,26 @@ import { PageLoader } from '@/components/ui/Loaders';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGameStore } from '../store';
+import { useAuthStore } from '@/stores/authStore';
 import {
   fetchGameContent,
   startGameSession,
   logEvents,
   submitSession,
   fetchResumeSession,
+  saveProgress,
 } from '../api';
 import { GameProgressBar } from './GameProgressBar';
 import { IntroScreen } from './IntroScreen';
 import { LogicGame } from './LogicGame';
+import { SaveProgressScreen } from './SaveProgressScreen';
 import { RiskSimulator } from './RiskSimulator';
 import { PlannerGame } from './PlannerGame';
 import { ScenarioSection } from './ScenarioSection';
 import { ProcessingScreen } from './ProcessingScreen';
 import type { GamePhase } from '../types';
 
-const GAME_PHASES: GamePhase[] = ['logic', 'risk', 'planner', 'scenario'];
+const GAME_PHASES: GamePhase[] = ['logic', 'save_progress', 'risk', 'planner', 'scenario'];
 
 interface GameEngineProps {
   resumeSessionId?: string | null;
@@ -32,6 +35,8 @@ interface GameEngineProps {
 
 export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = !!user;
   const {
     sessionId,
     phase,
@@ -70,16 +75,20 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
 
         if (resumeSessionId) {
           setSessionId(resumeSessionId);
-          try {
-            const resumeInfo = await fetchResumeSession();
-            if (resumeInfo.session && resumeInfo.session.session_id === resumeSessionId) {
-              const rp = resumeInfo.session.resume_phase;
-              const validPhases: GamePhase[] = ['logic', 'risk', 'planner', 'scenario', 'processing'];
-              setPhase(validPhases.includes(rp) ? rp : 'logic');
-            } else {
+          if (isAuthenticated) {
+            try {
+              const resumeInfo = await fetchResumeSession();
+              if (resumeInfo.session && resumeInfo.session.session_id === resumeSessionId) {
+                const rp = resumeInfo.session.resume_phase;
+                const validPhases: GamePhase[] = ['logic', 'save_progress', 'risk', 'planner', 'scenario', 'processing'];
+                setPhase(validPhases.includes(rp) ? rp : 'logic');
+              } else {
+                setPhase('logic');
+              }
+            } catch {
               setPhase('logic');
             }
-          } catch {
+          } else {
             setPhase('logic');
           }
         }
@@ -109,8 +118,17 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
       const { session_id } = await startGameSession();
       setSessionId(session_id);
       setPhase('logic');
-    } catch {
-      setError('Failed to start session. Please try again.');
+    } catch (err: unknown) {
+      const msg = String(err instanceof Error ? err.message : err);
+      const code = (err as { code?: string })?.code;
+      const isNetwork =
+        code === 'ERR_NETWORK' ||
+        /network|failed|fetch|connection|refused/i.test(msg);
+      setError(
+        isNetwork
+          ? 'Cannot reach server. Ensure backend runs with: python manage.py runserver 0.0.0.0:8000'
+          : 'Failed to start session. Please try again.'
+      );
     }
   }, [setSessionId, setPhase, setError]);
 
@@ -118,12 +136,44 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
     await flushEvents();
     const currentIdx = GAME_PHASES.indexOf(phase as GamePhase);
     if (currentIdx >= 0 && currentIdx < GAME_PHASES.length - 1) {
-      setPhase(GAME_PHASES[currentIdx + 1]);
+      let nextPhase = GAME_PHASES[currentIdx + 1];
+      if (nextPhase === 'save_progress' && isAuthenticated) {
+        nextPhase = 'risk';
+      }
+      setPhase(nextPhase);
       setSubProgress(0);
     } else {
       setPhase('processing');
     }
-  }, [flushEvents, phase, setPhase]);
+  }, [flushEvents, phase, setPhase, isAuthenticated]);
+
+  const handleLogicComplete = useCallback(async () => {
+    await flushEvents();
+    setSubProgress(0);
+    if (isAuthenticated) {
+      setPhase('risk');
+    } else {
+      setPhase('save_progress');
+    }
+  }, [flushEvents, setPhase, isAuthenticated]);
+
+  const [savingProgress, setSavingProgress] = useState(false);
+  const handleSaveProgressContinue = useCallback(
+    async (email: string) => {
+      if (!sessionId) return;
+      setSavingProgress(true);
+      try {
+        await saveProgress(sessionId, email);
+        setPhase('risk');
+        setSubProgress(0);
+      } catch {
+        setError('Failed to save progress. Please try again.');
+      } finally {
+        setSavingProgress(false);
+      }
+    },
+    [sessionId, setPhase, setError]
+  );
 
   const handleProcessingDone = useCallback(async () => {
     if (!sessionId) return;
@@ -142,7 +192,7 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
   }
 
   const bgTheme =
-    phase === 'logic' ? 'logic'
+    phase === 'logic' || phase === 'save_progress' ? 'logic'
     : phase === 'risk' ? 'risk'
     : phase === 'planner' ? 'planner'
     : phase === 'scenario' ? 'scenario'
@@ -173,7 +223,11 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
             {phase === 'intro' && <IntroScreen onStart={handleStart} />}
 
             {phase === 'logic' && content && (
-              <LogicGame tasks={content.logic_tasks} onComplete={advancePhase} onProgress={setSubProgress} />
+              <LogicGame tasks={content.logic_tasks} onComplete={handleLogicComplete} onProgress={setSubProgress} />
+            )}
+
+            {phase === 'save_progress' && (
+              <SaveProgressScreen onContinue={handleSaveProgressContinue} saving={savingProgress} />
             )}
 
             {phase === 'risk' && content && (
