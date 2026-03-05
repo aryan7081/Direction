@@ -8,13 +8,13 @@ import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGameStore } from '../store';
 import { useAuthStore } from '@/stores/authStore';
+import { googleAuth } from '@/features/auth/api';
 import {
   fetchGameContent,
   startGameSession,
   logEvents,
   submitSession,
   fetchResumeSession,
-  saveProgress,
 } from '../api';
 import { GameProgressBar } from './GameProgressBar';
 import { IntroScreen } from './IntroScreen';
@@ -157,22 +157,24 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
     }
   }, [flushEvents, setPhase, isAuthenticated]);
 
-  const [savingProgress, setSavingProgress] = useState(false);
-  const handleSaveProgressContinue = useCallback(
-    async (email: string) => {
+  const [linkingAccount, setLinkingAccount] = useState(false);
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const handleGoogleSignIn = useCallback(
+    async (credential: string) => {
       if (!sessionId) return;
-      setSavingProgress(true);
+      setLinkingAccount(true);
       try {
-        await saveProgress(sessionId, email);
+        const res = await googleAuth(credential, sessionId);
+        setAuth(res.user, res.access, res.refresh);
         setPhase('risk');
         setSubProgress(0);
       } catch {
-        setError('Failed to save progress. Please try again.');
+        setError('Sign in failed. Please try again.');
       } finally {
-        setSavingProgress(false);
+        setLinkingAccount(false);
       }
     },
-    [sessionId, setPhase, setError]
+    [sessionId, setPhase, setError, setAuth]
   );
 
   const handleProcessingDone = useCallback(async () => {
@@ -227,7 +229,11 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
             )}
 
             {phase === 'save_progress' && (
-              <SaveProgressScreen onContinue={handleSaveProgressContinue} saving={savingProgress} />
+              <SaveProgressScreen
+                onGoogleSignIn={handleGoogleSignIn}
+                loading={linkingAccount}
+                questionsCompleted={content?.logic_tasks?.length ?? 5}
+              />
             )}
 
             {phase === 'risk' && content && (

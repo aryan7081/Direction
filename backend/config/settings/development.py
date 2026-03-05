@@ -11,6 +11,7 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1", "*"]
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://direction-iagpards9-gangadhar-yadavs-projects.vercel.app",
 ]
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://192\.168\.\d+\.\d+:\d+$",

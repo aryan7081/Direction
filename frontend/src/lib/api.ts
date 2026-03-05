@@ -2,13 +2,13 @@ import axios, { AxiosError } from 'axios';
 
 const DEFAULT_API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-// In browser: use same host as page for mobile dev (phone can't reach localhost)
+// In browser: use env URL if set; otherwise same host as page (for mobile dev)
 function getApiBase(): string {
   if (typeof window === 'undefined') return DEFAULT_API_BASE;
   const envUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
-    return envUrl;
-  }
+  // Always use env URL when set (including localhost for deployed frontend + local backend)
+  if (envUrl) return envUrl;
+  // Fallback: same host as page (for mobile dev when env not set)
   return `${window.location.protocol}//${window.location.hostname}:8000/api`;
 }
 

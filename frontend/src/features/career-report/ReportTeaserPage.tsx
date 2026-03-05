@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Box, Button, Chip, Collapse, Container, TextField, Typography } from '@mui/material';
+import { Box, Button, Chip, Collapse, Container, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import { PageLoader, ButtonSpinner } from '@/components/ui/Loaders';
 import { useAuthStore } from '@/stores/authStore';
 import { fetchReportTeaser, createPaymentOrder, verifyPayment } from './api';
-import { createAccountFromSession } from '@/features/game-assessment/api';
+import { googleAuth } from '@/features/auth/api';
+import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
 import type { ReportTeaser } from './api';
 
 declare global {
@@ -50,10 +51,8 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const user = useAuthStore((s) => s.user);
   const [paying, setPaying] = useState(false);
   const [showWhatInside, setShowWhatInside] = useState(false);
-  const [showPasswordStep, setShowPasswordStep] = useState(false);
-  const [password, setPassword] = useState('');
-  const [creatingAccount, setCreatingAccount] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
+  const [showSignInStep, setShowSignInStep] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
 
   const { data: teaser, isLoading, error } = useQuery({
     queryKey: ['report-teaser', sessionId],
@@ -76,32 +75,27 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
     }
   }, [teaser, sessionId, router]);
 
-  const needsPasswordStep = teaser?.pending_email && !user;
+  const needsSignIn = !user;
 
   const handleUnlockClick = () => {
-    if (needsPasswordStep) {
-      setShowPasswordStep(true);
+    if (needsSignIn) {
+      setShowSignInStep(true);
     } else {
       handlePurchase();
     }
   };
 
-  const handleCreateAccountAndPurchase = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!teaser?.pending_email || !password.trim()) return;
-    setPasswordError('');
-    setCreatingAccount(true);
+  const handleGoogleSignInAndPurchase = async (credential: string) => {
+    setSigningIn(true);
     try {
-      const res = await createAccountFromSession(sessionId, teaser.pending_email, password.trim());
+      const res = await googleAuth(credential, sessionId);
       setAuth(res.user, res.access, res.refresh);
-      setShowPasswordStep(false);
-      setPassword('');
+      setShowSignInStep(false);
       await handlePurchase();
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setPasswordError(msg || 'Could not create account. Please try again.');
+    } catch {
+      alert('Sign in failed. Please try again.');
     } finally {
-      setCreatingAccount(false);
+      setSigningIn(false);
     }
   };
 
@@ -173,7 +167,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
 
   const price = teaser.price ?? 299;
 
-  if (showPasswordStep && teaser?.pending_email) {
+  if (showSignInStep) {
     return (
       <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 }, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <motion.div
@@ -183,71 +177,42 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
         >
           <Box sx={{ textAlign: 'center', mb: 3 }}>
             <Typography variant="h5" sx={{ fontWeight: 800, color: '#111827', mb: 1 }}>
-              One last step
+              Sign in to unlock
             </Typography>
             <Typography sx={{ color: '#6b7280', fontSize: '0.95rem' }}>
-              Create a password to unlock your career report and save it for later.
+              Sign in with Google to unlock your career report and proceed to payment.
             </Typography>
           </Box>
           <Box
-            component="form"
-            onSubmit={handleCreateAccountAndPurchase}
             sx={{
               p: 3,
               borderRadius: 3,
               bgcolor: 'rgba(255,255,255,0.9)',
               border: '1px solid rgba(0,0,0,0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 2,
             }}
           >
-            <TextField
-              fullWidth
-              label="Email"
-              value={teaser.pending_email}
-              disabled
-              sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-            />
-            <TextField
-              fullWidth
-              type="password"
-              label="Password"
-              placeholder="Create a password (min 8 characters)"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setPasswordError(''); }}
-              error={!!passwordError}
-              helperText={passwordError}
-              disabled={creatingAccount}
-              sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-              autoFocus
-              autoComplete="new-password"
-            />
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              fullWidth
-              disabled={creatingAccount || password.length < 8}
-              sx={{
-                py: 1.5,
-                minHeight: 52,
-                borderRadius: 3,
-                background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                textTransform: 'none',
-                fontWeight: 800,
-                fontSize: '1rem',
-                boxShadow: '0 10px 32px rgba(22,163,74,0.4)',
-                '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)' },
-              }}
-            >
-              {creatingAccount ? (
-                <><ButtonSpinner size={24} /> Creating account...</>
-              ) : (
-                <>Create account & unlock report — ₹{price}</>
-              )}
-            </Button>
+            {signingIn ? (
+              <Box sx={{ py: 3 }}>
+                <ButtonSpinner size={32} />
+                <Typography sx={{ mt: 1, fontSize: '0.9rem', color: '#6b7280' }}>
+                  Signing you in...
+                </Typography>
+              </Box>
+            ) : (
+              <GoogleSignInButton
+                onSuccess={handleGoogleSignInAndPurchase}
+                text="signin_with"
+                width={280}
+              />
+            )}
             <Button
               size="small"
-              onClick={() => setShowPasswordStep(false)}
-              sx={{ mt: 2, color: '#9ca3af', textTransform: 'none' }}
+              onClick={() => setShowSignInStep(false)}
+              sx={{ color: '#9ca3af', textTransform: 'none' }}
             >
               ← Back
             </Button>
