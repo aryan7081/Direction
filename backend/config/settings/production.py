@@ -31,9 +31,11 @@ DATABASES = {
     }
 }
 
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# Set USE_HTTPS=false when backend is HTTP-only (e.g. EC2 without SSL, frontend proxies via Vercel)
+_use_https = os.environ.get("USE_HTTPS", "true").lower() in ("1", "true", "yes")
+SECURE_SSL_REDIRECT = _use_https
+SESSION_COOKIE_SECURE = _use_https
+CSRF_COOKIE_SECURE = _use_https
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
