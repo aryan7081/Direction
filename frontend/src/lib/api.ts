@@ -11,8 +11,9 @@ function getApiBase(): string {
     const tunnelUrl = process.env.NEXT_PUBLIC_API_URL_TUNNEL;
     if (tunnelUrl) return tunnelUrl;
   }
-  // Vercel + HTTP backend: use same-origin proxy to avoid mixed content (HTTPS→HTTP blocked)
-  if (window.location.hostname?.includes('vercel.app')) {
+  // Use same-origin proxy to avoid CORS and ensure secure requests
+  const host = window.location.hostname;
+  if (host.includes('vercel.app') || host === 'outcave.in' || host === 'www.outcave.in') {
     return '/api'; // Next.js rewrites proxy /api/* to backend
   }
   // Always use env URL when set
