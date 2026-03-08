@@ -227,7 +227,7 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
   return (
     <Box sx={{ position: 'relative', minHeight: '80vh' }}>
       <AnimatedBackground theme={bgTheme} />
-      <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 }, position: 'relative', zIndex: 1 }}>
+      <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 }, position: 'relative', zIndex: 2, isolation: 'isolate' }}>
         {error && (
           <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2, borderRadius: 2 }}>
             {error}

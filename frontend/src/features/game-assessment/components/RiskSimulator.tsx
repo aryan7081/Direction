@@ -72,7 +72,7 @@ export function RiskSimulator({
         exit={{ opacity: 0, x: -40 }}
         transition={{ duration: 0.3 }}
       >
-        <Box sx={{ bgcolor: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(16px)', borderRadius: 3, border: '1px solid rgba(0,0,0,0.06)', p: { xs: 2.5, sm: 3.5 } }}>
+        <Box sx={{ bgcolor: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(16px)', borderRadius: 3, border: '1px solid rgba(0,0,0,0.08)', p: { xs: 2.5, sm: 3.5 }, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Chip
                 label={`Scenario ${current + 1} / ${scenarios.length}`}
@@ -84,7 +84,7 @@ export function RiskSimulator({
               </Typography>
             </Box>
 
-            <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#111827', mb: 3, lineHeight: 1.6 }}>
+            <Typography sx={{ fontWeight: 700, fontSize: { xs: '1.15rem', sm: '1.2rem' }, color: '#111827', mb: 3, lineHeight: 1.7 }}>
               {scenario.prompt}
             </Typography>
 
