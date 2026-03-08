@@ -86,6 +86,7 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
     if (initDoneRef.current) return;
     initDoneRef.current = true;
     reset();
+    setContent(contentData);
 
     (async () => {
       try {
@@ -248,28 +249,28 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
           >
             {phase === 'intro' && <IntroScreen onStart={handleStart} />}
 
-            {phase === 'logic' && content && (
-              <LogicGame tasks={content.logic_tasks} onComplete={handleLogicComplete} onProgress={setSubProgress} />
+            {phase === 'logic' && (content ?? contentData) && (
+              <LogicGame tasks={(content ?? contentData)!.logic_tasks} onComplete={handleLogicComplete} onProgress={setSubProgress} />
             )}
 
             {phase === 'save_progress' && (
               <SaveProgressScreen
                 onGoogleSignIn={handleGoogleSignIn}
                 loading={linkingAccount}
-                questionsCompleted={content?.logic_tasks?.length ?? 5}
+                questionsCompleted={(content ?? contentData)?.logic_tasks?.length ?? 5}
               />
             )}
 
-            {phase === 'risk' && content && (
-              <RiskSimulator scenarios={content.risk_scenarios} onComplete={advancePhase} onProgress={setSubProgress} />
+            {phase === 'risk' && (content ?? contentData) && (
+              <RiskSimulator scenarios={(content ?? contentData)!.risk_scenarios} onComplete={advancePhase} onProgress={setSubProgress} />
             )}
 
-            {phase === 'planner' && content && (
-              <PlannerGame config={content.planner_config} onComplete={advancePhase} onProgress={setSubProgress} />
+            {phase === 'planner' && (content ?? contentData) && (
+              <PlannerGame config={(content ?? contentData)!.planner_config} onComplete={advancePhase} onProgress={setSubProgress} />
             )}
 
-            {phase === 'scenario' && content && (
-              <ScenarioSection questions={content.scenario_questions} onComplete={advancePhase} onProgress={setSubProgress} />
+            {phase === 'scenario' && (content ?? contentData) && (
+              <ScenarioSection questions={(content ?? contentData)!.scenario_questions} onComplete={advancePhase} onProgress={setSubProgress} />
             )}
 
             {phase === 'processing' && <ProcessingScreen onDone={handleProcessingDone} />}

@@ -67,7 +67,7 @@ export function RiskSimulator({
     <AnimatePresence mode="wait">
       <motion.div
         key={scenario.id}
-        initial={{ opacity: 0, x: 40 }}
+        initial={{ opacity: 1, x: 0 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -40 }}
         transition={{ duration: 0.3 }}
