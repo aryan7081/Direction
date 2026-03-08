@@ -12,7 +12,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Outcave | Find Your Path',
+  title: 'Outcave | Break the cave',
   description: 'AI-powered career discovery for Class 9-10 students',
   icons: { icon: '/logo.png', apple: '/logo.png' },
 };
