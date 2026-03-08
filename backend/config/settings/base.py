@@ -1,5 +1,5 @@
 """
-Base settings for Direction Platform.
+Base settings for Outcave Platform.
 """
 import os
 from pathlib import Path
@@ -111,7 +111,7 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Direction Platform API",
+    "TITLE": "Outcave Platform API",
     "DESCRIPTION": "AI-powered career discovery for Class 9-10 students",
     "VERSION": "1.0.0",
 }

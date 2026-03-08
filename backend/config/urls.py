@@ -1,5 +1,5 @@
 """
-URL configuration for Direction Platform.
+URL configuration for Outcave Platform.
 """
 from django.contrib import admin
 from django.urls import path, include

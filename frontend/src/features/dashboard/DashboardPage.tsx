@@ -1,10 +1,11 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { fetchGameDashboard } from '@/features/game-assessment/api';
+import { fetchGameDashboard, fetchGameContent } from '@/features/game-assessment/api';
 import { fetchReportTeaser } from '@/features/career-report/api';
 import { getCareers } from '@/features/careers/api';
 import { getProfile } from '@/features/profile/api';
@@ -51,6 +52,12 @@ const fadeUp = (delay = 0) => ({
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    queryClient.prefetchQuery({ queryKey: ['game-content'], queryFn: fetchGameContent });
+    router.prefetch('/game-assessment');
+  }, [queryClient, router]);
 
   const { data, isLoading: dashLoading } = useQuery({
     queryKey: ['game-dashboard'],

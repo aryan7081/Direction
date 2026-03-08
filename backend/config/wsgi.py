@@ -1,5 +1,5 @@
 """
-WSGI config for Direction Platform.
+WSGI config for Outcave Platform.
 """
 import os
 

@@ -64,11 +64,10 @@ export function Layout({ children, bgTheme = 'dashboard' }: { children: React.Re
         }}
       >
         <Toolbar sx={{ maxWidth: 960, mx: 'auto', width: '100%', px: { xs: 1, sm: 2 }, minHeight: { xs: 56, sm: 64 } }}>
-          <Link href="/dashboard" style={{ flexGrow: 1, textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Box component="img" src="/logo.png" alt="Direction" sx={{ width: { xs: 32, sm: 38 }, height: { xs: 32, sm: 38 } }} />
-            <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: -0.5, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-              Direction
-            </Typography>
+          <Link href="/dashboard" style={{ flexGrow: 1, textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ width: { xs: 88, sm: 104 }, height: { xs: 34, sm: 40 }, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Box component="img" src="/logo.png" alt="Outcave" sx={{ height: { xs: 68, sm: 80 }, width: 'auto', minWidth: { xs: 68, sm: 80 }, objectFit: 'cover', objectPosition: 'center' }} />
+            </Box>
           </Link>
           {/* Desktop nav */}
           <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 0.5 }}>

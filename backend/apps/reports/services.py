@@ -3,6 +3,7 @@ PDF report generation service.
 """
 import hashlib
 import io
+import os
 from typing import Optional
 
 from django.conf import settings
@@ -42,6 +43,7 @@ class PDFReportService:
                 Table,
                 TableStyle,
                 PageBreak,
+                Image,
             )
         except ImportError:
             return self._generate_placeholder()
@@ -67,7 +69,11 @@ class PDFReportService:
         story = []
 
         user = self.attempt.user
-        story.append(Paragraph("Direction Report", title_style))
+        logo_path = str(settings.BASE_DIR / "frontend" / "public" / "logo.png")
+        if os.path.isfile(logo_path):
+            story.append(Image(logo_path, width=48, height=48))
+            story.append(Spacer(1, 0.2 * inch))
+        story.append(Paragraph("Outcave Report", title_style))
         story.append(Paragraph(f"Student: {user.email}", styles["Normal"]))
         story.append(Spacer(1, 0.5 * inch))
 

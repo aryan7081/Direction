@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { Box, Alert, Container } from '@mui/material';
 import { PageLoader } from '@/components/ui/Loaders';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
@@ -54,25 +55,40 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
 
   const [subProgress, setSubProgress] = useState(0);
   const [initializing, setInitializing] = useState(true);
-  const initRef = useRef(false);
+  const initDoneRef = useRef(false);
+  const precreateSessionRef = useRef<Promise<{ session_id: string }> | null>(null);
+
+  const { data: contentData } = useQuery({
+    queryKey: ['game-content'],
+    queryFn: fetchGameContent,
+    staleTime: 5 * 60 * 1000,
+  });
 
   useEffect(() => {
-    if (initRef.current) return;
-    initRef.current = true;
+    if (contentData) setContent(contentData);
+  }, [contentData, setContent]);
 
+  useEffect(() => {
+    if (phase === 'intro' && !precreateSessionRef.current) {
+      precreateSessionRef.current = startGameSession();
+    }
+  }, [phase]);
+
+  useEffect(() => {
+    if (viewSessionId) {
+      setInitializing(false);
+      router.replace(`/report?session=${viewSessionId}`);
+      return;
+    }
+
+    if (!contentData) return;
+
+    if (initDoneRef.current) return;
+    initDoneRef.current = true;
     reset();
 
     (async () => {
       try {
-        if (viewSessionId) {
-          setInitializing(false);
-          router.replace(`/report?session=${viewSessionId}`);
-          return;
-        }
-
-        const contentData = await fetchGameContent();
-        setContent(contentData);
-
         if (resumeSessionId) {
           setSessionId(resumeSessionId);
           if (isAuthenticated) {
@@ -99,7 +115,7 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [contentData, viewSessionId, resumeSessionId, isAuthenticated]);
 
   const flushEvents = useCallback(async () => {
     if (!sessionId) return;
@@ -115,7 +131,15 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
 
   const handleStart = useCallback(async () => {
     try {
-      const { session_id } = await startGameSession();
+      let session_id: string;
+      if (precreateSessionRef.current) {
+        const result = await precreateSessionRef.current;
+        session_id = result.session_id;
+      } else {
+        const result = await startGameSession();
+        session_id = result.session_id;
+      }
+      precreateSessionRef.current = null;
       setSessionId(session_id);
       setPhase('logic');
     } catch (err: unknown) {
@@ -189,7 +213,7 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
     }
   }, [sessionId, flushEvents, setPhase, setError, router]);
 
-  if (initializing) {
+  if (initializing || !contentData) {
     return <PageLoader message="Preparing your assessment..." />;
   }
 

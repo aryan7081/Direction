@@ -6,7 +6,7 @@
   @page {
     size: A4;
     margin: 20mm 18mm 25mm 18mm;
-    @top-left { content: "Direction"; font-size: 9px; color: #9ca3af; }
+    @top-left { content: "Outcave"; font-size: 9px; color: #9ca3af; }
     @top-right { content: "Career Intelligence Report"; font-size: 9px; color: #9ca3af; }
     @bottom-left { content: "Assessment {{ report.session_id|truncatechars:12 }}"; font-size: 8px; color: #9ca3af; }
     @bottom-center { content: counter(page) " / " counter(pages); font-size: 8px; color: #9ca3af; }
@@ -322,7 +322,7 @@
 <!-- ═══ COMPACT HEADER ═══ -->
 <div class="report-header">
   <div class="header-top">
-    {% if logo_uri %}<img src="{{ logo_uri }}" alt="Direction" style="width:36px; height:36px; margin-bottom:8px;">{% endif %}
+    {% if logo_uri %}<img src="{{ logo_uri }}" alt="Outcave" style="width:64px; height:64px; margin-bottom:8px; object-fit:contain; object-position:center;">{% endif %}
     <h1>Career Intelligence Report</h1>
     <p class="subtitle">Behavioral &amp; Trait-Based Analysis</p>
   </div>
@@ -403,7 +403,7 @@
     <span class="trait-score">{{ t.score }} / {{ t.max }}</span>
   </div>
   <div class="trait-bar-bg">
-    <div class="trait-bar-fill" style="width: {{ t.score|floatformat:0 }}0%;"></div>
+    <div class="trait-bar-fill" style="width: {{ t.bar_width }}%;"></div>
   </div>
   <div class="trait-desc">{{ t.description }}</div>
 </div>
@@ -514,8 +514,7 @@
 
 <!-- ═══ BRANDED FOOTER ═══ -->
 <div style="margin-top:30px; padding-top:16px; border-top:1px solid #e5e7eb; text-align:center; page-break-inside:avoid;">
-  {% if logo_uri %}<img src="{{ logo_uri }}" alt="Direction" style="width:22px; height:22px; vertical-align:middle; margin-right:6px;">{% endif %}
-  <span style="font-size:11px; font-weight:700; color:#111827; letter-spacing:-0.3px; vertical-align:middle;">Direction</span>
+  {% if logo_uri %}<img src="{{ logo_uri }}" alt="Outcave" style="width:36px; height:36px; vertical-align:middle; object-fit:contain; object-position:center;">{% endif %}
   <span style="font-size:9px; color:#9ca3af; margin-left:4px; vertical-align:middle;">— Find Your Path. Not By Chance.</span>
 </div>
 

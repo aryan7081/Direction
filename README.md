@@ -1,4 +1,4 @@
-# Direction
+# Outcave
 
 AI-powered career discovery for Class 9–10 students. Clean architecture, Django REST backend, Next.js frontend.
 

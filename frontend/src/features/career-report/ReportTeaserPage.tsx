@@ -119,7 +119,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
         key: orderData.key_id,
         amount: orderData.amount * 100,
         currency: orderData.currency,
-        name: 'Direction',
+        name: 'Outcave',
         description: 'Premium Career Intelligence Report',
         order_id: orderData.order_id,
         prefill: {
@@ -241,6 +241,9 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
             mb: 3,
           }}
         >
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <Box component="img" src="/logo.png" alt="Outcave" sx={{ height: { xs: 100, sm: 128 }, width: 'auto', maxWidth: 320, objectFit: 'contain' }} />
+          </Box>
           <Typography
             variant="overline"
             sx={{ color: '#15803d', fontWeight: 700, letterSpacing: 1.5, fontSize: '0.7rem' }}

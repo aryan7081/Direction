@@ -684,6 +684,7 @@ def build_report(session: GameSession) -> dict:
             "icon": meta.get("icon", ""),
             "score": round(score, 1),
             "max": 10,
+            "bar_width": min(100, int(round(score * 10))),
             "description": meta.get("description", ""),
         })
 

@@ -1,11 +1,13 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Typography, Container, Chip } from '@mui/material';
 import { motion, useInView, useScroll, useTransform } from 'framer-motion';
 import { useAuthStore } from '@/stores/authStore';
+import { fetchGameContent } from '@/features/game-assessment/api';
 
 /* ── Floating icon data (career / education themed) ── */
 const FLOATING_ICONS = [
@@ -259,9 +261,15 @@ function StatsBar() {
 
 export default function LandingPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const heroRef = useRef(null);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+
+  useEffect(() => {
+    queryClient.prefetchQuery({ queryKey: ['game-content'], queryFn: fetchGameContent });
+    router.prefetch('/game-assessment');
+  }, [queryClient, router]);
 
   const handleLogout = () => {
     logout();
@@ -295,11 +303,10 @@ export default function LandingPage() {
         }}
       >
         <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 0, sm: 2 }, gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0, minWidth: 0 }}>
-            <Box component="img" src="/logo.png" alt="Direction" sx={{ width: { xs: 34, sm: 40 }, height: { xs: 34, sm: 40 }, flexShrink: 0 }} />
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827', letterSpacing: -0.5, fontSize: { xs: '1rem', sm: '1.25rem' }, whiteSpace: 'nowrap' }}>
-              Direction
-            </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, minWidth: 0 }}>
+            <Box sx={{ width: { xs: 112, sm: 128 }, height: { xs: 48, sm: 56 }, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Box component="img" src="/logo.png" alt="Outcave" sx={{ height: { xs: 96, sm: 112 }, width: 'auto', minWidth: { xs: 96, sm: 112 }, objectFit: 'cover', objectPosition: 'center' }} />
+          </Box>
           </Box>
           <Box sx={{ display: 'flex', gap: { xs: 1, sm: 1.5 }, alignItems: 'center', flexShrink: 0, ml: 'auto' }}>
             {user ? (
@@ -520,7 +527,7 @@ export default function LandingPage() {
               >
                 {user
                   ? 'Access your dashboard to view your career report, retake the assessment, or explore career paths.'
-                  : 'Direction helps Class 9–12 students discover careers that match their natural abilities through interactive games, not boring questionnaires.'}
+                  : 'Outcave helps Class 9–12 students discover careers that match their natural abilities through interactive games, not boring questionnaires.'}
               </Typography>
             </motion.div>
 
@@ -791,7 +798,7 @@ export default function LandingPage() {
         }}
       >
         <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-          © {new Date().getFullYear()} Direction · Built for students, by educators
+          © {new Date().getFullYear()} Outcave · Built for students, by educators
         </Typography>
       </Box>
     </Box>

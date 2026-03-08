@@ -25,6 +25,9 @@ export function HeroSection({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+        <Box component="img" src="/logo.png" alt="Outcave" sx={{ height: { xs: 100, sm: 128 }, width: 'auto', maxWidth: 320, objectFit: 'contain' }} />
+      </Box>
       <Box
         sx={{
           display: 'flex',

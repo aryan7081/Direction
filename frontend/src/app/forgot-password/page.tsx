@@ -38,11 +38,8 @@ export default function ForgotPasswordPage() {
         transition={{ duration: 0.5 }}
         style={{ width: '100%', maxWidth: 420, position: 'relative', zIndex: 1 }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center', mb: 4 }}>
-          <Box component="img" src="/logo.png" alt="Direction" sx={{ width: 44, height: 44 }} />
-          <Typography sx={{ fontWeight: 700, fontSize: '1.3rem', color: '#111827', letterSpacing: -0.5 }}>
-            Direction
-          </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 4, height: 68, overflow: 'hidden' }}>
+          <Box component="img" src="/logo.png" alt="Outcave" sx={{ height: 136, width: 'auto', minWidth: 136, objectFit: 'cover', objectPosition: 'center' }} />
         </Box>
         <Box
           sx={{

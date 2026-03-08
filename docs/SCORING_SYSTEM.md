@@ -1,4 +1,4 @@
-# Direction — Game Assessment Scoring System
+# Outcave — Game Assessment Scoring System
 
 Complete technical documentation of how the interactive assessment works, from user interaction to career recommendation.
 
