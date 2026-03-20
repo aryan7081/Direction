@@ -151,9 +151,11 @@ The app will auto-detect the host and call the API on the same IP at port 8000.
 ## Recommendation Algorithm
 
 1. Compute normalized category scores (0–1) from user responses
-2. Cosine-like similarity: user vector × career weight vector
+2. Multi-factor: Interest (60%) + Academic (25%) + Financial (15%) for quiz; Cosine similarity for game assessment
 3. Rank careers by compatibility %
 4. Modular design: swap `BaseRecommendationEngine` for AI later
+
+**Full documentation**: [docs/RECOMMENDATION_LOGIC.md](docs/RECOMMENDATION_LOGIC.md) — explains the entire flow from assessment to career recommendation for beginners.
 
 ## Production (AWS)
 
