@@ -30,6 +30,7 @@ class Question(TimeStampedModel):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="questions")
     order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    metadata = models.JSONField(default=dict, blank=True)
 
     class Meta:
         db_table = "questions"
@@ -50,6 +51,7 @@ class AnswerOption(TimeStampedModel):
     text = models.CharField(max_length=500)
     score = models.PositiveSmallIntegerField()
     order = models.PositiveIntegerField(default=0)
+    category_weights = models.JSONField(default=dict, blank=True)
 
     class Meta:
         db_table = "answer_options"

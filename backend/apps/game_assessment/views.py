@@ -365,18 +365,18 @@ class SessionResultView(GenericAPIView):
         )
 
 
-GAME_PHASE_ORDER = ["logic", "risk", "planner", "scenario"]
+GAME_PHASE_ORDER = ["scenario"]
 
 
 def _detect_resume_phase(session):
-    logged_games = set(
-        GameEventLog.objects.filter(session=session)
-        .values_list("game_name", flat=True)
-        .distinct()
-    )
-    for phase in GAME_PHASE_ORDER:
-        if phase not in logged_games:
-            return phase
+    """Single-phase assessment: resume in scenario until all MCQ answers are logged."""
+    from apps.assessments.content.mcq_items import MCQ_ITEMS
+
+    n = GameEventLog.objects.filter(
+        session=session, game_name="scenario", event_type="answer"
+    ).count()
+    if n < len(MCQ_ITEMS):
+        return "scenario"
     return "processing"
 
 
@@ -440,6 +440,9 @@ class ResumeSessionView(GenericAPIView):
             return Response({"session": None})
 
         resume_phase = _detect_resume_phase(session)
+        scenario_answer_index = GameEventLog.objects.filter(
+            session=session, game_name="scenario", event_type="answer"
+        ).count()
 
         return Response(
             {
@@ -447,6 +450,7 @@ class ResumeSessionView(GenericAPIView):
                     "session_id": str(session.id),
                     "started_at": session.started_at,
                     "resume_phase": resume_phase,
+                    "scenario_answer_index": scenario_answer_index,
                 }
             }
         )

@@ -33,78 +33,48 @@ class Command(BaseCommand):
         ]
         for name, slug, desc in cats:
             Category.objects.get_or_create(slug=slug, defaults={"name": name, "description": desc})
+
+        assessment_sections = [
+            ("Interests (RIASEC)", "riasec-interests", "Holland-style interest items (hidden multi-signal scoring)."),
+            ("Traits", "work-traits", "Curiosity, persistence, initiative, empathy, planning."),
+            ("Personality", "work-personality", "Energy, risk, structure, autonomy."),
+        ]
+        for name, slug, desc in assessment_sections:
+            Category.objects.get_or_create(slug=slug, defaults={"name": name, "description": desc})
         self.stdout.write("Categories seeded.")
 
     def _seed_questions(self):
-        categories = {c.slug: c for c in Category.objects.all()}
-        opts = [(1, "Strongly disagree"), (2, "Disagree"), (3, "Neutral"), (4, "Agree"), (5, "Strongly agree")]
-        questions_data = [
-            ("analytical", "I enjoy solving puzzles and brain teasers."),
-            ("analytical", "I prefer working with numbers and data."),
-            ("analytical", "I like finding patterns in information."),
-            ("analytical", "I enjoy science and experiments."),
-            ("analytical", "I am good at logical reasoning."),
-            ("analytical", "I like analyzing problems step by step."),
-            ("analytical", "I prefer structured tasks over open-ended ones."),
-            ("creative", "I love drawing, painting, or designing."),
-            ("creative", "I enjoy coming up with new ideas."),
-            ("creative", "I like expressing myself through art or music."),
-            ("creative", "I enjoy brainstorming and thinking outside the box."),
-            ("creative", "I like creating stories or narratives."),
-            ("creative", "I prefer tasks that allow creativity."),
-            ("creative", "I enjoy visual design and aesthetics."),
-            ("social", "I like helping others with their problems."),
-            ("social", "I enjoy working in teams."),
-            ("social", "I like teaching or explaining to others."),
-            ("social", "I care about community and society."),
-            ("social", "I enjoy meeting new people."),
-            ("social", "I am good at understanding others' feelings."),
-            ("social", "I prefer collaborative over solo work."),
-            ("organizational", "I like to plan and organize things."),
-            ("organizational", "I am good at managing time."),
-            ("organizational", "I enjoy keeping things in order."),
-            ("organizational", "I like setting and achieving goals."),
-            ("organizational", "I prefer clear instructions and structure."),
-            ("organizational", "I am good at prioritizing tasks."),
-            ("organizational", "I enjoy managing projects."),
-            ("technical", "I enjoy fixing or building things."),
-            ("technical", "I am curious about how machines work."),
-            ("technical", "I like working with computers and technology."),
-            ("technical", "I enjoy troubleshooting and solving technical problems."),
-            ("technical", "I like learning new software or tools."),
-            ("technical", "I am interested in coding or programming."),
-            ("technical", "I prefer hands-on technical tasks."),
-            ("verbal", "I love reading and writing."),
-            ("verbal", "I enjoy debating or explaining ideas."),
-            ("verbal", "I am good at expressing myself in words."),
-            ("verbal", "I enjoy learning new languages."),
-            ("verbal", "I like researching and writing reports."),
-            ("verbal", "I prefer written over verbal communication."),
-            ("verbal", "I enjoy storytelling and narratives."),
-            ("scientific", "I am fascinated by how the human body works."),
-            ("scientific", "I am interested in biology and health sciences."),
-            ("scientific", "I would enjoy working in a hospital or healthcare setting."),
-            ("scientific", "I want to help people recover from illness or injury."),
-            ("scientific", "I enjoy learning about diseases and their treatments."),
-        ]
-        for i, (slug, text) in enumerate(questions_data):
-            cat = categories.get(slug)
-            if not cat:
-                continue
-            q, created = Question.objects.get_or_create(
-                category=cat,
-                text=text,
-                defaults={"order": i + 1, "is_active": True},
+        from apps.assessments.content.mcq_items import MCQ_ITEMS
+
+        section_slugs = {"riasec-interests", "work-traits", "work-personality"}
+        categories = {c.slug: c for c in Category.objects.filter(slug__in=section_slugs)}
+        if len(categories) != 3:
+            self.stdout.write(
+                self.style.WARNING("Seed categories first; missing RIASEC/trait/personality sections.")
             )
-            if created:
-                for j, (score, opt_text) in enumerate(opts):
-                    AnswerOption.objects.create(
-                        question=q,
-                        text=opt_text,
-                        score=score,
-                        order=j + 1,
-                    )
-        self.stdout.write("Questions seeded (sample set).")
+            return
+
+        self.stdout.write("Loading 30-question assessment (RIASEC + traits + personality)...")
+        Question.objects.all().delete()
+
+        for i, item in enumerate(MCQ_ITEMS, start=1):
+            cat = categories[item["section_category_slug"]]
+            q = Question.objects.create(
+                category=cat,
+                text=item["text"],
+                order=i,
+                is_active=True,
+                metadata=item["metadata"],
+            )
+            for j, (opt_text, weights) in enumerate(item["options"], start=1):
+                AnswerOption.objects.create(
+                    question=q,
+                    text=opt_text[:500],
+                    score=3,
+                    order=j,
+                    category_weights=weights,
+                )
+        self.stdout.write(f"Questions seeded ({len(MCQ_ITEMS)} items).")
 
     def _seed_careers(self):
         # (name, slug, desc, stream, min_ed, salary, growth, education_cost_tier)
