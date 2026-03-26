@@ -4,22 +4,19 @@ import { Box, LinearProgress, Typography, Chip } from '@mui/material';
 import { motion } from 'framer-motion';
 import type { GamePhase } from '../types';
 
-const ACTIVE_PHASES: GamePhase[] = ['logic', 'risk', 'planner', 'scenario'];
+const ACTIVE_PHASES: GamePhase[] = ['scenario'];
 
 const GAME_LABELS: Record<string, string> = {
-  logic: 'Logic Challenge',
-  save_progress: 'Save Progress',
-  risk: 'Decision Maker',
-  planner: 'Weekly Planner',
-  scenario: 'Situations',
+  logic: 'Assessment',
+  save_progress: 'Assessment',
+  risk: 'Assessment',
+  planner: 'Assessment',
+  scenario: 'Career assessment',
   processing: 'Analyzing...',
 };
 
 const STEP_LABELS: { phase: GamePhase; label: string }[] = [
-  { phase: 'logic', label: 'Logic' },
-  { phase: 'risk', label: 'Risk' },
-  { phase: 'planner', label: 'Planner' },
-  { phase: 'scenario', label: 'Scenarios' },
+  { phase: 'scenario', label: '30 questions' },
 ];
 
 export function GameProgressBar({
@@ -36,7 +33,7 @@ export function GameProgressBar({
   if (phase === 'processing') {
     overall = 100;
   } else if (phase === 'save_progress') {
-    overall = (1 / totalPhases) * 100;
+    overall = subProgress * 100;
   } else if (phaseIdx >= 0) {
     overall = ((phaseIdx + subProgress) / totalPhases) * 100;
   } else {

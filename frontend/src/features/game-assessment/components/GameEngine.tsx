@@ -27,7 +27,8 @@ import { ScenarioSection } from './ScenarioSection';
 import { ProcessingScreen } from './ProcessingScreen';
 import type { GamePhase } from '../types';
 
-const GAME_PHASES: GamePhase[] = ['logic', 'save_progress', 'risk', 'planner', 'scenario'];
+/** Single phase: 30-question RIASEC + traits + personality (was multi-game flow). */
+const GAME_PHASES: GamePhase[] = ['scenario'];
 
 interface GameEngineProps {
   resumeSessionId?: string | null;
@@ -44,12 +45,16 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
     content,
     result,
     error,
+    scenarioStartIndex,
+    scenarioGateCompletedCount,
     setSessionId,
     setPhase,
     setContent,
     drainEvents,
     setResult,
     setError,
+    setScenarioStartIndex,
+    setScenarioGateCompletedCount,
     reset,
   } = useGameStore();
 
@@ -97,16 +102,20 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
               const resumeInfo = await fetchResumeSession();
               if (resumeInfo.session && resumeInfo.session.session_id === resumeSessionId) {
                 const rp = resumeInfo.session.resume_phase;
-                const validPhases: GamePhase[] = ['logic', 'save_progress', 'risk', 'planner', 'scenario', 'processing'];
-                setPhase(validPhases.includes(rp) ? rp : 'logic');
+                const validPhases: GamePhase[] = ['scenario', 'processing'];
+                setPhase(validPhases.includes(rp as GamePhase) ? (rp as GamePhase) : 'scenario');
+                const idx = resumeInfo.session.scenario_answer_index ?? 0;
+                const qLen = contentData.scenario_questions?.length ?? 1;
+                setScenarioStartIndex(Math.min(idx, qLen));
+                setSubProgress(Math.min(idx, qLen) / qLen);
               } else {
-                setPhase('logic');
+                setPhase('scenario');
               }
             } catch {
-              setPhase('logic');
+              setPhase('scenario');
             }
           } else {
-            setPhase('logic');
+            setPhase('scenario');
           }
         }
       } catch {
@@ -130,6 +139,25 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
     }
   }, [sessionId, drainEvents, setError]);
 
+  const handleScenarioAuthGate = useCallback(
+    async (resumeAtIndex: number, completedCount: number) => {
+      await flushEvents();
+      setScenarioStartIndex(resumeAtIndex);
+      setScenarioGateCompletedCount(completedCount);
+      const qLen = (content ?? contentData)?.scenario_questions.length ?? 30;
+      setSubProgress(completedCount / qLen);
+      setPhase('save_progress');
+    },
+    [
+      flushEvents,
+      content,
+      contentData,
+      setScenarioStartIndex,
+      setScenarioGateCompletedCount,
+      setPhase,
+    ]
+  );
+
   const handleStart = useCallback(async () => {
     try {
       let session_id: string;
@@ -142,7 +170,10 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
       }
       precreateSessionRef.current = null;
       setSessionId(session_id);
-      setPhase('logic');
+      setScenarioStartIndex(0);
+      setScenarioGateCompletedCount(0);
+      setSubProgress(0);
+      setPhase('scenario');
     } catch (err: unknown) {
       const msg = String(err instanceof Error ? err.message : err);
       const code = (err as { code?: string })?.code;
@@ -155,32 +186,31 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
           : 'Failed to start session. Please try again.'
       );
     }
-  }, [setSessionId, setPhase, setError]);
+  }, [
+    setSessionId,
+    setPhase,
+    setError,
+    setScenarioStartIndex,
+    setScenarioGateCompletedCount,
+  ]);
 
   const advancePhase = useCallback(async () => {
     await flushEvents();
     const currentIdx = GAME_PHASES.indexOf(phase as GamePhase);
     if (currentIdx >= 0 && currentIdx < GAME_PHASES.length - 1) {
-      let nextPhase = GAME_PHASES[currentIdx + 1];
-      if (nextPhase === 'save_progress' && isAuthenticated) {
-        nextPhase = 'risk';
-      }
+      const nextPhase = GAME_PHASES[currentIdx + 1];
       setPhase(nextPhase);
       setSubProgress(0);
     } else {
       setPhase('processing');
     }
-  }, [flushEvents, phase, setPhase, isAuthenticated]);
+  }, [flushEvents, phase, setPhase]);
 
   const handleLogicComplete = useCallback(async () => {
     await flushEvents();
     setSubProgress(0);
-    if (isAuthenticated) {
-      setPhase('risk');
-    } else {
-      setPhase('save_progress');
-    }
-  }, [flushEvents, setPhase, isAuthenticated]);
+    setPhase('scenario');
+  }, [flushEvents, setPhase]);
 
   const [linkingAccount, setLinkingAccount] = useState(false);
   const setAuth = useAuthStore((s) => s.setAuth);
@@ -191,15 +221,18 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
       try {
         const res = await googleAuth(credential, sessionId);
         setAuth(res.user, res.access, res.refresh);
-        setPhase('risk');
-        setSubProgress(0);
+        const idx = useGameStore.getState().scenarioStartIndex;
+        const qLen =
+          (content ?? contentData)?.scenario_questions.length ?? 30;
+        setSubProgress(Math.min(idx, qLen) / qLen);
+        setPhase('scenario');
       } catch {
         setError('Sign in failed. Please try again.');
       } finally {
         setLinkingAccount(false);
       }
     },
-    [sessionId, setPhase, setError, setAuth]
+    [sessionId, setPhase, setError, setAuth, content, contentData]
   );
 
   const handleProcessingDone = useCallback(async () => {
@@ -257,7 +290,11 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
               <SaveProgressScreen
                 onGoogleSignIn={handleGoogleSignIn}
                 loading={linkingAccount}
-                questionsCompleted={(content ?? contentData)?.logic_tasks?.length ?? 5}
+                questionsCompleted={
+                  scenarioGateCompletedCount ||
+                  (content ?? contentData)?.logic_tasks?.length ||
+                  5
+                }
               />
             )}
 
@@ -270,7 +307,14 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
             )}
 
             {phase === 'scenario' && (content ?? contentData) && (
-              <ScenarioSection questions={(content ?? contentData)!.scenario_questions} onComplete={advancePhase} onProgress={setSubProgress} />
+              <ScenarioSection
+                questions={(content ?? contentData)!.scenario_questions}
+                startIndex={scenarioStartIndex}
+                isAuthenticated={isAuthenticated}
+                onAuthGate={handleScenarioAuthGate}
+                onComplete={advancePhase}
+                onProgress={setSubProgress}
+              />
             )}
 
             {phase === 'processing' && <ProcessingScreen onDone={handleProcessingDone} />}

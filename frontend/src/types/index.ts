@@ -17,8 +17,16 @@ export interface Category {
 export interface AnswerOption {
   id: number;
   text: string;
-  score: number;
   order: number;
+}
+
+export interface QuestionMetadata {
+  code?: string;
+  format?: string;
+  context?: string;
+  section?: string;
+  primary_focus?: string;
+  secondary_signal?: string;
 }
 
 export interface Question {
@@ -27,6 +35,7 @@ export interface Question {
   category: Category;
   order: number;
   answer_options: AnswerOption[];
+  metadata?: QuestionMetadata;
 }
 
 export interface Career {

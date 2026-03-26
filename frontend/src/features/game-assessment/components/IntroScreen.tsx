@@ -7,28 +7,22 @@ import { ButtonSpinner } from '@/components/ui/Loaders';
 
 const GAMES = [
   {
-    icon: '🧩',
-    title: 'Logic Challenge',
-    desc: 'Test your analytical reasoning',
-    tag: '5 puzzles',
-  },
-  {
     icon: '🎯',
-    title: 'Decision Maker',
-    desc: 'Reveal your risk & leadership style',
-    tag: '5 scenarios',
+    title: 'RIASEC interests',
+    desc: 'How you like to work — realistic, investigative, artistic, social, enterprising, conventional',
+    tag: '12 items',
   },
   {
-    icon: '📅',
-    title: 'Weekly Planner',
-    desc: 'Design your ideal week',
-    tag: 'Drag & drop activity',
+    icon: '🧠',
+    title: 'Core work traits',
+    desc: 'Curiosity, persistence, initiative, empathy, and planning',
+    tag: '10 items',
   },
   {
-    icon: '💬',
-    title: 'Situations',
-    desc: 'Real-life personality scenarios',
-    tag: '10 quick choices',
+    icon: '✨',
+    title: 'Personality style',
+    desc: 'Energy, risk, structure, and how you like direction',
+    tag: '8 items',
   },
 ];
 
@@ -121,7 +115,7 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
                 mb: { xs: 0, sm: 0.75 },
               }}
             >
-              Play 4 quick activities. No exams, no stress — just be yourself.
+              30 questions on interests, work habits, and style — no trick answers.
             </Typography>
             <Typography
               sx={{
@@ -131,7 +125,7 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
                 display: { xs: 'none', sm: 'block' },
               }}
             >
-              We analyze your strengths across 8 career traits.
+              We map RIASEC interests, five core traits, and basic personality to your career matches.
             </Typography>
           </Box>
 
@@ -261,7 +255,7 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
               order: { xs: 5, sm: 4 },
             }}
           >
-            Takes about 10 minutes • Your answers stay private
+            Takes about 5–10 minutes • Your answers stay private
           </Typography>
 
           {/* 6. TRUST MICROCOPY - order 6 on desktop */}

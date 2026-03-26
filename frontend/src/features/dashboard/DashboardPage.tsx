@@ -15,17 +15,17 @@ import { Box, Button, Chip, Container, LinearProgress, Typography } from '@mui/m
 import { motion } from 'framer-motion';
 
 const PHASE_LABELS: Record<string, string> = {
-  logic: 'Logic Challenge',
-  risk: 'Decision Maker',
-  planner: 'Weekly Planner',
-  scenario: 'Situations',
-  processing: 'Ready to Submit',
+  logic: 'Assessment',
+  risk: 'Assessment',
+  planner: 'Assessment',
+  scenario: '30 questions',
+  processing: 'Analyzing',
 };
 
 const PHASE_PROGRESS: Record<string, number> = {
-  logic: 25,
-  risk: 50,
-  planner: 75,
+  logic: 100,
+  risk: 100,
+  planner: 100,
   scenario: 100,
 };
 

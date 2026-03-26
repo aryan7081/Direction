@@ -6,21 +6,35 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store';
 import type { ScenarioQuestion } from '../types';
 
+const DEFAULT_AUTH_GATE_AFTER = 5;
+
 export function ScenarioSection({
   questions,
   onComplete,
   onProgress,
+  startIndex = 0,
+  isAuthenticated = true,
+  authGateAfterCount = DEFAULT_AUTH_GATE_AFTER,
+  onAuthGate,
 }: {
   questions: ScenarioQuestion[];
   onComplete: () => void;
   onProgress?: (fraction: number) => void;
+  startIndex?: number;
+  isAuthenticated?: boolean;
+  authGateAfterCount?: number;
+  onAuthGate?: (resumeAtIndex: number, completedCount: number) => void | Promise<void>;
 }) {
   const pushEvent = useGameStore((s) => s.pushEvent);
-  const [current, setCurrent] = useState(0);
+  const [current, setCurrent] = useState(startIndex);
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
 
   const question = questions[current];
+
+  useEffect(() => {
+    setCurrent(startIndex);
+  }, [startIndex]);
 
   useEffect(() => {
     setSelected(null);
@@ -46,7 +60,15 @@ export function ScenarioSection({
       const next = current + 1;
       onProgress?.(next / questions.length);
 
-      setTimeout(() => {
+      setTimeout(async () => {
+        if (
+          next === authGateAfterCount &&
+          !isAuthenticated &&
+          onAuthGate
+        ) {
+          await onAuthGate(next, authGateAfterCount);
+          return;
+        }
         if (next < questions.length) {
           setCurrent(next);
         } else {
@@ -54,7 +76,18 @@ export function ScenarioSection({
         }
       }, 500);
     },
-    [answered, pushEvent, question, current, questions.length, onComplete, onProgress]
+    [
+      answered,
+      pushEvent,
+      question,
+      current,
+      questions.length,
+      onComplete,
+      onProgress,
+      authGateAfterCount,
+      isAuthenticated,
+      onAuthGate,
+    ]
   );
 
   if (!question) return null;

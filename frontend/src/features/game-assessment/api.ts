@@ -98,6 +98,8 @@ export interface ResumeInfo {
     session_id: string;
     started_at: string;
     resume_phase: GamePhase;
+    /** Count of scenario answers logged; next question index (capped server-side if needed). */
+    scenario_answer_index?: number;
   } | null;
 }
 
