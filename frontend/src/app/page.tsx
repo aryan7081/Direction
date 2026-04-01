@@ -25,36 +25,36 @@ const FLOATING_ICONS = [
 
 const FEATURES = [
   {
-    icon: '🧩',
-    title: 'Logic & Pattern Games',
-    desc: 'Brain teasers that reveal your natural reasoning and analytical style',
+    icon: '🧠',
+    title: '30 Smart Questions',
+    desc: 'Quick scenarios that map your interests, personality, and work traits — no right or wrong answers',
     color: '#8b5cf6',
   },
   {
     icon: '🎯',
-    title: 'Decision Simulators',
-    desc: 'Real scenarios that uncover your leadership, risk, and decision-making style',
+    title: 'Stream Recommendation',
+    desc: 'Get a clear Science, Commerce, or Arts recommendation backed by your unique profile',
     color: '#3b82f6',
   },
   {
-    icon: '📅',
-    title: 'Weekly Planner',
-    desc: 'Drag-and-drop your ideal week to show how you organize and prioritize',
+    icon: '💼',
+    title: 'Career Matches',
+    desc: 'See which careers from 127+ options align with your natural strengths and personality',
     color: '#16a34a',
   },
   {
-    icon: '💬',
-    title: 'Situation Analysis',
-    desc: 'Real-life situations with no right or wrong — just your authentic self',
+    icon: '📊',
+    title: 'Detailed Report',
+    desc: 'Download a comprehensive PDF with your trait breakdown, career roadmap, and next steps',
     color: '#f59e0b',
   },
 ];
 
 const STATS = [
-  { value: '8', label: 'Core Traits Measured' },
-  { value: '15+', label: 'Career Matches' },
-  { value: '4', label: 'Interactive Games' },
-  { value: 'A4', label: 'PDF Report Included' },
+  { value: '15', label: 'Dimensions Measured' },
+  { value: '127+', label: 'Careers Matched' },
+  { value: '3', label: 'Streams Analyzed' },
+  { value: '5 min', label: 'Assessment Time' },
 ];
 
 function FloatingIcon({ emoji, x, y, size, delay, duration }: typeof FLOATING_ICONS[0]) {
@@ -527,7 +527,7 @@ export default function LandingPage() {
               >
                 {user
                   ? 'Access your dashboard to view your career report, retake the assessment, or explore career paths.'
-                  : 'Outcave helps Class 9–12 students discover careers that match their natural abilities through interactive games, not boring questionnaires.'}
+                  : 'Confused about Science, Commerce, or Arts? Take our free 5-minute assessment and get a clear stream recommendation backed by your interests, traits, and personality.'}
               </Typography>
             </motion.div>
 
@@ -691,7 +691,7 @@ export default function LandingPage() {
                 letterSpacing: '-0.02em',
               }}
             >
-              Not a boring questionnaire.
+              How It Works
             </Typography>
             <Typography
               sx={{
@@ -703,7 +703,7 @@ export default function LandingPage() {
                 mx: 'auto',
               }}
             >
-              Four interactive games designed by career psychologists to map your natural abilities.
+              A 5-minute assessment designed by career psychologists to map your natural abilities across 15 dimensions.
             </Typography>
           </motion.div>
 
@@ -760,7 +760,7 @@ export default function LandingPage() {
             <Typography sx={{ color: '#6b7280', mb: 4, lineHeight: 1.7 }}>
               {user
                 ? 'Your career insights are ready. Access your dashboard to view your report and explore matched careers.'
-                : 'Join students across India who found clarity about their career path through our game-based trait assessment.'}
+                : 'Join thousands of students across India who found clarity about their stream and career path.'}
             </Typography>
             <Link href={user ? '/dashboard' : '/game-assessment'} style={{ textDecoration: 'none' }}>
               <Button
@@ -800,6 +800,14 @@ export default function LandingPage() {
         <Typography variant="caption" sx={{ color: '#9ca3af' }}>
           © {new Date().getFullYear()} Outcave · Built for students, by educators
         </Typography>
+        <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center', gap: 2 }}>
+          <Link href="/privacy" style={{ textDecoration: 'none' }}>
+            <Typography variant="caption" sx={{ color: '#9ca3af', '&:hover': { color: '#6b7280' } }}>Privacy Policy</Typography>
+          </Link>
+          <Link href="/terms" style={{ textDecoration: 'none' }}>
+            <Typography variant="caption" sx={{ color: '#9ca3af', '&:hover': { color: '#6b7280' } }}>Terms of Service</Typography>
+          </Link>
+        </Box>
       </Box>
     </Box>
   );
