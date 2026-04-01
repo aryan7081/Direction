@@ -1,6 +1,9 @@
 """
 Seed categories, questions, careers, and weights for MVP.
 Expanded to 120+ careers across 15 buckets.
+
+Career weights now use 15 explicit scoring dimensions:
+  RIASEC (6)  + Core Traits (5) + Personality (4)
 """
 from decimal import Decimal
 
@@ -8,6 +11,22 @@ from django.core.management.base import BaseCommand
 
 from apps.assessments.models import AnswerOption, Category, Question
 from apps.careers.models import Career, CareerCategoryWeight, CareerSubjectWeight
+
+# ── 15-dimension helper ─────────────────────────────────────────────
+
+_DIMS = [
+    "riasec_realistic", "riasec_investigative", "riasec_artistic",
+    "riasec_social", "riasec_enterprising", "riasec_conventional",
+    "trait_curiosity", "trait_persistence", "trait_initiative",
+    "trait_empathy_teamwork", "trait_planning",
+    "personality_extroversion", "personality_risk_taking",
+    "personality_structure", "personality_self_direction",
+]
+
+
+def _p(r, i, a, s, e, c, cur, per, ini, emp, pln, ext, rsk, strc, slf):
+    """Build a 15-dimension career profile dict (compact one-liner per career)."""
+    return dict(zip(_DIMS, [r, i, a, s, e, c, cur, per, ini, emp, pln, ext, rsk, strc, slf]))
 
 
 class Command(BaseCommand):
@@ -21,27 +40,50 @@ class Command(BaseCommand):
         self._seed_subject_weights()
         self.stdout.write(self.style.SUCCESS("Seed complete."))
 
+    # ── Categories ──────────────────────────────────────────────────
+
     def _seed_categories(self):
-        cats = [
-            ("Analytical", "analytical", "Logical reasoning and problem-solving"),
-            ("Creative", "creative", "Artistic and innovative thinking"),
-            ("Social", "social", "Interpersonal and helping others"),
-            ("Organizational", "organizational", "Planning and management"),
-            ("Technical", "technical", "Technical and mechanical aptitude"),
-            ("Verbal", "verbal", "Language and communication"),
-            ("Scientific", "scientific", "Interest in biology, health sciences and medicine"),
+        OLD_SCORING_SLUGS = [
+            "analytical", "creative", "social", "organizational",
+            "technical", "verbal", "scientific",
         ]
-        for name, slug, desc in cats:
+        deleted, _ = Category.objects.filter(slug__in=OLD_SCORING_SLUGS).delete()
+        if deleted:
+            self.stdout.write(f"Cleaned up {deleted} old scoring categories.")
+
+        scoring_cats = [
+            # RIASEC
+            ("Realistic",       "riasec_realistic",       "Hands-on, mechanical, physical work"),
+            ("Investigative",   "riasec_investigative",   "Analytical, intellectual, research"),
+            ("Artistic",        "riasec_artistic",        "Creative, original, independent"),
+            ("Social",          "riasec_social",          "Helping, teaching, counselling"),
+            ("Enterprising",    "riasec_enterprising",    "Leading, persuading, managing"),
+            ("Conventional",    "riasec_conventional",    "Organizing, data, attention to detail"),
+            # Core traits
+            ("Curiosity",       "trait_curiosity",        "Desire to explore and learn"),
+            ("Persistence",     "trait_persistence",      "Sticking with difficult tasks"),
+            ("Initiative",      "trait_initiative",       "Taking action without being told"),
+            ("Empathy & Teamwork", "trait_empathy_teamwork", "Understanding others and collaborating"),
+            ("Planning",        "trait_planning",         "Systematic approach and organization"),
+            # Personality
+            ("Extroversion",    "personality_extroversion",   "Outgoing vs reserved"),
+            ("Risk-taking",     "personality_risk_taking",    "Bold vs cautious"),
+            ("Structure",       "personality_structure",      "Organized vs flexible"),
+            ("Self-direction",  "personality_self_direction", "Autonomous vs externally guided"),
+        ]
+        for name, slug, desc in scoring_cats:
             Category.objects.get_or_create(slug=slug, defaults={"name": name, "description": desc})
 
-        assessment_sections = [
-            ("Interests (RIASEC)", "riasec-interests", "Holland-style interest items (hidden multi-signal scoring)."),
-            ("Traits", "work-traits", "Curiosity, persistence, initiative, empathy, planning."),
-            ("Personality", "work-personality", "Energy, risk, structure, autonomy."),
+        section_cats = [
+            ("Interests (RIASEC)", "riasec-interests", "Holland-style interest items."),
+            ("Traits",             "work-traits",      "Curiosity, persistence, initiative, empathy, planning."),
+            ("Personality",        "work-personality",  "Energy, risk, structure, autonomy."),
         ]
-        for name, slug, desc in assessment_sections:
+        for name, slug, desc in section_cats:
             Category.objects.get_or_create(slug=slug, defaults={"name": name, "description": desc})
-        self.stdout.write("Categories seeded.")
+        self.stdout.write("Categories seeded (15 scoring + 3 sections).")
+
+    # ── Questions ───────────────────────────────────────────────────
 
     def _seed_questions(self):
         from apps.assessments.content.mcq_items import MCQ_ITEMS
@@ -76,8 +118,9 @@ class Command(BaseCommand):
                 )
         self.stdout.write(f"Questions seeded ({len(MCQ_ITEMS)} items).")
 
+    # ── Careers ─────────────────────────────────────────────────────
+
     def _seed_careers(self):
-        # (name, slug, desc, stream, min_ed, salary, growth, education_cost_tier)
         careers_data = [
             # 1. TECH & ENGINEERING (20)
             ("Software Engineer", "software-engineer", "Design and build software applications.", "Science", "B.Tech/B.E.", "₹5-50L", "Very High", "medium"),
@@ -100,14 +143,14 @@ class Command(BaseCommand):
             ("Data Scientist", "data-scientist", "Analyze data to extract insights.", "Science", "B.Tech/M.Sc", "₹6-40L", "Very High", "medium"),
             ("Mechanical Engineer", "mechanical-engineer", "Design and develop mechanical systems.", "Science", "B.Tech", "₹4-25L", "High", "medium"),
             ("Civil Engineer", "civil-engineer", "Design and build infrastructure.", "Science", "B.Tech", "₹4-20L", "High", "medium"),
-            # 2. ARCHITECTURE & DESIGN (7)
+            # 2. ARCHITECTURE & DESIGN (6)
             ("Architect", "architect", "Design buildings and structures.", "Science", "B.Arch", "₹5-30L", "High", "medium"),
             ("Interior Designer", "interior-designer", "Design indoor spaces for homes and offices.", "Arts", "B.Des/Diploma", "₹3-15L", "High", "low"),
             ("Landscape Architect", "landscape-architect", "Design outdoor spaces and environments.", "Science", "B.Arch/B.L.A", "₹4-18L", "High", "medium"),
             ("Urban Planner", "urban-planner", "Plan and design cities and urban areas.", "Science", "B.Plan/M.Plan", "₹4-20L", "High", "medium"),
             ("Industrial Designer", "industrial-designer", "Design products for mass production.", "Science", "B.Des", "₹4-20L", "High", "medium"),
             ("Product Designer", "product-designer", "Design user-centred products and experiences.", "Arts", "B.Des/Any", "₹5-25L", "Very High", "medium"),
-            # 3. MEDICAL & HEALTHCARE (11)
+            # 3. MEDICAL & HEALTHCARE (12)
             ("Doctor", "doctor", "Diagnose and treat medical conditions.", "Science", "MBBS", "₹8-80L", "High", "high"),
             ("Dentist", "dentist", "Diagnose and treat dental and oral health.", "Science", "BDS", "₹4-30L", "High", "high"),
             ("Pharmacist", "pharmacist", "Dispense medicines and advise on drug use.", "Science", "B.Pharm", "₹3-12L", "Stable", "medium"),
@@ -137,7 +180,7 @@ class Command(BaseCommand):
             ("Operations Manager", "operations-manager", "Oversee daily business operations.", "Commerce", "BBA/MBA", "₹5-25L", "High", "medium"),
             ("Product Manager", "product-manager", "Define and deliver product strategy.", "Commerce", "B.Tech/MBA", "₹8-40L", "Very High", "medium"),
             ("Entrepreneur", "entrepreneur", "Start and run your own business.", "Commerce", "Any", "Variable", "Variable", "medium"),
-            # 5. ARTS & CREATIVE (11)
+            # 5. ARTS & CREATIVE (12)
             ("Graphic Designer", "graphic-designer", "Create visual content for brands.", "Arts", "B.Des/BFA", "₹3-15L", "High", "low"),
             ("Writer", "writer", "Create written content and books.", "Arts", "Any", "₹2-20L", "Variable", "low"),
             ("Animator", "animator", "Create animated content for films and games.", "Arts", "B.Des/Diploma", "₹3-18L", "High", "medium"),
@@ -238,164 +281,177 @@ class Command(BaseCommand):
             )
         self.stdout.write(f"Careers seeded ({len(careers_data)} total).")
 
+    # ── 15-dimension career weights ─────────────────────────────────
+
     def _seed_weights(self):
-        categories = {c.slug: c for c in Category.objects.all()}
-        # Category weights: analytical, creative, social, organizational, technical, verbal, scientific
+        categories = {c.slug: c for c in Category.objects.filter(slug__in=_DIMS)}
+        if len(categories) < 15:
+            self.stdout.write(self.style.WARNING("Run seed_categories first – missing scoring dims."))
+            return
+
+        CareerCategoryWeight.objects.all().delete()
+
+        #                                    R     I     A     S     E     C    cur   per   ini   emp   pln   ext   rsk   str   slf
         weights_map = {
-            # Tech & Engineering
-            "software-engineer": {"analytical": 0.9, "technical": 0.9, "organizational": 0.5},
-            "web-developer": {"analytical": 0.8, "technical": 0.9, "creative": 0.5},
-            "mobile-app-developer": {"analytical": 0.8, "technical": 0.9, "creative": 0.5},
-            "ai-engineer": {"analytical": 0.95, "technical": 0.95, "organizational": 0.5},
-            "machine-learning-engineer": {"analytical": 0.95, "technical": 0.9, "organizational": 0.5},
-            "cybersecurity-analyst": {"analytical": 0.9, "technical": 0.9, "organizational": 0.6},
-            "cloud-engineer": {"analytical": 0.8, "technical": 0.95, "organizational": 0.6},
-            "devops-engineer": {"analytical": 0.8, "technical": 0.9, "organizational": 0.8},
-            "game-developer": {"analytical": 0.7, "technical": 0.9, "creative": 0.8},
-            "blockchain-developer": {"analytical": 0.9, "technical": 0.9, "organizational": 0.5},
-            "database-administrator": {"analytical": 0.9, "technical": 0.9, "organizational": 0.7},
-            "network-engineer": {"analytical": 0.8, "technical": 0.9, "organizational": 0.6},
-            "embedded-systems-engineer": {"analytical": 0.9, "technical": 0.95, "organizational": 0.5},
-            "robotics-engineer": {"analytical": 0.9, "technical": 0.95, "organizational": 0.6},
-            "electronics-engineer": {"analytical": 0.9, "technical": 0.95, "organizational": 0.5},
-            "electrical-engineer": {"analytical": 0.85, "technical": 0.9, "organizational": 0.6},
-            "mechatronics-engineer": {"analytical": 0.9, "technical": 0.95, "organizational": 0.5},
-            "data-scientist": {"analytical": 0.95, "technical": 0.9, "organizational": 0.5},
-            "mechanical-engineer": {"analytical": 0.8, "technical": 0.9, "organizational": 0.5},
-            "civil-engineer": {"analytical": 0.8, "technical": 0.8, "organizational": 0.6},
-            # Architecture & Design
-            "architect": {"creative": 0.8, "analytical": 0.7, "technical": 0.6},
-            "interior-designer": {"creative": 0.95, "organizational": 0.6, "technical": 0.4},
-            "landscape-architect": {"creative": 0.8, "analytical": 0.6, "technical": 0.5},
-            "urban-planner": {"analytical": 0.8, "organizational": 0.8, "creative": 0.5},
-            "industrial-designer": {"creative": 0.9, "technical": 0.7, "analytical": 0.6},
-            "product-designer": {"creative": 0.9, "analytical": 0.7, "social": 0.6},
-            # Medical & Healthcare
-            "doctor": {"analytical": 0.7, "social": 0.9, "scientific": 0.95, "organizational": 0.5},
-            "dentist": {"analytical": 0.7, "technical": 0.7, "social": 0.7, "scientific": 0.8},
-            "pharmacist": {"analytical": 0.8, "organizational": 0.7, "scientific": 0.7},
-            "nurse": {"social": 0.95, "organizational": 0.8, "scientific": 0.6},
-            "physiotherapist": {"social": 0.8, "technical": 0.6, "scientific": 0.7},
-            "psychologist": {"social": 0.95, "verbal": 0.7, "analytical": 0.5},
-            "psychiatrist": {"analytical": 0.8, "social": 0.8, "scientific": 0.9},
-            "nutritionist": {"scientific": 0.8, "social": 0.7, "verbal": 0.6},
-            "radiologist": {"analytical": 0.9, "technical": 0.8, "scientific": 0.9},
-            "medical-lab-technician": {"technical": 0.8, "analytical": 0.7, "organizational": 0.7},
-            "occupational-therapist": {"social": 0.9, "creative": 0.5, "organizational": 0.7},
-            "speech-therapist": {"social": 0.9, "verbal": 0.8, "scientific": 0.6},
-            # Commerce & Business
-            "accountant": {"analytical": 0.8, "organizational": 0.9, "technical": 0.4},
-            "chartered-accountant": {"analytical": 0.9, "organizational": 0.9},
-            "business-analyst": {"analytical": 0.7, "organizational": 0.8, "social": 0.6},
-            "marketing-manager": {"creative": 0.7, "social": 0.8, "verbal": 0.8},
-            "investment-banker": {"analytical": 0.9, "organizational": 0.8, "verbal": 0.6},
-            "financial-analyst": {"analytical": 0.95, "organizational": 0.7},
-            "stock-trader": {"analytical": 0.9, "organizational": 0.6},
-            "economist": {"analytical": 0.95, "verbal": 0.7},
-            "auditor": {"analytical": 0.9, "organizational": 0.9},
-            "risk-manager": {"analytical": 0.9, "organizational": 0.8},
-            "insurance-advisor": {"social": 0.8, "verbal": 0.7, "organizational": 0.6},
-            "sales-manager": {"social": 0.9, "verbal": 0.8, "organizational": 0.7},
-            "hr-manager": {"social": 0.9, "organizational": 0.8, "verbal": 0.7},
-            "operations-manager": {"organizational": 0.95, "analytical": 0.7, "social": 0.5},
-            "product-manager": {"organizational": 0.8, "analytical": 0.8, "social": 0.7, "verbal": 0.6},
-            "entrepreneur": {"organizational": 0.8, "creative": 0.7, "social": 0.6},
-            # Arts & Creative
-            "graphic-designer": {"creative": 0.95, "technical": 0.5},
-            "writer": {"verbal": 0.95, "creative": 0.8},
-            "animator": {"creative": 0.95, "technical": 0.6},
-            "illustrator": {"creative": 0.95, "verbal": 0.5},
-            "fashion-designer": {"creative": 0.95, "organizational": 0.5},
-            "photographer": {"creative": 0.9, "technical": 0.5},
-            "filmmaker": {"creative": 0.9, "verbal": 0.7, "organizational": 0.6},
-            "video-editor": {"creative": 0.8, "technical": 0.7},
-            "vfx-artist": {"creative": 0.9, "technical": 0.8},
-            "ui-ux-designer": {"creative": 0.8, "analytical": 0.7, "social": 0.6},
-            "content-creator": {"creative": 0.8, "verbal": 0.8, "social": 0.7},
-            "script-writer": {"verbal": 0.95, "creative": 0.9},
-            # Media & Communication
-            "journalist": {"verbal": 0.95, "analytical": 0.7, "social": 0.6},
-            "news-anchor": {"verbal": 0.95, "social": 0.7, "organizational": 0.5},
-            "radio-jockey": {"verbal": 0.9, "creative": 0.6, "social": 0.8},
-            "pr-specialist": {"verbal": 0.9, "social": 0.9, "organizational": 0.7},
-            "copywriter": {"verbal": 0.95, "creative": 0.8},
-            "social-media-manager": {"creative": 0.7, "verbal": 0.7, "social": 0.8},
-            # Law
-            "lawyer": {"verbal": 0.9, "analytical": 0.8, "social": 0.6},
-            "corporate-lawyer": {"verbal": 0.9, "analytical": 0.9, "organizational": 0.7},
-            "criminal-lawyer": {"verbal": 0.9, "analytical": 0.8, "social": 0.7},
-            "judge": {"analytical": 0.95, "verbal": 0.9, "organizational": 0.8},
-            "legal-advisor": {"verbal": 0.9, "analytical": 0.85, "organizational": 0.7},
-            "company-secretary": {"analytical": 0.8, "organizational": 0.9, "verbal": 0.6},
-            # Education
-            "teacher": {"social": 0.9, "verbal": 0.9, "organizational": 0.6},
-            "professor": {"analytical": 0.9, "verbal": 0.9, "organizational": 0.7},
-            "tutor": {"social": 0.8, "verbal": 0.8, "organizational": 0.6},
-            "education-counselor": {"social": 0.9, "verbal": 0.8, "organizational": 0.7},
-            "academic-researcher": {"analytical": 0.95, "organizational": 0.7, "verbal": 0.6},
-            # Government & Defence
-            "ias-officer": {"organizational": 0.9, "verbal": 0.8, "analytical": 0.8, "social": 0.7},
-            "ips-officer": {"organizational": 0.8, "social": 0.8, "analytical": 0.7},
-            "ifs-officer": {"verbal": 0.9, "social": 0.9, "organizational": 0.8},
-            "army-officer": {"organizational": 0.9, "social": 0.8, "analytical": 0.6},
-            "navy-officer": {"organizational": 0.9, "technical": 0.7, "analytical": 0.7},
-            "air-force-officer": {"organizational": 0.9, "technical": 0.8, "analytical": 0.7},
-            "police-officer": {"organizational": 0.8, "social": 0.8, "analytical": 0.6},
-            "intelligence-officer": {"analytical": 0.95, "organizational": 0.8, "verbal": 0.6},
-            # Sports
-            "athlete": {"organizational": 0.7, "analytical": 0.5},
-            "coach": {"social": 0.9, "organizational": 0.8, "verbal": 0.7},
-            "fitness-trainer": {"social": 0.8, "organizational": 0.7, "scientific": 0.5},
-            "sports-analyst": {"analytical": 0.9, "technical": 0.5, "organizational": 0.5},
-            "sports-manager": {"organizational": 0.9, "social": 0.8, "verbal": 0.6},
-            # Agriculture & Environment
-            "agricultural-scientist": {"analytical": 0.9, "scientific": 0.9, "organizational": 0.5},
-            "farmer": {"organizational": 0.8, "technical": 0.5},
-            "horticulturist": {"scientific": 0.8, "organizational": 0.6, "technical": 0.5},
-            "forestry-officer": {"organizational": 0.8, "scientific": 0.7, "analytical": 0.6},
-            "environmental-scientist": {"analytical": 0.9, "scientific": 0.95, "organizational": 0.5},
-            "wildlife-biologist": {"scientific": 0.95, "analytical": 0.8, "organizational": 0.5},
-            # Aviation & Hospitality
-            "pilot": {"technical": 0.8, "organizational": 0.9, "analytical": 0.7},
-            "cabin-crew": {"social": 0.95, "organizational": 0.8, "verbal": 0.7},
-            "air-traffic-controller": {"analytical": 0.9, "organizational": 0.95, "technical": 0.6},
-            "airport-manager": {"organizational": 0.9, "social": 0.7, "analytical": 0.6},
-            "hotel-manager": {"organizational": 0.9, "social": 0.9, "verbal": 0.6},
-            "chef": {"creative": 0.8, "organizational": 0.7, "technical": 0.5},
-            "event-manager": {"organizational": 0.95, "social": 0.9, "creative": 0.6},
-            "travel-consultant": {"social": 0.8, "verbal": 0.7, "organizational": 0.7},
-            # Vocational
-            "electrician": {"technical": 0.9, "analytical": 0.6, "organizational": 0.5},
-            "plumber": {"technical": 0.8, "organizational": 0.6},
-            "carpenter": {"technical": 0.8, "creative": 0.5, "organizational": 0.6},
-            "mechanic": {"technical": 0.9, "analytical": 0.6, "organizational": 0.5},
-            "technician": {"technical": 0.9, "analytical": 0.6, "organizational": 0.6},
-            "tailor": {"creative": 0.7, "technical": 0.7, "organizational": 0.5},
-            "beautician": {"creative": 0.6, "social": 0.8, "technical": 0.5},
-            # Operations & Logistics
-            "supply-chain-manager": {"organizational": 0.95, "analytical": 0.8, "technical": 0.4},
-            "logistics-manager": {"organizational": 0.95, "analytical": 0.7},
-            "warehouse-manager": {"organizational": 0.9, "analytical": 0.6},
-            "procurement-specialist": {"organizational": 0.9, "analytical": 0.7, "verbal": 0.5},
-            # New-age Digital
-            "digital-marketer": {"creative": 0.8, "verbal": 0.8, "social": 0.7, "analytical": 0.6},
-            "seo-specialist": {"analytical": 0.8, "technical": 0.6, "verbal": 0.6},
-            "growth-hacker": {"analytical": 0.8, "creative": 0.7, "organizational": 0.6},
-            "influencer": {"creative": 0.8, "social": 0.9, "verbal": 0.8},
-            "ethical-hacker": {"analytical": 0.95, "technical": 0.95, "organizational": 0.5},
-            "no-code-developer": {"analytical": 0.7, "technical": 0.7, "creative": 0.6},
+            # ── TECH & ENGINEERING ──────────────────────────────────
+            "software-engineer":          _p(0.50, 0.90, 0.30, 0.20, 0.30, 0.60, 0.90, 0.80, 0.70, 0.40, 0.70, 0.30, 0.50, 0.70, 0.80),
+            "web-developer":              _p(0.45, 0.80, 0.50, 0.25, 0.30, 0.50, 0.80, 0.70, 0.70, 0.40, 0.60, 0.35, 0.50, 0.60, 0.80),
+            "mobile-app-developer":       _p(0.45, 0.80, 0.50, 0.25, 0.30, 0.50, 0.80, 0.70, 0.70, 0.40, 0.60, 0.35, 0.50, 0.60, 0.80),
+            "ai-engineer":                _p(0.40, 0.95, 0.25, 0.20, 0.30, 0.55, 0.95, 0.85, 0.70, 0.30, 0.70, 0.25, 0.55, 0.70, 0.90),
+            "machine-learning-engineer":  _p(0.40, 0.95, 0.25, 0.20, 0.25, 0.55, 0.90, 0.85, 0.65, 0.30, 0.70, 0.25, 0.50, 0.70, 0.85),
+            "cybersecurity-analyst":      _p(0.50, 0.90, 0.20, 0.20, 0.30, 0.70, 0.85, 0.80, 0.75, 0.30, 0.80, 0.25, 0.60, 0.80, 0.75),
+            "cloud-engineer":             _p(0.55, 0.80, 0.20, 0.25, 0.30, 0.70, 0.80, 0.75, 0.60, 0.35, 0.80, 0.30, 0.40, 0.80, 0.70),
+            "devops-engineer":            _p(0.55, 0.80, 0.20, 0.30, 0.35, 0.70, 0.80, 0.80, 0.70, 0.45, 0.80, 0.35, 0.45, 0.80, 0.70),
+            "game-developer":             _p(0.50, 0.70, 0.75, 0.20, 0.30, 0.40, 0.85, 0.70, 0.70, 0.35, 0.55, 0.30, 0.60, 0.50, 0.80),
+            "blockchain-developer":       _p(0.40, 0.90, 0.25, 0.15, 0.40, 0.60, 0.90, 0.80, 0.75, 0.25, 0.65, 0.25, 0.70, 0.65, 0.90),
+            "database-administrator":     _p(0.55, 0.80, 0.15, 0.20, 0.20, 0.90, 0.70, 0.80, 0.50, 0.30, 0.90, 0.20, 0.20, 0.90, 0.60),
+            "network-engineer":           _p(0.65, 0.75, 0.15, 0.20, 0.20, 0.75, 0.70, 0.75, 0.55, 0.30, 0.80, 0.25, 0.30, 0.85, 0.65),
+            "embedded-systems-engineer":  _p(0.80, 0.85, 0.20, 0.15, 0.20, 0.60, 0.80, 0.85, 0.55, 0.25, 0.70, 0.20, 0.40, 0.80, 0.80),
+            "robotics-engineer":          _p(0.80, 0.90, 0.35, 0.15, 0.25, 0.50, 0.90, 0.85, 0.75, 0.30, 0.70, 0.25, 0.60, 0.65, 0.80),
+            "electronics-engineer":       _p(0.80, 0.85, 0.20, 0.15, 0.20, 0.60, 0.80, 0.80, 0.55, 0.25, 0.70, 0.20, 0.35, 0.80, 0.75),
+            "electrical-engineer":        _p(0.80, 0.80, 0.20, 0.20, 0.25, 0.60, 0.75, 0.80, 0.55, 0.30, 0.75, 0.30, 0.35, 0.80, 0.70),
+            "mechatronics-engineer":      _p(0.80, 0.85, 0.30, 0.15, 0.25, 0.55, 0.85, 0.80, 0.65, 0.25, 0.70, 0.25, 0.50, 0.70, 0.80),
+            "data-scientist":             _p(0.30, 0.95, 0.30, 0.20, 0.30, 0.60, 0.95, 0.80, 0.65, 0.30, 0.70, 0.30, 0.50, 0.70, 0.85),
+            "mechanical-engineer":        _p(0.85, 0.80, 0.25, 0.20, 0.25, 0.55, 0.70, 0.80, 0.55, 0.30, 0.70, 0.30, 0.40, 0.75, 0.70),
+            "civil-engineer":             _p(0.80, 0.70, 0.30, 0.30, 0.35, 0.60, 0.65, 0.80, 0.55, 0.40, 0.80, 0.40, 0.35, 0.80, 0.65),
+            # ── ARCHITECTURE & DESIGN ──────────────────────────────
+            "architect":                  _p(0.55, 0.70, 0.80, 0.30, 0.40, 0.50, 0.80, 0.80, 0.65, 0.40, 0.80, 0.40, 0.50, 0.70, 0.80),
+            "interior-designer":          _p(0.35, 0.30, 0.95, 0.50, 0.40, 0.30, 0.75, 0.60, 0.65, 0.55, 0.55, 0.50, 0.45, 0.40, 0.75),
+            "landscape-architect":        _p(0.55, 0.55, 0.80, 0.30, 0.30, 0.50, 0.70, 0.70, 0.55, 0.35, 0.70, 0.35, 0.40, 0.60, 0.70),
+            "urban-planner":              _p(0.40, 0.70, 0.45, 0.50, 0.50, 0.70, 0.80, 0.70, 0.65, 0.55, 0.85, 0.45, 0.35, 0.80, 0.65),
+            "industrial-designer":        _p(0.55, 0.60, 0.90, 0.25, 0.35, 0.40, 0.80, 0.70, 0.70, 0.35, 0.60, 0.35, 0.50, 0.50, 0.80),
+            "product-designer":           _p(0.35, 0.55, 0.85, 0.55, 0.45, 0.30, 0.85, 0.65, 0.75, 0.55, 0.55, 0.50, 0.55, 0.40, 0.80),
+            # ── MEDICAL & HEALTHCARE ───────────────────────────────
+            "doctor":                     _p(0.50, 0.85, 0.20, 0.90, 0.35, 0.50, 0.80, 0.90, 0.60, 0.90, 0.80, 0.50, 0.40, 0.80, 0.60),
+            "dentist":                    _p(0.60, 0.70, 0.25, 0.70, 0.30, 0.55, 0.70, 0.80, 0.55, 0.75, 0.75, 0.45, 0.30, 0.80, 0.60),
+            "pharmacist":                 _p(0.40, 0.80, 0.15, 0.50, 0.25, 0.75, 0.70, 0.75, 0.45, 0.55, 0.80, 0.35, 0.20, 0.85, 0.55),
+            "nurse":                      _p(0.40, 0.50, 0.15, 0.95, 0.25, 0.60, 0.55, 0.80, 0.50, 0.95, 0.75, 0.50, 0.30, 0.75, 0.40),
+            "physiotherapist":            _p(0.55, 0.55, 0.25, 0.80, 0.25, 0.50, 0.65, 0.75, 0.55, 0.85, 0.65, 0.50, 0.30, 0.65, 0.55),
+            "psychologist":               _p(0.15, 0.75, 0.25, 0.95, 0.25, 0.40, 0.85, 0.75, 0.50, 0.95, 0.60, 0.40, 0.30, 0.50, 0.70),
+            "psychiatrist":               _p(0.20, 0.85, 0.20, 0.85, 0.30, 0.50, 0.85, 0.85, 0.55, 0.90, 0.70, 0.40, 0.35, 0.65, 0.65),
+            "nutritionist":               _p(0.30, 0.70, 0.20, 0.75, 0.25, 0.50, 0.70, 0.65, 0.50, 0.75, 0.65, 0.45, 0.25, 0.65, 0.55),
+            "radiologist":                _p(0.40, 0.90, 0.15, 0.40, 0.25, 0.65, 0.80, 0.80, 0.45, 0.45, 0.75, 0.25, 0.30, 0.80, 0.65),
+            "medical-lab-technician":     _p(0.60, 0.75, 0.10, 0.30, 0.15, 0.80, 0.65, 0.75, 0.40, 0.35, 0.80, 0.20, 0.20, 0.85, 0.50),
+            "occupational-therapist":     _p(0.40, 0.50, 0.35, 0.90, 0.25, 0.55, 0.65, 0.70, 0.55, 0.90, 0.65, 0.50, 0.30, 0.60, 0.55),
+            "speech-therapist":           _p(0.20, 0.50, 0.30, 0.90, 0.25, 0.45, 0.70, 0.75, 0.50, 0.90, 0.60, 0.45, 0.25, 0.55, 0.55),
+            # ── COMMERCE & BUSINESS ────────────────────────────────
+            "accountant":                 _p(0.20, 0.50, 0.10, 0.30, 0.30, 0.95, 0.45, 0.75, 0.40, 0.35, 0.90, 0.25, 0.15, 0.95, 0.50),
+            "chartered-accountant":       _p(0.20, 0.70, 0.10, 0.30, 0.45, 0.95, 0.60, 0.90, 0.55, 0.30, 0.90, 0.30, 0.20, 0.95, 0.65),
+            "business-analyst":           _p(0.25, 0.75, 0.25, 0.55, 0.50, 0.65, 0.80, 0.70, 0.60, 0.55, 0.75, 0.45, 0.40, 0.70, 0.65),
+            "marketing-manager":          _p(0.15, 0.40, 0.65, 0.70, 0.80, 0.40, 0.75, 0.65, 0.80, 0.60, 0.65, 0.80, 0.65, 0.50, 0.70),
+            "investment-banker":          _p(0.15, 0.80, 0.15, 0.40, 0.85, 0.70, 0.70, 0.90, 0.80, 0.30, 0.75, 0.55, 0.80, 0.70, 0.75),
+            "financial-analyst":          _p(0.15, 0.85, 0.10, 0.25, 0.45, 0.80, 0.75, 0.80, 0.55, 0.25, 0.80, 0.30, 0.50, 0.85, 0.70),
+            "stock-trader":               _p(0.15, 0.75, 0.15, 0.20, 0.65, 0.55, 0.70, 0.70, 0.80, 0.20, 0.55, 0.40, 0.90, 0.40, 0.90),
+            "economist":                  _p(0.15, 0.90, 0.20, 0.35, 0.35, 0.65, 0.90, 0.80, 0.50, 0.40, 0.70, 0.35, 0.40, 0.70, 0.80),
+            "auditor":                    _p(0.20, 0.65, 0.10, 0.30, 0.30, 0.95, 0.55, 0.80, 0.45, 0.30, 0.90, 0.25, 0.15, 0.95, 0.55),
+            "risk-manager":               _p(0.20, 0.80, 0.15, 0.35, 0.50, 0.80, 0.75, 0.80, 0.60, 0.35, 0.85, 0.35, 0.55, 0.85, 0.70),
+            "insurance-advisor":          _p(0.15, 0.40, 0.15, 0.75, 0.65, 0.60, 0.50, 0.65, 0.60, 0.65, 0.65, 0.65, 0.35, 0.65, 0.50),
+            "sales-manager":              _p(0.15, 0.30, 0.25, 0.75, 0.90, 0.40, 0.55, 0.75, 0.85, 0.65, 0.65, 0.90, 0.65, 0.50, 0.70),
+            "hr-manager":                 _p(0.15, 0.40, 0.20, 0.90, 0.65, 0.60, 0.60, 0.65, 0.60, 0.90, 0.75, 0.70, 0.35, 0.65, 0.55),
+            "operations-manager":         _p(0.30, 0.55, 0.15, 0.50, 0.65, 0.80, 0.55, 0.80, 0.70, 0.50, 0.90, 0.50, 0.40, 0.90, 0.60),
+            "product-manager":            _p(0.20, 0.65, 0.40, 0.65, 0.75, 0.50, 0.85, 0.70, 0.80, 0.65, 0.75, 0.60, 0.55, 0.60, 0.75),
+            "entrepreneur":               _p(0.30, 0.55, 0.55, 0.55, 0.90, 0.40, 0.85, 0.90, 0.95, 0.50, 0.65, 0.70, 0.85, 0.40, 0.95),
+            # ── ARTS & CREATIVE ────────────────────────────────────
+            "graphic-designer":           _p(0.25, 0.25, 0.95, 0.30, 0.20, 0.25, 0.70, 0.60, 0.65, 0.35, 0.50, 0.35, 0.50, 0.35, 0.80),
+            "writer":                     _p(0.10, 0.55, 0.90, 0.35, 0.20, 0.25, 0.85, 0.75, 0.60, 0.45, 0.50, 0.20, 0.45, 0.35, 0.90),
+            "animator":                   _p(0.35, 0.40, 0.90, 0.25, 0.20, 0.30, 0.75, 0.70, 0.60, 0.35, 0.55, 0.25, 0.45, 0.45, 0.75),
+            "illustrator":                _p(0.20, 0.30, 0.95, 0.25, 0.15, 0.25, 0.75, 0.65, 0.55, 0.30, 0.45, 0.20, 0.45, 0.35, 0.85),
+            "fashion-designer":           _p(0.30, 0.35, 0.95, 0.45, 0.55, 0.30, 0.75, 0.65, 0.75, 0.40, 0.55, 0.55, 0.60, 0.40, 0.80),
+            "photographer":               _p(0.40, 0.30, 0.90, 0.30, 0.30, 0.20, 0.70, 0.55, 0.65, 0.30, 0.40, 0.35, 0.55, 0.25, 0.85),
+            "filmmaker":                  _p(0.35, 0.40, 0.90, 0.50, 0.55, 0.30, 0.80, 0.75, 0.80, 0.50, 0.65, 0.55, 0.65, 0.40, 0.80),
+            "video-editor":               _p(0.40, 0.35, 0.80, 0.25, 0.20, 0.40, 0.65, 0.70, 0.50, 0.30, 0.60, 0.25, 0.35, 0.55, 0.75),
+            "vfx-artist":                 _p(0.40, 0.50, 0.85, 0.20, 0.20, 0.35, 0.75, 0.70, 0.55, 0.30, 0.55, 0.25, 0.45, 0.50, 0.75),
+            "ui-ux-designer":             _p(0.25, 0.55, 0.85, 0.60, 0.35, 0.35, 0.80, 0.65, 0.65, 0.65, 0.55, 0.40, 0.45, 0.45, 0.75),
+            "content-creator":            _p(0.20, 0.35, 0.80, 0.65, 0.55, 0.25, 0.70, 0.55, 0.75, 0.55, 0.45, 0.70, 0.60, 0.30, 0.85),
+            "script-writer":              _p(0.10, 0.50, 0.95, 0.40, 0.25, 0.25, 0.85, 0.70, 0.60, 0.50, 0.50, 0.25, 0.45, 0.35, 0.90),
+            # ── MEDIA & COMMUNICATION ──────────────────────────────
+            "journalist":                 _p(0.15, 0.60, 0.50, 0.65, 0.45, 0.40, 0.85, 0.70, 0.80, 0.55, 0.55, 0.60, 0.60, 0.40, 0.75),
+            "news-anchor":                _p(0.10, 0.40, 0.35, 0.65, 0.60, 0.45, 0.65, 0.65, 0.65, 0.50, 0.60, 0.85, 0.45, 0.55, 0.55),
+            "radio-jockey":               _p(0.10, 0.25, 0.55, 0.80, 0.55, 0.25, 0.60, 0.50, 0.70, 0.60, 0.40, 0.90, 0.55, 0.25, 0.70),
+            "pr-specialist":              _p(0.10, 0.35, 0.40, 0.85, 0.70, 0.55, 0.60, 0.65, 0.65, 0.70, 0.70, 0.75, 0.40, 0.60, 0.55),
+            "copywriter":                 _p(0.10, 0.40, 0.85, 0.35, 0.40, 0.35, 0.75, 0.65, 0.60, 0.35, 0.50, 0.35, 0.40, 0.40, 0.80),
+            "social-media-manager":       _p(0.15, 0.35, 0.65, 0.70, 0.65, 0.40, 0.70, 0.55, 0.70, 0.55, 0.55, 0.75, 0.55, 0.40, 0.70),
+            # ── LAW ────────────────────────────────────────────────
+            "lawyer":                     _p(0.10, 0.70, 0.25, 0.60, 0.55, 0.60, 0.75, 0.85, 0.70, 0.55, 0.75, 0.55, 0.50, 0.70, 0.70),
+            "corporate-lawyer":           _p(0.10, 0.75, 0.15, 0.45, 0.65, 0.75, 0.70, 0.85, 0.65, 0.40, 0.80, 0.50, 0.45, 0.80, 0.65),
+            "criminal-lawyer":            _p(0.10, 0.65, 0.25, 0.65, 0.55, 0.50, 0.70, 0.85, 0.75, 0.60, 0.65, 0.60, 0.60, 0.55, 0.70),
+            "judge":                      _p(0.10, 0.80, 0.15, 0.60, 0.45, 0.80, 0.75, 0.90, 0.55, 0.55, 0.85, 0.40, 0.30, 0.90, 0.80),
+            "legal-advisor":              _p(0.10, 0.70, 0.20, 0.55, 0.50, 0.70, 0.70, 0.80, 0.55, 0.50, 0.80, 0.45, 0.35, 0.75, 0.65),
+            "company-secretary":          _p(0.10, 0.55, 0.10, 0.35, 0.40, 0.90, 0.55, 0.80, 0.45, 0.35, 0.90, 0.30, 0.20, 0.90, 0.50),
+            # ── EDUCATION ──────────────────────────────────────────
+            "teacher":                    _p(0.15, 0.45, 0.35, 0.90, 0.35, 0.50, 0.70, 0.70, 0.55, 0.90, 0.65, 0.60, 0.25, 0.60, 0.50),
+            "professor":                  _p(0.20, 0.85, 0.30, 0.70, 0.35, 0.50, 0.90, 0.85, 0.60, 0.65, 0.70, 0.45, 0.35, 0.65, 0.80),
+            "tutor":                      _p(0.15, 0.45, 0.30, 0.85, 0.30, 0.45, 0.65, 0.60, 0.50, 0.85, 0.55, 0.50, 0.20, 0.50, 0.55),
+            "education-counselor":        _p(0.10, 0.45, 0.25, 0.95, 0.40, 0.45, 0.65, 0.60, 0.55, 0.95, 0.60, 0.60, 0.25, 0.50, 0.50),
+            "academic-researcher":        _p(0.30, 0.95, 0.25, 0.30, 0.25, 0.55, 0.95, 0.90, 0.60, 0.30, 0.70, 0.25, 0.40, 0.70, 0.90),
+            # ── GOVERNMENT & DEFENCE ───────────────────────────────
+            "ias-officer":                _p(0.20, 0.60, 0.20, 0.70, 0.75, 0.75, 0.70, 0.90, 0.75, 0.65, 0.85, 0.60, 0.45, 0.80, 0.65),
+            "ips-officer":                _p(0.55, 0.45, 0.15, 0.65, 0.70, 0.60, 0.55, 0.90, 0.80, 0.60, 0.75, 0.60, 0.55, 0.75, 0.60),
+            "ifs-officer":                _p(0.15, 0.60, 0.25, 0.80, 0.65, 0.60, 0.75, 0.80, 0.65, 0.75, 0.75, 0.70, 0.40, 0.70, 0.55),
+            "army-officer":               _p(0.80, 0.40, 0.15, 0.60, 0.70, 0.65, 0.50, 0.95, 0.85, 0.65, 0.80, 0.55, 0.70, 0.85, 0.50),
+            "navy-officer":               _p(0.75, 0.55, 0.15, 0.55, 0.60, 0.65, 0.55, 0.90, 0.80, 0.60, 0.80, 0.50, 0.65, 0.85, 0.50),
+            "air-force-officer":          _p(0.75, 0.60, 0.15, 0.50, 0.55, 0.65, 0.60, 0.90, 0.75, 0.50, 0.80, 0.45, 0.65, 0.85, 0.55),
+            "police-officer":             _p(0.55, 0.40, 0.15, 0.65, 0.55, 0.60, 0.45, 0.80, 0.70, 0.60, 0.70, 0.55, 0.50, 0.75, 0.45),
+            "intelligence-officer":       _p(0.30, 0.85, 0.20, 0.35, 0.40, 0.65, 0.85, 0.85, 0.70, 0.35, 0.75, 0.30, 0.55, 0.70, 0.75),
+            # ── SPORTS ─────────────────────────────────────────────
+            "athlete":                    _p(0.90, 0.25, 0.15, 0.35, 0.40, 0.35, 0.50, 0.95, 0.85, 0.40, 0.55, 0.55, 0.70, 0.50, 0.75),
+            "coach":                      _p(0.50, 0.35, 0.25, 0.85, 0.60, 0.45, 0.60, 0.80, 0.70, 0.85, 0.70, 0.70, 0.45, 0.60, 0.60),
+            "fitness-trainer":            _p(0.65, 0.30, 0.20, 0.80, 0.50, 0.35, 0.50, 0.70, 0.65, 0.75, 0.55, 0.75, 0.40, 0.45, 0.60),
+            "sports-analyst":             _p(0.25, 0.80, 0.20, 0.35, 0.35, 0.65, 0.80, 0.70, 0.50, 0.30, 0.70, 0.30, 0.40, 0.75, 0.70),
+            "sports-manager":             _p(0.25, 0.35, 0.20, 0.65, 0.80, 0.60, 0.55, 0.70, 0.70, 0.60, 0.75, 0.65, 0.45, 0.65, 0.60),
+            # ── AGRICULTURE & ENVIRONMENT ──────────────────────────
+            "agricultural-scientist":     _p(0.65, 0.85, 0.20, 0.30, 0.25, 0.50, 0.85, 0.80, 0.55, 0.35, 0.65, 0.30, 0.40, 0.65, 0.75),
+            "farmer":                     _p(0.90, 0.30, 0.20, 0.30, 0.35, 0.40, 0.45, 0.85, 0.65, 0.35, 0.60, 0.35, 0.50, 0.50, 0.70),
+            "horticulturist":             _p(0.70, 0.65, 0.30, 0.30, 0.20, 0.45, 0.70, 0.70, 0.50, 0.30, 0.60, 0.30, 0.30, 0.60, 0.65),
+            "forestry-officer":           _p(0.65, 0.55, 0.15, 0.40, 0.35, 0.55, 0.60, 0.75, 0.55, 0.40, 0.70, 0.35, 0.35, 0.70, 0.55),
+            "environmental-scientist":    _p(0.50, 0.85, 0.25, 0.40, 0.30, 0.50, 0.85, 0.80, 0.55, 0.45, 0.65, 0.35, 0.35, 0.65, 0.75),
+            "wildlife-biologist":         _p(0.65, 0.85, 0.25, 0.30, 0.20, 0.40, 0.90, 0.80, 0.55, 0.35, 0.55, 0.25, 0.45, 0.50, 0.80),
+            # ── AVIATION & HOSPITALITY ─────────────────────────────
+            "pilot":                      _p(0.75, 0.55, 0.15, 0.30, 0.40, 0.70, 0.60, 0.85, 0.60, 0.40, 0.85, 0.40, 0.55, 0.90, 0.55),
+            "cabin-crew":                 _p(0.15, 0.20, 0.25, 0.90, 0.40, 0.50, 0.45, 0.55, 0.50, 0.85, 0.60, 0.85, 0.30, 0.60, 0.35),
+            "air-traffic-controller":     _p(0.30, 0.70, 0.10, 0.30, 0.35, 0.90, 0.60, 0.90, 0.55, 0.30, 0.95, 0.25, 0.30, 0.95, 0.50),
+            "airport-manager":            _p(0.25, 0.45, 0.15, 0.60, 0.70, 0.75, 0.55, 0.75, 0.65, 0.55, 0.85, 0.55, 0.35, 0.80, 0.55),
+            "hotel-manager":              _p(0.20, 0.35, 0.30, 0.85, 0.75, 0.60, 0.55, 0.70, 0.70, 0.80, 0.80, 0.75, 0.35, 0.65, 0.55),
+            "chef":                       _p(0.60, 0.30, 0.80, 0.40, 0.35, 0.30, 0.65, 0.75, 0.65, 0.40, 0.55, 0.40, 0.50, 0.45, 0.70),
+            "event-manager":              _p(0.15, 0.30, 0.55, 0.80, 0.80, 0.55, 0.60, 0.70, 0.80, 0.70, 0.80, 0.80, 0.50, 0.60, 0.55),
+            "travel-consultant":          _p(0.15, 0.30, 0.30, 0.80, 0.55, 0.50, 0.55, 0.50, 0.50, 0.70, 0.60, 0.70, 0.30, 0.50, 0.45),
+            # ── VOCATIONAL ─────────────────────────────────────────
+            "electrician":                _p(0.90, 0.40, 0.15, 0.25, 0.20, 0.50, 0.45, 0.75, 0.55, 0.25, 0.60, 0.30, 0.40, 0.65, 0.55),
+            "plumber":                    _p(0.90, 0.35, 0.10, 0.30, 0.20, 0.45, 0.40, 0.75, 0.55, 0.30, 0.55, 0.35, 0.35, 0.60, 0.55),
+            "carpenter":                  _p(0.90, 0.30, 0.45, 0.25, 0.20, 0.40, 0.50, 0.75, 0.55, 0.25, 0.55, 0.30, 0.35, 0.55, 0.65),
+            "mechanic":                   _p(0.90, 0.45, 0.10, 0.25, 0.20, 0.50, 0.50, 0.80, 0.55, 0.25, 0.60, 0.30, 0.40, 0.65, 0.55),
+            "technician":                 _p(0.85, 0.50, 0.10, 0.30, 0.20, 0.55, 0.55, 0.75, 0.50, 0.30, 0.65, 0.30, 0.30, 0.70, 0.50),
+            "tailor":                     _p(0.55, 0.20, 0.70, 0.35, 0.25, 0.40, 0.50, 0.65, 0.45, 0.30, 0.55, 0.30, 0.30, 0.50, 0.65),
+            "beautician":                 _p(0.35, 0.20, 0.55, 0.75, 0.45, 0.30, 0.50, 0.50, 0.55, 0.65, 0.45, 0.70, 0.35, 0.35, 0.55),
+            # ── OPERATIONS & LOGISTICS ─────────────────────────────
+            "supply-chain-manager":       _p(0.30, 0.55, 0.10, 0.45, 0.60, 0.85, 0.60, 0.75, 0.65, 0.45, 0.90, 0.45, 0.35, 0.90, 0.60),
+            "logistics-manager":          _p(0.35, 0.45, 0.10, 0.45, 0.55, 0.80, 0.50, 0.75, 0.60, 0.45, 0.85, 0.45, 0.30, 0.85, 0.55),
+            "warehouse-manager":          _p(0.50, 0.35, 0.10, 0.40, 0.40, 0.80, 0.40, 0.70, 0.55, 0.40, 0.80, 0.40, 0.25, 0.85, 0.45),
+            "procurement-specialist":     _p(0.25, 0.50, 0.10, 0.50, 0.60, 0.75, 0.55, 0.70, 0.55, 0.45, 0.80, 0.45, 0.35, 0.80, 0.55),
+            # ── NEW-AGE DIGITAL ────────────────────────────────────
+            "digital-marketer":           _p(0.15, 0.40, 0.60, 0.60, 0.70, 0.40, 0.75, 0.60, 0.75, 0.50, 0.55, 0.70, 0.55, 0.40, 0.70),
+            "seo-specialist":             _p(0.20, 0.65, 0.30, 0.30, 0.40, 0.60, 0.70, 0.70, 0.55, 0.30, 0.65, 0.30, 0.35, 0.65, 0.70),
+            "growth-hacker":              _p(0.20, 0.65, 0.50, 0.40, 0.75, 0.45, 0.85, 0.65, 0.85, 0.35, 0.55, 0.55, 0.75, 0.35, 0.85),
+            "influencer":                 _p(0.10, 0.25, 0.70, 0.80, 0.70, 0.20, 0.60, 0.55, 0.80, 0.55, 0.40, 0.90, 0.65, 0.25, 0.80),
+            "ethical-hacker":             _p(0.45, 0.90, 0.20, 0.15, 0.25, 0.60, 0.90, 0.80, 0.75, 0.25, 0.70, 0.20, 0.70, 0.70, 0.85),
+            "no-code-developer":          _p(0.30, 0.60, 0.50, 0.35, 0.45, 0.45, 0.70, 0.55, 0.65, 0.35, 0.55, 0.35, 0.45, 0.50, 0.70),
         }
+
         for career in Career.objects.all():
-            wmap = weights_map.get(career.slug, {})
-            for cat_slug, weight in wmap.items():
-                cat = categories.get(cat_slug)
+            profile = weights_map.get(career.slug)
+            if not profile:
+                continue
+            for dim_slug, weight in profile.items():
+                cat = categories.get(dim_slug)
                 if cat:
-                    CareerCategoryWeight.objects.update_or_create(
+                    CareerCategoryWeight.objects.create(
                         career=career,
                         category=cat,
-                        defaults={"weight": Decimal(str(weight))},
+                        weight=Decimal(str(weight)),
                     )
-        self.stdout.write("Weights seeded.")
+        self.stdout.write("15-dimension career weights seeded.")
+
+    # ── Subject weights (unchanged) ─────────────────────────────────
 
     def _seed_subject_weights(self):
         """Subject importance per career: math, science, english, social_science."""

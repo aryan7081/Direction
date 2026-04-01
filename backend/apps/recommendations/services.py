@@ -1,10 +1,14 @@
 """
-Recommendation engine - career matching from assessment scores.
-Multi-factor: interests + academic marks + financial fit.
+Recommendation engine — career matching from assessment scores.
+
+Multi-factor:
+  65 %  Profile similarity (cosine similarity across 15 dimensions)
+  20 %  Academic marks fit
+  15 %  Financial tier fit
 """
 import math
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from django.db.models import Prefetch
 
@@ -13,7 +17,7 @@ from apps.careers.models import Career, CareerCategoryWeight, CareerSubjectWeigh
 
 
 class BaseRecommendationEngine(ABC):
-    """Abstract base for recommendation engines - enables future AI swap."""
+    """Abstract base for recommendation engines — enables future AI swap."""
 
     @abstractmethod
     def get_recommendations(
@@ -28,16 +32,16 @@ class BaseRecommendationEngine(ABC):
 class WeightedSimilarityEngine(BaseRecommendationEngine):
     """
     Multi-factor compatibility:
-    - Interest (60%): cosine similarity of category scores vs career category weights
-    - Academic (25%): subject marks vs career subject weights (0-100 marks normalized)
-    - Financial (15%): user financial tier vs career education cost tier
+      Profile  (65 %) — cosine similarity of the user's 15-dimension score
+                        vector against the career's ideal 15-dimension weights
+      Academic (20 %) — weighted average of subject marks
+      Financial(15 %) — user financial tier vs career education cost tier
     """
 
-    INTEREST_WEIGHT = 0.60
-    ACADEMIC_WEIGHT = 0.25
+    PROFILE_WEIGHT = 0.65
+    ACADEMIC_WEIGHT = 0.20
     FINANCIAL_WEIGHT = 0.15
 
-    # Financial fit: (user_tier, career_cost_tier) -> score 0-1
     FINANCIAL_MATRIX = {
         ("low", "low"): 1.0,
         ("low", "medium"): 0.5,
@@ -83,10 +87,10 @@ class WeightedSimilarityEngine(BaseRecommendationEngine):
 
         scores = []
         for career in careers:
-            interest = self._interest_compatibility(
+            profile_sim = self._profile_similarity(
                 category_scores, list(career.category_weights.all())
             )
-            if interest is None:
+            if profile_sim is None:
                 continue
 
             academic = self._academic_compatibility(
@@ -97,7 +101,7 @@ class WeightedSimilarityEngine(BaseRecommendationEngine):
             )
 
             total = (
-                interest * self.INTEREST_WEIGHT
+                profile_sim * self.PROFILE_WEIGHT
                 + academic * self.ACADEMIC_WEIGHT
                 + financial * self.FINANCIAL_WEIGHT
             )
@@ -118,69 +122,50 @@ class WeightedSimilarityEngine(BaseRecommendationEngine):
             for c, compat in top
         ]
 
-    def _interest_compatibility(
-        self,
+    # ── Profile similarity (cosine) ────────────────────────────────
+
+    @staticmethod
+    def _profile_similarity(
         user_scores: Dict[str, float],
         career_weights: List[CareerCategoryWeight],
     ) -> Optional[float]:
         """
-        Score that differentiates low vs high engagement and penalizes mismatch.
-        Uses (user_score - 0.5) so: low interest hurts, high interest helps, neutral=0.
-        Cosine similarity gave identical rankings for "all disagree" vs "all agree".
-        Adds small tie-breaker from dot product so uniform responses still rank.
+        Cosine similarity between the user's 15-dimension score vector
+        and the career's ideal weight vector.
+
+        Both vectors are non-negative (0-1) so cosine sits in [0, 1].
+        Returns None if the career has no weights (skip it).
         """
         if not career_weights:
             return None
 
-        NEUTRAL = 0.5  # 3/5 on Likert scale
-        weighted_sum = 0.0
-        dot_product = 0.0
-        weight_sum = 0.0
+        user_vec: List[float] = []
+        career_vec: List[float] = []
 
         for cw in career_weights:
             cat_key = str(cw.category_id)
-            u = float(user_scores.get(cat_key, NEUTRAL))
-            w = float(cw.weight)
-            weighted_sum += w * (u - NEUTRAL)
-            dot_product += u * w
-            weight_sum += w
+            u = float(user_scores.get(cat_key, 0.0))
+            c = float(cw.weight)
+            user_vec.append(u)
+            career_vec.append(c)
 
-        if weight_sum == 0:
-            return None
+        dot = sum(u * c for u, c in zip(user_vec, career_vec))
+        norm_u = math.sqrt(sum(u * u for u in user_vec))
+        norm_c = math.sqrt(sum(c * c for c in career_vec))
 
-        raw_min = -0.3 * weight_sum
-        raw_max = 0.5 * weight_sum
-        span = raw_max - raw_min
-        if span <= 0:
-            base = 0.5
-        else:
-            base = max(0.0, min(1.0, (weighted_sum - raw_min) / span))
+        if norm_u < 1e-9 or norm_c < 1e-9:
+            return 0.0
 
-        # Tie-breaker for uniform responses:
-        # "all agree" (base=1): favour careers with higher total weights
-        # "all disagree" (base=0): favour careers with lower total weights
-        if base < 0.1:
-            tie_break = max(0, 1.0 - weight_sum / 4.0)  # lighter careers score higher
-        elif base > 0.9:
-            tie_break = min(1.0, weight_sum / 4.0)  # heavier careers score higher
-        else:
-            max_dot = weight_sum
-            min_dot = 0.2 * weight_sum
-            dot_span = max_dot - min_dot
-            tie_break = (dot_product - min_dot) / dot_span if dot_span > 1e-9 else 0.5
-        return max(0.0, min(1.0, base * 0.99 + tie_break * 0.01))
+        return dot / (norm_u * norm_c)
 
+    # ── Academic compatibility ──────────────────────────────────────
+
+    @staticmethod
     def _academic_compatibility(
-        self,
         subject_marks: Dict[str, float],
         subject_weights: List[CareerSubjectWeight],
     ) -> float:
-        """
-        Weighted average of marks by career's subject importance.
-        Full marks in all subjects → 1.0 for every career (student is qualified).
-        Cosine similarity previously penalized specialized careers (e.g. Doctor)
-        even when the student had 100 in every subject.
-        """
+        """Weighted average of marks by career's subject importance."""
         if not subject_marks or not subject_weights:
             return 1.0
 
@@ -198,18 +183,18 @@ class WeightedSimilarityEngine(BaseRecommendationEngine):
 
         return max(0.0, min(1.0, weighted_sum / weight_sum))
 
+    # ── Financial compatibility ─────────────────────────────────────
+
     def _financial_compatibility(
         self, user_tier: str, career_cost_tier: str
     ) -> float:
-        """Returns 0-1. No user tier / prefer not = assume 1.0."""
+        """Returns 0-1.  No user tier / prefer not → assume 1.0."""
         if not user_tier:
             return 1.0
-
         career_cost_tier = (career_cost_tier or "medium").lower()
-        key = (user_tier, career_cost_tier)
-        return self.FINANCIAL_MATRIX.get(key, 1.0)
+        return self.FINANCIAL_MATRIX.get((user_tier, career_cost_tier), 1.0)
 
 
 def get_recommendation_engine() -> BaseRecommendationEngine:
-    """Factory for recommendation engine - swap implementation here for AI."""
+    """Factory — swap implementation here for an AI engine later."""
     return WeightedSimilarityEngine()

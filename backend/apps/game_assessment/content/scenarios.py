@@ -1,6 +1,8 @@
 """
 Scenario section: same 30 items as quiz (RIASEC + core traits + personality).
 Interest weights are mapped to game trait signals for the scoring pipeline.
+
+Bridge: 15 quiz dimensions → 8 game traits.
 """
 
 from __future__ import annotations
@@ -11,8 +13,32 @@ from apps.assessments.content.mcq_items import MCQ_ITEMS
 
 _LETTERS = ("a", "b", "c", "d")
 
+# ── Mapping table: quiz dimension slug → game trait contributions ──
+# Each entry is (game_trait, cap).  Intensity is raw/5.
+_DIM_TO_TRAITS: Dict[str, List[tuple]] = {
+    # RIASEC
+    "riasec_realistic":       [("quantitative_comfort", 0.70), ("structure_discipline", 0.45)],
+    "riasec_investigative":   [("analytical_reasoning", 0.95), ("quantitative_comfort", 0.55)],
+    "riasec_artistic":        [("creativity_innovation", 0.95), ("risk_appetite", 0.35)],
+    "riasec_social":          [("social_orientation", 0.95), ("verbal_communication", 0.45)],
+    "riasec_enterprising":    [("leadership_drive", 0.85), ("verbal_communication", 0.60)],
+    "riasec_conventional":    [("structure_discipline", 0.85), ("analytical_reasoning", 0.35)],
+    # Core traits
+    "trait_curiosity":        [("analytical_reasoning", 0.55), ("creativity_innovation", 0.45)],
+    "trait_persistence":      [("structure_discipline", 0.60)],
+    "trait_initiative":       [("leadership_drive", 0.60), ("risk_appetite", 0.45)],
+    "trait_empathy_teamwork": [("social_orientation", 0.70), ("verbal_communication", 0.35)],
+    "trait_planning":         [("structure_discipline", 0.70)],
+    # Personality
+    "personality_extroversion":   [("social_orientation", 0.55), ("verbal_communication", 0.45)],
+    "personality_risk_taking":    [("risk_appetite", 0.80)],
+    "personality_structure":      [("structure_discipline", 0.60)],
+    "personality_self_direction": [("leadership_drive", 0.45), ("analytical_reasoning", 0.30)],
+}
+
 
 def _interest_weights_to_traits(category_weights: Dict[str, int]) -> Dict[str, float]:
+    """Map quiz option category_weights to game trait signals."""
     traits: Dict[str, float] = {}
 
     def bump(trait: str, cap: float, intensity: float) -> None:
@@ -24,25 +50,11 @@ def _interest_weights_to_traits(category_weights: Dict[str, int]) -> Dict[str, f
 
     for slug, raw in category_weights.items():
         intensity = float(raw) / 5.0
-        if slug == "analytical":
-            bump("analytical_reasoning", 0.95, intensity)
-        elif slug == "scientific":
-            bump("analytical_reasoning", 0.55, intensity)
-            bump("quantitative_comfort", 0.8, intensity)
-        elif slug == "creative":
-            bump("creativity_innovation", 0.95, intensity)
-            bump("risk_appetite", 0.45, intensity)
-        elif slug == "social":
-            bump("social_orientation", 0.95, intensity)
-        elif slug == "verbal":
-            bump("verbal_communication", 0.95, intensity)
-            bump("leadership_drive", 0.5, intensity)
-        elif slug == "organizational":
-            bump("structure_discipline", 0.92, intensity)
-            bump("leadership_drive", 0.55, intensity)
-        elif slug == "technical":
-            bump("quantitative_comfort", 0.72, intensity)
-            bump("analytical_reasoning", 0.48, intensity)
+        mappings = _DIM_TO_TRAITS.get(slug)
+        if not mappings:
+            continue
+        for game_trait, cap in mappings:
+            bump(game_trait, cap, intensity)
 
     return traits
 

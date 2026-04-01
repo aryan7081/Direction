@@ -1,7 +1,13 @@
 """
-30-question career MCQ: RIASEC (Q01–Q12), five core traits (Q13–Q22),
-basic personality (Q23–Q30). Option weights use legacy interest slugs for
-career matching (quiz path) and feed game scenario scoring (mapped to traits).
+30-question career MCQ scored across 15 explicit dimensions:
+
+  RIASEC (6)   — Holland interest types from Q01-Q12
+  Traits  (5)  — Core work traits from Q13-Q22
+  Personality (4) — Behavioural style from Q23-Q30
+
+Every option contributes weights that the scoring engine aggregates
+into a 15-dimension user profile.  Career matching uses cosine
+similarity between this profile and each career's ideal weights.
 """
 
 from __future__ import annotations
@@ -12,18 +18,26 @@ SECTION_SLUG_RIASEC = "riasec-interests"
 SECTION_SLUG_TRAITS = "work-traits"
 SECTION_SLUG_PERSONALITY = "work-personality"
 
+# ── RIASEC helpers ──────────────────────────────────────────────────
+
+_RIASEC_SLUGS = [
+    "riasec_realistic",
+    "riasec_investigative",
+    "riasec_artistic",
+    "riasec_social",
+    "riasec_enterprising",
+    "riasec_conventional",
+]
+_HOLLAND_IDX = {"R": 0, "I": 1, "A": 2, "S": 3, "E": 4, "C": 5}
+
 
 def _h(code: str) -> Dict[str, int]:
-    holland = {
-        "R": {"technical": 5},
-        "I": {"analytical": 5, "scientific": 3},
-        "A": {"creative": 5},
-        "S": {"social": 5, "verbal": 3},
-        "E": {"verbal": 5, "organizational": 4},
-        "C": {"organizational": 5, "analytical": 3},
-    }
-    return dict(holland[code])
+    """RIASEC option: primary Holland type scores 5, all others score 1."""
+    primary = _HOLLAND_IDX[code]
+    return {slug: (5 if i == primary else 1) for i, slug in enumerate(_RIASEC_SLUGS)}
 
+
+# ── generic builder ─────────────────────────────────────────────────
 
 def _mcq(
     code: str,
@@ -54,7 +68,12 @@ def _mcq(
     }
 
 
+# ====================================================================
+#  MCQ_ITEMS — 30 questions
+# ====================================================================
+
 MCQ_ITEMS: List[Dict[str, Any]] = [
+    # ── RIASEC  (Q01-Q12) ──────────────────────────────────────────
     _mcq(
         "Q01", SECTION_SLUG_RIASEC, "scenario", "home",
         "Your ceiling fan suddenly stops working. What's your first move?",
@@ -62,8 +81,7 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
             ("🔧 Open it up and check the wires myself", _h("R")),
             ("🔍 Search online for what could be wrong", _h("I")),
             ("📞 Call someone who knows how to fix things", _h("S")),
-            ("💡 Think of a different way to cool the room",
-             {"creative": 4, "verbal": 4, "organizational": 4}),
+            ("💡 Think of a different way to cool the room", _h("A")),
         ], "R", "I",
     ),
     _mcq(
@@ -78,7 +96,7 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
     ),
     _mcq(
         "Q03", SECTION_SLUG_RIASEC, "puzzle", "game",
-        "You’re playing a strategy game and something isn’t working as expected. What do you do?",
+        "You're playing a strategy game and something isn't working as expected. What do you do?",
         [
             ("🔍 Analyze the pattern to figure out the logic", _h("I")),
             ("🛠 Try random actions until something works", _h("R")),
@@ -88,7 +106,7 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
     ),
     _mcq(
         "Q04", SECTION_SLUG_RIASEC, "scenario", "school",
-        "You’re given a complex assignment. How do you approach it?",
+        "You're given a complex assignment. How do you approach it?",
         [
             ("🔍 Break it down and understand the concepts", _h("I")),
             ("🗂 Follow a structured method step-by-step", _h("C")),
@@ -148,7 +166,7 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
     ),
     _mcq(
         "Q10", SECTION_SLUG_RIASEC, "planning", "home",
-        "You’re organizing an event. What’s your approach?",
+        "You're organizing an event. What's your approach?",
         [
             ("📈 Lead and make decisions", _h("E")),
             ("📋 Plan everything in detail", _h("C")),
@@ -176,14 +194,18 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
             ("👥 Helping people", _h("S")),
         ], "C", "R",
     ),
+
+    # ── CORE TRAITS  (Q13-Q22, 2 questions per trait) ──────────────
+
+    # curiosity (Q13-Q14)
     _mcq(
         "Q13", SECTION_SLUG_TRAITS, "scenario", "",
         "You encounter something new. What do you do?",
         [
-            ("🔍 Explore it deeply", {"analytical": 5, "scientific": 4, "creative": 3}),
-            ("📋 Ignore unless needed", {"analytical": 2, "organizational": 3}),
-            ("👥 Ask someone", {"social": 4, "analytical": 4, "verbal": 3}),
-            ("🎨 Try creatively", {"creative": 5, "analytical": 3}),
+            ("🔍 Explore it deeply", {"trait_curiosity": 5}),
+            ("📋 Ignore unless needed", {"trait_curiosity": 1}),
+            ("👥 Ask someone", {"trait_curiosity": 3}),
+            ("🎨 Try creatively", {"trait_curiosity": 4}),
         ],
         "curiosity",
     ),
@@ -191,21 +213,23 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
         "Q14", SECTION_SLUG_TRAITS, "quick_pick", "",
         "What excites you most?",
         [
-            ("🔍 Learning new things", {"analytical": 5, "scientific": 4}),
-            ("📋 Completing tasks", {"organizational": 5, "analytical": 3}),
-            ("👥 Talking to people", {"social": 5, "verbal": 4}),
-            ("🎨 Creating things", {"creative": 5}),
+            ("🔍 Learning new things", {"trait_curiosity": 5}),
+            ("📋 Completing tasks", {"trait_curiosity": 2}),
+            ("👥 Talking to people", {"trait_curiosity": 2}),
+            ("🎨 Creating things", {"trait_curiosity": 4}),
         ],
         "curiosity",
     ),
+
+    # persistence (Q15-Q16)
     _mcq(
         "Q15", SECTION_SLUG_TRAITS, "scenario", "",
         "When things get tough?",
         [
-            ("💪 Keep trying", {"organizational": 5, "analytical": 4}),
-            ("📋 Change plan", {"organizational": 4, "analytical": 4}),
-            ("👥 Ask for help", {"social": 4, "organizational": 3}),
-            ("🎨 Do something else", {"creative": 4, "analytical": 3}),
+            ("💪 Keep trying", {"trait_persistence": 5}),
+            ("📋 Change plan", {"trait_persistence": 4}),
+            ("👥 Ask for help", {"trait_persistence": 2}),
+            ("🎨 Do something else", {"trait_persistence": 1}),
         ],
         "persistence",
     ),
@@ -213,21 +237,23 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
         "Q16", SECTION_SLUG_TRAITS, "scenario", "",
         "Long task?",
         [
-            ("💪 Finish it no matter what", {"organizational": 5, "analytical": 3}),
-            ("📋 Break into steps", {"organizational": 5, "analytical": 4}),
-            ("👥 Work with others", {"social": 5, "organizational": 3}),
-            ("🎨 Take breaks", {"creative": 3, "social": 3, "analytical": 3}),
+            ("💪 Finish it no matter what", {"trait_persistence": 5}),
+            ("📋 Break into steps", {"trait_persistence": 4}),
+            ("👥 Work with others", {"trait_persistence": 3}),
+            ("🎨 Take breaks", {"trait_persistence": 2}),
         ],
         "persistence",
     ),
+
+    # initiative (Q17-Q18)
     _mcq(
         "Q17", SECTION_SLUG_TRAITS, "scenario", "school",
         "You see something that needs improvement. What do you do?",
         [
-            ("🚀 Take action immediately", {"organizational": 5, "verbal": 4}),
-            ("📋 Plan before acting", {"organizational": 5, "analytical": 4}),
-            ("👥 Discuss with others", {"social": 5, "verbal": 3}),
-            ("🎨 Think of creative ideas first", {"creative": 5, "analytical": 3}),
+            ("🚀 Take action immediately", {"trait_initiative": 5}),
+            ("📋 Plan before acting", {"trait_initiative": 4}),
+            ("👥 Discuss with others", {"trait_initiative": 2}),
+            ("🎨 Think of creative ideas first", {"trait_initiative": 3}),
         ],
         "initiative",
     ),
@@ -235,21 +261,23 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
         "Q18", SECTION_SLUG_TRAITS, "role_choice", "daily_life",
         "In a new situation, you usually:",
         [
-            ("🚀 Take the lead", {"verbal": 5, "organizational": 4}),
-            ("📋 Wait and observe", {"analytical": 5, "organizational": 3}),
-            ("👥 Follow others", {"social": 4, "organizational": 3}),
-            ("🎨 Explore freely", {"creative": 5, "analytical": 3}),
+            ("🚀 Take the lead", {"trait_initiative": 5}),
+            ("📋 Wait and observe", {"trait_initiative": 2}),
+            ("👥 Follow others", {"trait_initiative": 1}),
+            ("🎨 Explore freely", {"trait_initiative": 4}),
         ],
         "initiative",
     ),
+
+    # empathy & teamwork (Q19-Q20)
     _mcq(
         "Q19", SECTION_SLUG_TRAITS, "scenario", "friends",
         "Your team member is struggling. What do you do?",
         [
-            ("👥 Help and support them", {"social": 5, "verbal": 3}),
-            ("📋 Focus on your own task", {"analytical": 4, "organizational": 3}),
-            ("🔍 Analyze their problem", {"analytical": 5, "scientific": 3}),
-            ("🎨 Motivate in a fun way", {"creative": 4, "social": 4}),
+            ("👥 Help and support them", {"trait_empathy_teamwork": 5}),
+            ("📋 Focus on your own task", {"trait_empathy_teamwork": 1}),
+            ("🔍 Analyze their problem", {"trait_empathy_teamwork": 3}),
+            ("🎨 Motivate in a fun way", {"trait_empathy_teamwork": 4}),
         ],
         "empathy_teamwork",
     ),
@@ -257,21 +285,23 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
         "Q20", SECTION_SLUG_TRAITS, "role_choice", "school",
         "In a group, you prefer to:",
         [
-            ("👥 Collaborate closely", {"social": 5, "verbal": 4}),
-            ("📋 Work independently", {"analytical": 4, "organizational": 3}),
-            ("🔍 Take analytical role", {"analytical": 5, "scientific": 3}),
-            ("🎨 Bring energy/fun", {"creative": 5, "social": 4}),
+            ("👥 Collaborate closely", {"trait_empathy_teamwork": 5}),
+            ("📋 Work independently", {"trait_empathy_teamwork": 1}),
+            ("🔍 Take analytical role", {"trait_empathy_teamwork": 2}),
+            ("🎨 Bring energy/fun", {"trait_empathy_teamwork": 4}),
         ],
         "empathy_teamwork",
     ),
+
+    # planning & organization (Q21-Q22)
     _mcq(
         "Q21", SECTION_SLUG_TRAITS, "planning", "daily_life",
-        "You have multiple things to do. What’s your approach?",
+        "You have multiple things to do. What's your approach?",
         [
-            ("📋 Plan everything clearly", {"organizational": 5, "analytical": 3}),
-            ("🚀 Start immediately", {"organizational": 4, "analytical": 3}),
-            ("👥 Ask others", {"social": 4, "organizational": 3}),
-            ("🎨 Go with the flow", {"creative": 4, "organizational": 2}),
+            ("📋 Plan everything clearly", {"trait_planning": 5}),
+            ("🚀 Start immediately", {"trait_planning": 3}),
+            ("👥 Ask others", {"trait_planning": 2}),
+            ("🎨 Go with the flow", {"trait_planning": 1}),
         ],
         "planning_organization",
     ),
@@ -279,21 +309,25 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
         "Q22", SECTION_SLUG_TRAITS, "scenario", "home",
         "How do you manage deadlines?",
         [
-            ("📋 Schedule in advance", {"organizational": 5, "analytical": 3}),
-            ("🚀 Work last minute", {"creative": 4, "analytical": 3, "organizational": 3}),
-            ("👥 Coordinate with others", {"social": 4, "organizational": 3}),
-            ("🎨 Adjust dynamically", {"creative": 4, "analytical": 4}),
+            ("📋 Schedule in advance", {"trait_planning": 5}),
+            ("🚀 Work last minute", {"trait_planning": 1}),
+            ("👥 Coordinate with others", {"trait_planning": 3}),
+            ("🎨 Adjust dynamically", {"trait_planning": 2}),
         ],
         "planning_organization",
     ),
+
+    # ── PERSONALITY  (Q23-Q30, 2 questions per dimension) ──────────
+
+    # introversion / extroversion (Q23-Q24)
     _mcq(
         "Q23", SECTION_SLUG_PERSONALITY, "scenario", "friends",
         "After a long week, you prefer:",
         [
-            ("🧘 Spend time alone", {"analytical": 4, "creative": 4}),
-            ("🎉 Go out with friends", {"social": 5, "verbal": 5}),
-            ("👥 Small group hangout", {"social": 4, "verbal": 3}),
-            ("🎨 Do something creative alone", {"creative": 5, "analytical": 3}),
+            ("🧘 Spend time alone", {"personality_extroversion": 1}),
+            ("🎉 Go out with friends", {"personality_extroversion": 5}),
+            ("👥 Small group hangout", {"personality_extroversion": 3}),
+            ("🎨 Do something creative alone", {"personality_extroversion": 2}),
         ],
         "introversion_extroversion",
     ),
@@ -301,21 +335,23 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
         "Q24", SECTION_SLUG_PERSONALITY, "quick_pick", "daily_life",
         "What energizes you more?",
         [
-            ("🧘 Alone time", {"analytical": 4, "creative": 3}),
-            ("🎉 Social gatherings", {"social": 5, "verbal": 5}),
-            ("👥 Meaningful conversations", {"social": 4, "verbal": 4}),
-            ("🎨 Creative time", {"creative": 5, "analytical": 3}),
+            ("🧘 Alone time", {"personality_extroversion": 1}),
+            ("🎉 Social gatherings", {"personality_extroversion": 5}),
+            ("👥 Meaningful conversations", {"personality_extroversion": 3}),
+            ("🎨 Creative time", {"personality_extroversion": 2}),
         ],
         "introversion_extroversion",
     ),
+
+    # risk-taking / cautious (Q25-Q26)
     _mcq(
         "Q25", SECTION_SLUG_PERSONALITY, "scenario", "daily_life",
         "You get a risky opportunity. What do you do?",
         [
-            ("🚀 Take the risk", {"creative": 4, "organizational": 4, "analytical": 3}),
-            ("📋 Evaluate carefully", {"analytical": 5, "organizational": 4}),
-            ("👥 Ask others", {"social": 4, "analytical": 3}),
-            ("🎨 Try a safe variation", {"analytical": 4, "creative": 3, "organizational": 3}),
+            ("🚀 Take the risk", {"personality_risk_taking": 5}),
+            ("📋 Evaluate carefully", {"personality_risk_taking": 2}),
+            ("👥 Ask others", {"personality_risk_taking": 3}),
+            ("🎨 Try a safe variation", {"personality_risk_taking": 1}),
         ],
         "risk_cautious",
     ),
@@ -323,21 +359,23 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
         "Q26", SECTION_SLUG_PERSONALITY, "quick_pick", "game",
         "In games, you prefer:",
         [
-            ("🚀 Aggressive strategy", {"creative": 4, "organizational": 3}),
-            ("📋 Safe strategy", {"analytical": 5, "organizational": 4}),
-            ("👥 Team-based play", {"social": 5, "organizational": 3}),
-            ("🎨 Creative moves", {"creative": 5, "analytical": 3}),
+            ("🚀 Aggressive strategy", {"personality_risk_taking": 5}),
+            ("📋 Safe strategy", {"personality_risk_taking": 1}),
+            ("👥 Team-based play", {"personality_risk_taking": 3}),
+            ("🎨 Creative moves", {"personality_risk_taking": 4}),
         ],
         "risk_cautious",
     ),
+
+    # structure / flexibility (Q27-Q28)
     _mcq(
         "Q27", SECTION_SLUG_PERSONALITY, "scenario", "school",
         "How do you like your work?",
         [
-            ("📋 Structured and clear", {"organizational": 5, "analytical": 3}),
-            ("🎨 Flexible and open", {"creative": 5, "analytical": 3}),
-            ("👥 Collaborative", {"social": 5, "organizational": 3}),
-            ("🔍 Analytical", {"analytical": 5, "scientific": 3}),
+            ("📋 Structured and clear", {"personality_structure": 5}),
+            ("🎨 Flexible and open", {"personality_structure": 1}),
+            ("👥 Collaborative", {"personality_structure": 3}),
+            ("🔍 Analytical", {"personality_structure": 4}),
         ],
         "structure_flexibility",
     ),
@@ -345,21 +383,23 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
         "Q28", SECTION_SLUG_PERSONALITY, "planning", "daily_life",
         "Your daily routine is:",
         [
-            ("📋 Planned", {"organizational": 5}),
-            ("🎨 Spontaneous", {"creative": 5, "analytical": 3}),
-            ("👥 Socially driven", {"social": 5, "verbal": 3}),
-            ("🔍 Task-based", {"analytical": 5, "organizational": 4}),
+            ("📋 Planned", {"personality_structure": 5}),
+            ("🎨 Spontaneous", {"personality_structure": 1}),
+            ("👥 Socially driven", {"personality_structure": 2}),
+            ("🔍 Task-based", {"personality_structure": 4}),
         ],
         "structure_flexibility",
     ),
+
+    # self-directed / externally-guided (Q29-Q30)
     _mcq(
         "Q29", SECTION_SLUG_PERSONALITY, "scenario", "school",
         "When given freedom, you:",
         [
-            ("🚀 Set your own direction", {"analytical": 4, "organizational": 4, "creative": 3}),
-            ("📋 Follow instructions", {"organizational": 5, "analytical": 3}),
-            ("👥 Ask for guidance", {"social": 4, "organizational": 3}),
-            ("🎨 Explore freely", {"creative": 5, "analytical": 3}),
+            ("🚀 Set your own direction", {"personality_self_direction": 5}),
+            ("📋 Follow instructions", {"personality_self_direction": 1}),
+            ("👥 Ask for guidance", {"personality_self_direction": 2}),
+            ("🎨 Explore freely", {"personality_self_direction": 4}),
         ],
         "self_directed_externally_guided",
     ),
@@ -367,10 +407,10 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
         "Q30", SECTION_SLUG_PERSONALITY, "role_choice", "daily_life",
         "In general, you prefer:",
         [
-            ("🚀 Making your own decisions", {"analytical": 4, "organizational": 4, "verbal": 3}),
-            ("📋 Following clear rules", {"organizational": 5, "analytical": 3}),
-            ("👥 Getting advice", {"social": 4, "verbal": 4, "analytical": 3}),
-            ("🎨 Trying different paths", {"creative": 5, "analytical": 3}),
+            ("🚀 Making your own decisions", {"personality_self_direction": 5}),
+            ("📋 Following clear rules", {"personality_self_direction": 1}),
+            ("👥 Getting advice", {"personality_self_direction": 2}),
+            ("🎨 Trying different paths", {"personality_self_direction": 4}),
         ],
         "self_directed_externally_guided",
     ),

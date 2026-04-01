@@ -116,9 +116,10 @@ class StreamRecommendationService:
     """Service for computing stream recommendation from category scores."""
 
     STREAM_CATEGORY_MAP = {
-        "Science": ["analytical", "logical", "mathematical", "scientific"],
-        "Commerce": ["organizational", "numerical", "business", "administrative"],
-        "Arts": ["creative", "verbal", "artistic", "social"],
+        "Science": ["riasec_investigative", "riasec_realistic", "trait_curiosity"],
+        "Commerce": ["riasec_enterprising", "riasec_conventional", "trait_planning"],
+        "Arts": ["riasec_artistic", "riasec_social", "trait_empathy_teamwork",
+                 "personality_extroversion"],
     }
 
     def __init__(self, category_scores: Dict[int, float], category_slugs: Dict[int, str]):
