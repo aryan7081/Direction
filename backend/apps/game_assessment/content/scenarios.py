@@ -37,12 +37,22 @@ _DIM_TO_TRAITS: Dict[str, List[tuple]] = {
 }
 
 
+_SIGNAL_THRESHOLD = 0.20  # discard noise from non-primary RIASEC base-1 scores
+
+
 def _interest_weights_to_traits(category_weights: Dict[str, int]) -> Dict[str, float]:
-    """Map quiz option category_weights to game trait signals."""
+    """Map quiz option category_weights to game trait signals.
+
+    Signals below _SIGNAL_THRESHOLD are discarded — they come from the
+    RIASEC base-1 scores given to non-primary types and would otherwise
+    drag every trait's average down to 2–4 / 10.
+    """
     traits: Dict[str, float] = {}
 
     def bump(trait: str, cap: float, intensity: float) -> None:
         v = min(1.0, cap * intensity)
+        if v < _SIGNAL_THRESHOLD:
+            return
         traits[trait] = max(traits.get(trait, 0.0), v)
 
     if not category_weights:

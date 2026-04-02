@@ -1,6 +1,10 @@
 """
 Builds the full career report data structure from a completed GameSession.
 Uses stored TraitScore and CareerMatchScore — never modifies scoring.
+
+Report payload now includes the student-facing 15-dimension profile
+(RIASEC 6 + Core Traits 5 + Personality 4) alongside the internal
+8-trait system used for career matching.
 """
 from __future__ import annotations
 
@@ -15,6 +19,16 @@ from ..models import (
     TRAIT_SLUGS,
 )
 from apps.careers.models import Career
+
+from .dimension_meta import (
+    calculate_15d_scores,
+    build_interest_profile,
+    build_core_traits,
+    build_personality_style,
+    detect_dominant_pattern,
+    recommend_subjects,
+    derive_working_style,
+)
 
 # ── Trait metadata ──────────────────────────────────────────────────
 
@@ -778,7 +792,6 @@ def build_report(session: GameSession) -> dict:
     stream_rec = _recommend_stream(careers)
     roadmap = _build_roadmap(top, traits) if top else {}
     improvements = _areas_to_improve(traits)
-    dominant_pattern = _detect_dominant_pattern(traits)
     less_natural = _less_natural_careers(traits)
     comparison_text = _comparison_analysis(careers, traits)
 
@@ -787,6 +800,19 @@ def build_report(session: GameSession) -> dict:
     completed_fmt = None
     if session.completed_at:
         completed_fmt = session.completed_at.strftime("%d %B %Y, %I:%M %p")
+
+    # ── 15-dimension profile (student-facing) ──────────────────────
+    riasec_scores, core_trait_scores, personality_scores = calculate_15d_scores(session)
+    recommended_stream = stream_rec.get("stream", "General")
+
+    interest_profile = build_interest_profile(riasec_scores)
+    core_traits_15d = build_core_traits(core_trait_scores, recommended_stream)
+    personality_style = build_personality_style(personality_scores)
+    dominant_pattern = detect_dominant_pattern(riasec_scores, core_trait_scores)
+    subject_rec = recommend_subjects(
+        riasec_scores, core_trait_scores, personality_scores, recommended_stream,
+    )
+    working_style = derive_working_style(personality_scores)
 
     return {
         "session_id": str(session.id),
@@ -799,16 +825,26 @@ def build_report(session: GameSession) -> dict:
             "confidence": hero_confidence,
             "confidence_explanation": _confidence_explanation(hero_confidence),
         },
+        # 8-trait system (kept for career matching context / why_match)
         "traits": trait_list,
+        # 15-dimension student-facing profile
+        "interest_profile": interest_profile,
+        "core_traits": core_traits_15d,
+        "personality_style": personality_style,
+        "dominant_pattern": dominant_pattern,
+        "subject_recommendation": subject_rec,
+        "working_style": working_style,
+        # Career data
         "careers": careers,
         "career_comparison_text": comparison_text,
-        "dominant_pattern": dominant_pattern,
         "less_natural_careers": less_natural,
         "stream_recommendation": stream_rec,
         "roadmap": roadmap,
         "areas_to_improve": improvements,
         "disclaimer": (
-            "This report is generated using behavioral gameplay and trait modeling. "
-            "It is intended for educational guidance purposes only."
+            "This report is generated from a 30-question behavioral assessment "
+            "across 15 scientifically-backed dimensions. It is intended for "
+            "educational guidance purposes and works best when discussed with "
+            "a parent or school counsellor."
         ),
     }

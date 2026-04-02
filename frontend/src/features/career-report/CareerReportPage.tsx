@@ -9,9 +9,12 @@ import { PageLoader, ButtonSpinner } from '@/components/ui/Loaders';
 import { fetchCareerReport, downloadReportPdf } from './api';
 import { HeroSection } from './components/HeroSection';
 import { StreamSection } from './components/StreamSection';
+import { SubjectRecommendationSection } from './components/SubjectRecommendation';
 import { DominantPattern } from './components/DominantPattern';
-import { TraitRadarChart } from './components/TraitRadarChart';
-import { TraitBreakdown } from './components/TraitBreakdown';
+import { InterestProfile } from './components/InterestProfile';
+import { WorkDNA } from './components/WorkDNA';
+import { PersonalityStyle } from './components/PersonalityStyle';
+import { WorkingStyleSection } from './components/WorkingStyleSection';
 import { CareerCards } from './components/CareerCards';
 import { CareerComparison } from './components/CareerComparison';
 import { LessNaturalCareers } from './components/LessNaturalCareers';
@@ -74,7 +77,7 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
         </Button>
       </motion.div>
 
-      {/* ── Student header + report date ── */}
+      {/* ── Student header ── */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Typography
@@ -92,10 +95,13 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
             {report.generated_at && `Generated on ${report.generated_at}`}
             {report.completed_at && ` · Assessment completed ${report.completed_at}`}
           </Typography>
+          <Typography sx={{ color: '#9ca3af', fontSize: '0.72rem', mt: 0.5 }}>
+            Assessed across 15 scientifically-backed dimensions · 30 questions · RIASEC + Work Traits + Personality
+          </Typography>
         </Box>
       </motion.div>
 
-      {/* ── PDF Download Banner ── */}
+      {/* ── PDF Download ── */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <Box
           sx={{
@@ -140,41 +146,69 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
         )}
       </motion.div>
 
-      {/* ── Hero — Top Career Match ── */}
+      {/* ══════════════════════════════════════════════════════════════
+          SECTION 1: THE BIG ANSWERS
+          What career? What stream? What subjects?
+         ══════════════════════════════════════════════════════════════ */}
+
       <HeroSection hero={report.hero} />
 
-      {/* ── Stream Recommendation (elevated to own section) ── */}
       <StreamSection streamRecommendation={report.stream_recommendation} />
 
-      {/* ── Dominant Pattern with key traits ── */}
+      {report.subject_recommendation && (
+        <SubjectRecommendationSection
+          recommendation={report.subject_recommendation}
+          stream={report.stream_recommendation?.stream || ''}
+        />
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          SECTION 2: YOUR PROFILE
+          Who you are across 15 dimensions
+         ══════════════════════════════════════════════════════════════ */}
+
       {report.dominant_pattern && (
         <DominantPattern pattern={report.dominant_pattern} />
       )}
 
-      {/* ── Trait Radar ── */}
-      <TraitRadarChart traits={report.traits} />
+      {report.interest_profile && (
+        <InterestProfile profile={report.interest_profile} />
+      )}
 
-      {/* ── Trait Breakdown (with icons) ── */}
-      <TraitBreakdown traits={report.traits} />
+      {report.core_traits && report.core_traits.length > 0 && (
+        <WorkDNA traits={report.core_traits} />
+      )}
 
-      {/* ── Career Cards (capped at 3 + expand) ── */}
+      {report.personality_style && report.personality_style.length > 0 && (
+        <PersonalityStyle dimensions={report.personality_style} />
+      )}
+
+      {report.working_style && report.working_style.length > 0 && (
+        <WorkingStyleSection items={report.working_style} />
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          SECTION 3: CAREER MATCHES
+          Detailed career cards and comparison
+         ══════════════════════════════════════════════════════════════ */}
+
       <CareerCards careers={report.careers} />
 
-      {/* ── Career Comparison ── */}
       <CareerComparison careers={report.careers} comparisonText={report.career_comparison_text} />
 
-      {/* ── Less Natural Careers ── */}
       {report.less_natural_careers && report.less_natural_careers.length > 0 && (
         <LessNaturalCareers items={report.less_natural_careers} />
       )}
 
-      {/* ── Development Roadmap ── */}
+      {/* ══════════════════════════════════════════════════════════════
+          SECTION 4: YOUR GROWTH PATH
+          Roadmap, areas to improve, next steps
+         ══════════════════════════════════════════════════════════════ */}
+
       <DevelopmentRoadmap roadmap={report.roadmap} />
 
-      {/* ── Areas to Develop / Stretch Goals ── */}
       <AreasToImprove areas={report.areas_to_improve} />
 
-      {/* ── Your Next Steps ── */}
       <NextSteps
         stream={report.stream_recommendation?.stream}
         topCareer={report.hero?.career_name}
@@ -209,11 +243,13 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
             onClick={() => {
               const topCareer = report.hero?.career_name || 'my career match';
               const stream = report.stream_recommendation?.stream || 'my recommended stream';
+              const holland = report.interest_profile?.holland_code || '';
               const text = encodeURIComponent(
                 `🎓 I just took a career assessment on Direction by Outcave!\n\n` +
                 `My recommended stream: ${stream}\n` +
-                `My #1 career match: ${topCareer}\n\n` +
-                `The report has detailed trait analysis, career matches, and a development roadmap.\n\n` +
+                `My #1 career match: ${topCareer}\n` +
+                `${holland ? `My Holland Code: ${holland}\n` : ''}` +
+                `\nThe report has my full 15-dimension profile, career matches, and a development roadmap.\n\n` +
                 `Try it free: ${window.location.origin}/game-assessment`
               );
               window.open(`https://wa.me/?text=${text}`, '_blank');
