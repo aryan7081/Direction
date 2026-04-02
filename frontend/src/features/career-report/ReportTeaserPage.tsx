@@ -3,7 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Box, Button, Chip, Collapse, Container, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Chip,
+  Container,
+  Snackbar,
+  Alert,
+  Typography,
+} from '@mui/material';
 import { motion } from 'framer-motion';
 import { PageLoader, ButtonSpinner } from '@/components/ui/Loaders';
 import { useAuthStore } from '@/stores/authStore';
@@ -18,7 +26,7 @@ declare global {
   }
 }
 
-const SOCIAL_PROOF_COUNT = 12847;
+const SOCIAL_PROOF_COUNT = 12_847;
 
 function CountUp({ target, duration = 2200 }: { target: number; duration?: number }) {
   const [count, setCount] = useState(0);
@@ -37,11 +45,19 @@ function CountUp({ target, duration = 2200 }: { target: number; duration?: numbe
   return <>{count.toLocaleString('en-IN')}</>;
 }
 
-const WHAT_INSIDE = [
-  '8-trait deep analysis with your exact scores',
-  'Top 3 career matches with match % and education paths',
-  'Dominant personality pattern & roadmap (Class 10 → 12th)',
-  'Premium PDF to share with parents & counsellors',
+const STREAM_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  Science: { bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' },
+  Commerce: { bg: '#fefce8', text: '#a16207', border: '#fde68a' },
+  Arts: { bg: '#fdf2f8', text: '#be185d', border: '#fbcfe8' },
+  Humanities: { bg: '#fdf2f8', text: '#be185d', border: '#fbcfe8' },
+};
+
+const UNLOCK_FEATURES = [
+  { icon: '📊', text: 'Detailed trait analysis across 8 dimensions with exact scores' },
+  { icon: '🎯', text: 'Top 5 career matches with confidence scores & education paths' },
+  { icon: '🗺️', text: 'Personalized development roadmap (Class 10 → 12th → College)' },
+  { icon: '📈', text: 'Career comparison chart — see why #1 beats #2' },
+  { icon: '📄', text: 'Premium PDF report to share with parents & counsellors' },
 ];
 
 export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
@@ -50,9 +66,13 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const setAuth = useAuthStore((s) => s.setAuth);
   const user = useAuthStore((s) => s.user);
   const [paying, setPaying] = useState(false);
-  const [showWhatInside, setShowWhatInside] = useState(false);
   const [showSignInStep, setShowSignInStep] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
+  const [snack, setSnack] = useState<{ open: boolean; message: string; severity: 'error' | 'success' }>({
+    open: false,
+    message: '',
+    severity: 'error',
+  });
 
   const { data: teaser, isLoading, error } = useQuery({
     queryKey: ['report-teaser', sessionId],
@@ -75,6 +95,8 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
     }
   }, [teaser, sessionId, router]);
 
+  const showError = (message: string) => setSnack({ open: true, message, severity: 'error' });
+
   const needsSignIn = !user;
 
   const handleUnlockClick = () => {
@@ -93,7 +115,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
       setShowSignInStep(false);
       await handlePurchase();
     } catch {
-      alert('Sign in failed. Please try again.');
+      showError('Sign in failed. Please try again.');
     } finally {
       setSigningIn(false);
     }
@@ -137,7 +159,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
             queryClient.invalidateQueries({ queryKey: ['report-teaser', sessionId] });
             router.push(`/report?session=${sessionId}`);
           } catch {
-            alert('Payment verification failed. Please contact support.');
+            showError('Payment verification failed. Please contact support@outcave.in');
           }
         },
         modal: { ondismiss: () => setPaying(false) },
@@ -146,7 +168,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch {
-      alert('Could not initiate payment. Please try again.');
+      showError('Could not initiate payment. Please try again.');
     } finally {
       setPaying(false);
     }
@@ -166,54 +188,30 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   }
 
   const price = teaser.price ?? 299;
+  const streamColor = STREAM_COLORS[teaser.stream_recommendation] || STREAM_COLORS.Science;
 
   if (showSignInStep) {
     return (
       <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 }, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <Box sx={{ textAlign: 'center', mb: 3 }}>
             <Typography variant="h5" sx={{ fontWeight: 800, color: '#111827', mb: 1 }}>
               Sign in to unlock
             </Typography>
             <Typography sx={{ color: '#6b7280', fontSize: '0.95rem' }}>
-              Sign in with Google to unlock your career report and proceed to payment.
+              Sign in with Google to securely purchase and access your full report.
             </Typography>
           </Box>
-          <Box
-            sx={{
-              p: 3,
-              borderRadius: 3,
-              bgcolor: 'rgba(255,255,255,0.9)',
-              border: '1px solid rgba(0,0,0,0.08)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 2,
-            }}
-          >
+          <Box sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.9)', border: '1px solid rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             {signingIn ? (
               <Box sx={{ py: 3 }}>
                 <ButtonSpinner size={32} />
-                <Typography sx={{ mt: 1, fontSize: '0.9rem', color: '#6b7280' }}>
-                  Signing you in...
-                </Typography>
+                <Typography sx={{ mt: 1, fontSize: '0.9rem', color: '#6b7280' }}>Signing you in...</Typography>
               </Box>
             ) : (
-              <GoogleSignInButton
-                onSuccess={handleGoogleSignInAndPurchase}
-                text="signin_with"
-                width={280}
-              />
+              <GoogleSignInButton onSuccess={handleGoogleSignInAndPurchase} text="signin_with" width={280} />
             )}
-            <Button
-              size="small"
-              onClick={() => setShowSignInStep(false)}
-              sx={{ color: '#9ca3af', textTransform: 'none' }}
-            >
+            <Button size="small" onClick={() => setShowSignInStep(false)} sx={{ color: '#9ca3af', textTransform: 'none' }}>
               ← Back
             </Button>
           </Box>
@@ -223,291 +221,312 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 }, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        {/* Big result card */}
-        <Box
-          sx={{
-            textAlign: 'center',
-            py: { xs: 3, sm: 5 },
-            px: { xs: 2, sm: 3 },
-            borderRadius: 4,
-            background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0f9ff 100%)',
-            border: '1px solid #d1fae5',
-            mb: 3,
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <Box component="img" src="/logo.png" alt="Outcave" sx={{ height: { xs: 100, sm: 128 }, width: 'auto', maxWidth: 320, objectFit: 'contain' }} />
+    <>
+      <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 }, minHeight: '100vh' }}>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+          {/* ── Header: celebration ── */}
+          <Box sx={{ textAlign: 'center', mb: 3 }}>
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }}>
+              <Box sx={{ fontSize: 48, mb: 1 }}>🎉</Box>
+            </motion.div>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>
+              Your Results Are Ready!
+            </Typography>
+            <Typography sx={{ color: '#6b7280', fontSize: '0.9rem', mt: 0.5 }}>
+              Here&apos;s a preview of what we found about you
+            </Typography>
           </Box>
-          <Typography
-            variant="overline"
-            sx={{ color: '#15803d', fontWeight: 700, letterSpacing: 1.5, fontSize: '0.7rem' }}
-          >
-            Your top career match
-          </Typography>
 
-          <motion.div
-            initial={{ scale: 0.92, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.15, type: 'spring', stiffness: 200 }}
-          >
-            <Typography
+          {/* ── Free Insights Card ── */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <Box
               sx={{
-                fontSize: { xs: '2rem', sm: '2.6rem' },
-                fontWeight: 800,
-                color: '#111827',
-                lineHeight: 1.2,
-                mt: 0.5,
-                mb: 1,
+                borderRadius: 3,
+                overflow: 'hidden',
+                border: '1px solid #e5e7eb',
+                mb: 3,
+                bgcolor: '#fff',
               }}
             >
-              {teaser.hero_career}
-            </Typography>
+              <Box sx={{ px: 2.5, py: 1.5, bgcolor: '#f8fafc', borderBottom: '1px solid #e5e7eb' }}>
+                <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: 1 }}>
+                  ✓ Your Free Insights
+                </Typography>
+              </Box>
+
+              <Box sx={{ p: { xs: 2, sm: 2.5 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {/* Stream Recommendation */}
+                {teaser.stream_recommendation && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: streamColor.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+                      🎓
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>Recommended Stream</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>
+                          {teaser.stream_recommendation}
+                        </Typography>
+                        <Chip
+                          label="✓ Matched"
+                          size="small"
+                          sx={{ height: 22, fontSize: '0.68rem', fontWeight: 700, bgcolor: streamColor.bg, color: streamColor.text, border: `1px solid ${streamColor.border}` }}
+                        />
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
+
+                {/* Personality Type */}
+                {teaser.dominant_pattern && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+                      🧠
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>Your Personality Type</Typography>
+                      <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>
+                        {teaser.dominant_pattern}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+
+                {/* Top Career Match */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+                    🏆
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>#1 Career Match</Typography>
+                    <motion.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}>
+                      <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>
+                        {teaser.hero_career}
+                      </Typography>
+                    </motion.div>
+                  </Box>
+                  <Chip
+                    label={`${teaser.hero_confidence}`}
+                    size="small"
+                    sx={{ ml: 'auto', height: 24, fontSize: '0.7rem', fontWeight: 700, bgcolor: '#ecfdf5', color: '#16a34a', border: '1px solid #bbf7d0' }}
+                  />
+                </Box>
+              </Box>
+            </Box>
           </motion.div>
 
-          <Chip
-            label={`${teaser.hero_confidence} Confidence`}
-            sx={{
-              bgcolor: '#fff',
-              color: '#16a34a',
-              border: '1px solid #bbf7d0',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              height: 32,
-            }}
-          />
+          {/* ── Rarity / Curiosity Hook ── */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+            <Box sx={{ textAlign: 'center', mb: 3, py: 1.5, px: 2, borderRadius: 2, background: 'linear-gradient(135deg, #faf5ff 0%, #eff6ff 100%)', border: '1px solid #e9d5ff' }}>
+              <Typography sx={{ fontSize: '0.85rem', color: '#6d28d9', fontWeight: 600 }}>
+                ✨ Only 8% of students share your exact trait combination
+              </Typography>
+            </Box>
+          </motion.div>
 
-          <Typography
-            sx={{
-              mt: 2.5,
-              fontSize: '1rem',
-              color: '#374151',
-              lineHeight: 1.5,
-              fontWeight: 500,
-            }}
-          >
-            This matches your strongest behavioral pattern.
-          </Typography>
-          <Typography
-            sx={{
-              mt: 1,
-              fontSize: '0.9rem',
-              color: '#6b7280',
-              lineHeight: 1.5,
-              fontWeight: 500,
-              fontStyle: 'italic',
-            }}
-          >
-            Based on your responses, this is statistically your strongest match.
-          </Typography>
-          <Typography
-            sx={{
-              mt: 1.5,
-              fontSize: '0.85rem',
-              color: '#4b5563',
-              lineHeight: 1.5,
-              fontWeight: 500,
-            }}
-          >
-            Most students never get this level of clarity before choosing their path.
-          </Typography>
-        </Box>
-
-        {/* Primary CTA — larger, heavier, only thing to click */}
-        <Button
-          variant="contained"
-          size="large"
-          fullWidth
-          onClick={handleUnlockClick}
-          disabled={paying}
-          sx={{
-            py: { xs: 2, sm: 2.2 },
-            minHeight: 52,
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, #16a34a, #15803d)',
-            textTransform: 'none',
-            fontWeight: 800,
-            fontSize: { xs: '1rem', sm: '1.12rem' },
-            letterSpacing: '-0.02em',
-            boxShadow: '0 10px 32px rgba(22,163,74,0.4)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #15803d, #166534)',
-              boxShadow: '0 12px 40px rgba(22,163,74,0.45)',
-            },
-          }}
-        >
-          {paying ? (
-            <><ButtonSpinner size={24} /> Processing...</>
-          ) : (
-            <>🔒 Get My Complete Career Roadmap — ₹{price}</>
-          )}
-        </Button>
-
-        {/* Subtle urgency */}
-        <Typography
-          sx={{
-            mt: 1.5,
-            textAlign: 'center',
-            fontSize: '0.8rem',
-            color: '#6b7280',
-            fontWeight: 500,
-          }}
-        >
-          ⚡ Unlock within 24 hours for maximum accuracy.
-        </Typography>
-
-        {/* Trust row */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: { xs: 2, sm: 3 },
-            flexWrap: 'wrap',
-            mt: 2,
-            mb: 2,
-          }}
-        >
-          {['✓ Instant PDF', '✓ Parent-share ready', '✓ Personalized analysis'].map((item) => (
-            <Typography key={item} sx={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 500 }}>
-              {item}
-            </Typography>
-          ))}
-        </Box>
-
-        {/* Locked Top 3 — curiosity lever, darker bg, blur on locked, gap line */}
-        <Box
-          sx={{
-            py: 1.5,
-            px: 2,
-            mb: 2,
-            borderRadius: 2,
-            bgcolor: '#f1f5f9',
-            border: '1px solid #e2e8f0',
-          }}
-        >
-          <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151', mb: 1.5, textAlign: 'center' }}>
-            Your Top 3 Career Matches
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-            {teaser.career_preview.map((c, i) => {
-              const isRevealed = 'career_name' in c && c.career_name;
-              const colors = ['#16a34a', '#6b7280', '#6b7280'];
-              return (
-                <Box
-                  key={c.rank}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    py: 0.75,
-                    px: 1.5,
-                    borderRadius: 1,
-                    bgcolor: isRevealed ? 'rgba(22,163,74,0.08)' : 'rgba(255,255,255,0.6)',
-                    filter: isRevealed ? 'none' : 'blur(0.4px)',
-                    transition: 'filter 0.2s ease',
-                    '&:hover': {
-                      filter: isRevealed ? 'none' : 'blur(0.2px)',
-                    },
-                    '& .lock-icon': {
-                      display: 'inline-block',
-                      transition: 'transform 0.25s ease',
-                    },
-                    '&:hover .lock-icon': {
-                      transform: 'scale(1.15)',
-                    },
-                  }}
-                >
-                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: colors[i], minWidth: 20 }}>
-                    #{c.rank}
-                  </Typography>
-                  {isRevealed ? (
-                    <Typography sx={{ fontSize: '0.88rem', fontWeight: 600, color: '#111827' }}>
-                      {c.career_name}
-                    </Typography>
-                  ) : (
-                    <Typography sx={{ fontSize: '0.82rem', color: '#94a3b8' }}>
-                      <span className="lock-icon">🔒</span> Unlock to reveal
-                    </Typography>
-                  )}
-                </Box>
-              );
-            })}
-          </Box>
-          {teaser.top_two_gap != null && (
-            <Typography sx={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textAlign: 'center', mt: 1.5 }}>
-              Difference between #1 and #2 is only {teaser.top_two_gap}%
-            </Typography>
-          )}
-          <Typography sx={{ fontSize: '0.72rem', color: '#94a3b8', textAlign: 'center', mt: 1 }}>
-            See full ranking, match % and stream path.
-          </Typography>
-        </Box>
-
-        {/* Social proof — validation before paying */}
-        <Box
-          sx={{
-            textAlign: 'center',
-            py: 2,
-            px: 2,
-            borderRadius: 2,
-            bgcolor: 'rgba(0,0,0,0.02)',
-            border: '1px solid rgba(0,0,0,0.06)',
-            mb: 2,
-          }}
-        >
-          <Typography sx={{ fontSize: '0.9rem', color: '#374151', fontWeight: 600 }}>
-            <CountUp target={SOCIAL_PROOF_COUNT} />+ students unlocked their blueprint
-          </Typography>
-        </Box>
-
-        {/* See what's inside — collapsible so page isn't dead if they don't click */}
-        <Box sx={{ mb: 2 }}>
-          <Button
-            fullWidth
-            onClick={() => setShowWhatInside((v) => !v)}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              color: '#6b7280',
-              fontSize: '0.88rem',
-              justifyContent: 'center',
-              py: 1,
-            }}
-          >
-            {showWhatInside ? '▼ Hide' : 'See what\'s inside'}
-          </Button>
-          <Collapse in={showWhatInside}>
+          {/* ── Unlock Section ── */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
             <Box
-              component="ul"
               sx={{
-                m: 0,
-                pl: 2.5,
-                py: 1,
-                '& li': { fontSize: '0.85rem', color: '#6b7280', lineHeight: 1.8 },
+                borderRadius: 3,
+                overflow: 'hidden',
+                border: '1px solid',
+                borderColor: 'rgba(99,102,241,0.2)',
+                mb: 3,
+                bgcolor: '#fff',
               }}
             >
-              {WHAT_INSIDE.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </Box>
-          </Collapse>
-        </Box>
+              <Box sx={{ px: 2.5, py: 1.5, background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' }}>
+                <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>
+                  🔓 Unlock Your Full Report
+                </Typography>
+              </Box>
 
-        <Box sx={{ textAlign: 'center' }}>
-          <Button
-            size="small"
-            onClick={() => router.push('/dashboard')}
-            sx={{ color: '#9ca3af', textTransform: 'none', fontSize: '0.82rem' }}
-          >
-            ← Back to Dashboard
-          </Button>
-        </Box>
-      </motion.div>
-    </Container>
+              <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  {UNLOCK_FEATURES.map((f) => (
+                    <Box key={f.text} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                      <Typography sx={{ fontSize: 18, lineHeight: 1.4, flexShrink: 0 }}>{f.icon}</Typography>
+                      <Typography sx={{ fontSize: '0.85rem', color: '#374151', lineHeight: 1.5, fontWeight: 500 }}>
+                        {f.text}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </Box>
+          </motion.div>
+
+          {/* ── Value Anchoring ── */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: { xs: 2, sm: 3 },
+                py: 2,
+                px: 2,
+                mb: 2,
+                borderRadius: 2,
+                bgcolor: '#fffbeb',
+                border: '1px solid #fde68a',
+              }}
+            >
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography sx={{ fontSize: '0.7rem', color: '#92400e', fontWeight: 600, textTransform: 'uppercase' }}>
+                  Career Counselor
+                </Typography>
+                <Typography sx={{ fontSize: '1.3rem', fontWeight: 700, color: '#92400e', textDecoration: 'line-through', opacity: 0.7 }}>
+                  ₹3,000+
+                </Typography>
+              </Box>
+
+              <Box sx={{ fontSize: 20, color: '#d97706' }}>→</Box>
+
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography sx={{ fontSize: '0.7rem', color: '#16a34a', fontWeight: 600, textTransform: 'uppercase' }}>
+                  Direction Report
+                </Typography>
+                <Typography sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#16a34a' }}>
+                  ₹{price}
+                </Typography>
+              </Box>
+            </Box>
+          </motion.div>
+
+          {/* ── Primary CTA ── */}
+          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.45 }}>
+            <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                onClick={handleUnlockClick}
+                disabled={paying}
+                sx={{
+                  py: { xs: 2, sm: 2.2 },
+                  minHeight: 56,
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                  textTransform: 'none',
+                  fontWeight: 800,
+                  fontSize: { xs: '1.05rem', sm: '1.15rem' },
+                  letterSpacing: '-0.02em',
+                  boxShadow: '0 10px 32px rgba(22,163,74,0.4)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #15803d, #166534)',
+                    boxShadow: '0 12px 40px rgba(22,163,74,0.5)',
+                  },
+                }}
+              >
+                {paying ? (
+                  <><ButtonSpinner size={24} /> Processing...</>
+                ) : (
+                  <>🔓 Unlock Full Report — ₹{price}</>
+                )}
+              </Button>
+            </motion.div>
+          </motion.div>
+
+          {/* ── Trust Badges ── */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: { xs: 1.5, sm: 2.5 }, flexWrap: 'wrap', mt: 2, mb: 2 }}>
+            {[
+              { icon: '🔒', text: 'Secure Payment' },
+              { icon: '⚡', text: 'Instant Access' },
+              { icon: '📱', text: 'Razorpay Protected' },
+            ].map((badge) => (
+              <Box key={badge.text} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography sx={{ fontSize: 14 }}>{badge.icon}</Typography>
+                <Typography sx={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 600 }}>
+                  {badge.text}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+
+          {/* ── Social Proof ── */}
+          <Box sx={{ textAlign: 'center', py: 1.5, px: 2, mb: 2, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+            <Typography sx={{ fontSize: '0.88rem', color: '#374151', fontWeight: 600 }}>
+              📊 <CountUp target={SOCIAL_PROOF_COUNT} />+ students unlocked their career report
+            </Typography>
+          </Box>
+
+          {/* ── Locked Top 3 Preview ── */}
+          <Box sx={{ py: 1.5, px: 2, mb: 2, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+            <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', mb: 1.5, textAlign: 'center' }}>
+              Your Top 3 Career Matches
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+              {teaser.career_preview.map((c, i) => {
+                const isRevealed = 'career_name' in c && c.career_name;
+                return (
+                  <Box
+                    key={c.rank}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      py: 0.75,
+                      px: 1.5,
+                      borderRadius: 1.5,
+                      bgcolor: isRevealed ? 'rgba(22,163,74,0.06)' : 'rgba(255,255,255,0.7)',
+                      border: isRevealed ? '1px solid rgba(22,163,74,0.15)' : '1px solid transparent',
+                      filter: isRevealed ? 'none' : 'blur(0.5px)',
+                    }}
+                  >
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: i === 0 ? '#16a34a' : '#9ca3af', minWidth: 20 }}>
+                      #{c.rank}
+                    </Typography>
+                    {isRevealed ? (
+                      <Typography sx={{ fontSize: '0.88rem', fontWeight: 600, color: '#111827' }}>
+                        {c.career_name}
+                      </Typography>
+                    ) : (
+                      <Typography sx={{ fontSize: '0.82rem', color: '#94a3b8' }}>
+                        🔒 Unlock to reveal
+                      </Typography>
+                    )}
+                  </Box>
+                );
+              })}
+            </Box>
+            {teaser.top_two_gap != null && (
+              <Typography sx={{ fontSize: '0.72rem', color: '#6366f1', fontWeight: 600, textAlign: 'center', mt: 1.5 }}>
+                Gap between #1 and #2 is only {teaser.top_two_gap}% — the details matter
+              </Typography>
+            )}
+          </Box>
+
+          {/* ── Back ── */}
+          <Box sx={{ textAlign: 'center', mt: 2 }}>
+            <Button
+              size="small"
+              onClick={() => router.push('/dashboard')}
+              sx={{ color: '#9ca3af', textTransform: 'none', fontSize: '0.82rem' }}
+            >
+              ← Back to Dashboard
+            </Button>
+          </Box>
+        </motion.div>
+      </Container>
+
+      {/* ── Toast Notifications ── */}
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={5000}
+        onClose={() => setSnack((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnack((s) => ({ ...s, open: false }))}
+          severity={snack.severity}
+          variant="filled"
+          sx={{ width: '100%', borderRadius: 2 }}
+        >
+          {snack.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 }

@@ -152,6 +152,56 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
         </Box>
       </motion.div>
 
+      {/* Share with parents / WhatsApp */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6 }}
+      >
+        <Box
+          sx={{
+            p: { xs: 2.5, sm: 3 },
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #ecfdf5 0%, #eff6ff 100%)',
+            border: '1px solid #d1fae5',
+            mb: 4,
+            textAlign: 'center',
+          }}
+        >
+          <Typography sx={{ fontWeight: 700, color: '#111827', mb: 0.5, fontSize: '1rem' }}>
+            📱 Share with your parents
+          </Typography>
+          <Typography sx={{ color: '#6b7280', fontSize: '0.85rem', mb: 2, lineHeight: 1.6 }}>
+            Send a quick summary to your parents or counsellor on WhatsApp
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => {
+              const topCareer = report.hero?.career_name || 'my career match';
+              const stream = report.stream_recommendation?.stream || 'my recommended stream';
+              const text = encodeURIComponent(
+                `🎓 I just took a career assessment on Direction by Outcave!\n\n` +
+                `My recommended stream: ${stream}\n` +
+                `My #1 career match: ${topCareer}\n\n` +
+                `The report has detailed trait analysis, career matches, and a development roadmap.\n\n` +
+                `Try it free: ${window.location.origin}/game-assessment`
+              );
+              window.open(`https://wa.me/?text=${text}`, '_blank');
+            }}
+            sx={{
+              bgcolor: '#25D366',
+              textTransform: 'none',
+              fontWeight: 700,
+              borderRadius: 2,
+              px: 3,
+              '&:hover': { bgcolor: '#1eb954' },
+            }}
+          >
+            Share on WhatsApp
+          </Button>
+        </Box>
+      </motion.div>
+
       {/* Bottom actions */}
       <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mb: 6, flexWrap: 'wrap' }}>
         <Button variant="outlined" onClick={() => router.push('/dashboard')} sx={{ borderRadius: 2 }}>

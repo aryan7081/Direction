@@ -7,6 +7,8 @@ export interface ReportTeaser {
   hero_career: string;
   hero_confidence: string;
   dominant_pattern: string;
+  dominant_pattern_description: string;
+  stream_recommendation: string;
   trait_preview: { label: string; icon: string }[];
   career_preview: { rank: number; career_name?: string; stream?: string }[];
   top_two_gap?: number;
@@ -14,7 +16,6 @@ export interface ReportTeaser {
   total_sections: number;
   is_paid: boolean;
   price?: number;
-  /** Present when session was anonymous; use for password step before payment */
   pending_email?: string;
 }
 

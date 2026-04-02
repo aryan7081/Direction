@@ -6,7 +6,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store';
 import type { ScenarioQuestion } from '../types';
 
-const DEFAULT_AUTH_GATE_AFTER = 5;
+const DEFAULT_AUTH_GATE_AFTER = 10;
+
+const MILESTONES: Record<number, { emoji: string; title: string; subtitle: string }> = {
+  10: {
+    emoji: '🎯',
+    title: 'Great start!',
+    subtitle: 'Your personality pattern is emerging...',
+  },
+  20: {
+    emoji: '🔥',
+    title: 'Almost there!',
+    subtitle: 'We can already see strong career signals.',
+  },
+};
 
 export function ScenarioSection({
   questions,
@@ -29,6 +42,7 @@ export function ScenarioSection({
   const [current, setCurrent] = useState(startIndex);
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
+  const [milestone, setMilestone] = useState<{ emoji: string; title: string; subtitle: string } | null>(null);
 
   const question = questions[current];
 
@@ -61,11 +75,20 @@ export function ScenarioSection({
       onProgress?.(next / questions.length);
 
       setTimeout(async () => {
-        if (
-          next === authGateAfterCount &&
-          !isAuthenticated &&
-          onAuthGate
-        ) {
+        if (MILESTONES[next] && next < questions.length) {
+          setMilestone(MILESTONES[next]);
+          setTimeout(() => {
+            setMilestone(null);
+            if (next === authGateAfterCount && !isAuthenticated && onAuthGate) {
+              onAuthGate(next, authGateAfterCount);
+              return;
+            }
+            setCurrent(next);
+          }, 2000);
+          return;
+        }
+
+        if (next === authGateAfterCount && !isAuthenticated && onAuthGate) {
           await onAuthGate(next, authGateAfterCount);
           return;
         }
@@ -94,14 +117,51 @@ export function ScenarioSection({
 
   return (
     <AnimatePresence mode="wait">
-      <motion.div
-        key={question.id}
-        initial={{ opacity: 1, y: 0 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.25 }}
-      >
-        <Box sx={{ bgcolor: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(16px)', borderRadius: 3, border: '1px solid rgba(0,0,0,0.08)', p: { xs: 2.5, sm: 3.5 }, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
+      {milestone ? (
+        <motion.div
+          key="milestone"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.35 }}
+        >
+          <Box
+            sx={{
+              textAlign: 'center',
+              py: { xs: 6, sm: 8 },
+              px: 3,
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+            >
+              <Typography sx={{ fontSize: 56, mb: 2 }}>{milestone.emoji}</Typography>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.4rem', sm: '1.6rem' }, color: '#111827', mb: 0.5 }}>
+                {milestone.title}
+              </Typography>
+              <Typography sx={{ color: '#6366f1', fontWeight: 600, fontSize: '0.95rem' }}>
+                {milestone.subtitle}
+              </Typography>
+            </motion.div>
+          </Box>
+        </motion.div>
+      ) : (
+        <motion.div
+          key={question.id}
+          initial={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.25 }}
+        >
+          <Box sx={{ bgcolor: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(16px)', borderRadius: 3, border: '1px solid rgba(0,0,0,0.08)', p: { xs: 2.5, sm: 3.5 }, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Chip
                 label={`${current + 1} / ${questions.length}`}
@@ -145,8 +205,9 @@ export function ScenarioSection({
                 </motion.div>
               ))}
             </Box>
-        </Box>
-      </motion.div>
+          </Box>
+        </motion.div>
+      )}
     </AnimatePresence>
   );
 }
