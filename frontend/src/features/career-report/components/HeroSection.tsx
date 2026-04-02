@@ -10,13 +10,7 @@ const BADGE_COLORS: Record<string, { bg: string; text: string; border: string }>
   Exploratory: { bg: '#fffbeb', text: '#d97706', border: '#fde68a' },
 };
 
-export function HeroSection({
-  hero,
-  streamRecommendation,
-}: {
-  hero: CareerReport['hero'];
-  streamRecommendation: CareerReport['stream_recommendation'];
-}) {
+export function HeroSection({ hero }: { hero: CareerReport['hero'] }) {
   const badge = BADGE_COLORS[hero.confidence] ?? BADGE_COLORS.Exploratory;
 
   return (
@@ -25,143 +19,70 @@ export function HeroSection({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-        <Box component="img" src="/logo.png" alt="Outcave" sx={{ height: { xs: 100, sm: 128 }, width: 'auto', maxWidth: 320, objectFit: 'contain' }} />
-      </Box>
       <Box
         sx={{
-          display: 'flex',
-          gap: { xs: 2, sm: 3 },
+          textAlign: 'center',
+          py: { xs: 4, sm: 5 },
+          px: 3,
+          borderRadius: 3,
+          background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0f9ff 100%)',
+          border: '1px solid',
+          borderColor: 'grey.200',
           mb: 3,
-          flexDirection: { xs: 'column', sm: 'row' },
         }}
       >
-        {/* Recommended Stream */}
-        <Box
+        <Typography
+          variant="body2"
           sx={{
-            flex: 1,
-            borderRadius: 3,
-            p: { xs: 3, sm: 4 },
-            background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
-            border: '1px solid #bbf7d0',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
+            color: 'text.secondary', fontWeight: 500, mb: 1, letterSpacing: 1,
+            textTransform: 'uppercase', fontSize: '0.75rem',
           }}
         >
-          <Typography
-            variant="overline"
-            sx={{ color: '#15803d', fontWeight: 600, letterSpacing: 1.5 }}
-          >
-            Recommended Stream
-          </Typography>
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 800,
-              color: '#16a34a',
-              mt: 0.5,
-              mb: 1.5,
-              fontSize: { xs: '1.5rem', sm: '2rem' },
-            }}
-          >
-            {streamRecommendation.stream}
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#374151', lineHeight: 1.7 }}>
-            {streamRecommendation.reasoning}
-          </Typography>
-        </Box>
+          #1 Career Match
+        </Typography>
 
-        {/* Top Career Match */}
-        <Box
-          sx={{
-            flex: 1,
-            textAlign: 'center',
-            py: { xs: 4, sm: 5 },
-            px: 3,
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0f9ff 100%)',
-            border: '1px solid',
-            borderColor: 'grey.200',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+        <motion.div
+          initial={{ scale: 0.9 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
         >
           <Typography
-            variant="body2"
-            sx={{
-              color: 'text.secondary',
-              fontWeight: 500,
-              mb: 1,
-              letterSpacing: 1,
-              textTransform: 'uppercase',
-              fontSize: '0.75rem',
-            }}
+            variant="h3"
+            sx={{ fontWeight: 800, color: '#111827', mb: 1, fontSize: { xs: '1.6rem', sm: '2.2rem' } }}
           >
-            Top Career Match
+            {hero.career_name}
           </Typography>
+        </motion.div>
 
-          <motion.div
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-          >
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: 800,
-                color: '#111827',
-                mb: 0.5,
-                fontSize: { xs: '1.5rem', sm: '2rem' },
-              }}
-            >
-              {hero.career_name}
-            </Typography>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Typography
-              sx={{
-                fontSize: { xs: '2.2rem', sm: '2.8rem' },
-                fontWeight: 800,
-                color: '#16a34a',
-                mb: 1.5,
-                lineHeight: 1,
-              }}
-            >
-              {hero.score_percent}%
-            </Typography>
-          </motion.div>
-
-          <Chip
-            label={`${hero.confidence} Confidence`}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Typography
             sx={{
-              bgcolor: badge.bg,
-              color: badge.text,
-              border: `1px solid ${badge.border}`,
-              fontWeight: 600,
-              fontSize: '0.8rem',
-              height: 32,
+              fontSize: { xs: '2.4rem', sm: '3rem' }, fontWeight: 800,
+              color: '#16a34a', lineHeight: 1, mb: 1.5,
             }}
-          />
-        </Box>
+          >
+            {hero.score_percent}%
+          </Typography>
+        </motion.div>
+
+        <Chip
+          label={`${hero.confidence} Confidence`}
+          sx={{
+            bgcolor: badge.bg, color: badge.text, border: `1px solid ${badge.border}`,
+            fontWeight: 600, fontSize: '0.82rem', height: 32,
+          }}
+        />
       </Box>
 
-      {/* Confidence Explanation */}
       {hero.confidence_explanation && (
         <Box
           sx={{
-            p: 2.5,
-            borderRadius: 2,
-            bgcolor: badge.bg,
-            border: `1px solid ${badge.border}`,
-            mb: 3,
+            p: 2.5, borderRadius: 2, bgcolor: badge.bg,
+            border: `1px solid ${badge.border}`, mb: 3,
           }}
         >
           <Typography variant="caption" sx={{ fontWeight: 700, color: badge.text, textTransform: 'uppercase', letterSpacing: 0.5 }}>

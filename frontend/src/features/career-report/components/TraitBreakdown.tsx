@@ -4,8 +4,20 @@ import { Box, Card, CardContent, LinearProgress, Typography } from '@mui/materia
 import { motion } from 'framer-motion';
 import type { ReportTrait } from '../types';
 
+const ICON_MAP: Record<string, string> = {
+  brain: '🧠',
+  calculator: '🔢',
+  lightbulb: '💡',
+  'message-circle': '💬',
+  users: '👥',
+  trophy: '🏆',
+  zap: '⚡',
+  calendar: '📅',
+};
+
 function TraitRow({ trait, index }: { trait: ReportTrait; index: number }) {
   const pct = (trait.score / trait.max) * 100;
+  const emoji = ICON_MAP[trait.icon] || '●';
 
   return (
     <motion.div
@@ -14,10 +26,13 @@ function TraitRow({ trait, index }: { trait: ReportTrait; index: number }) {
       transition={{ delay: 0.05 * index }}
     >
       <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-          <Typography variant="subtitle2" fontWeight={700} color="text.primary">
-            {trait.label}
-          </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography sx={{ fontSize: 16, lineHeight: 1 }}>{emoji}</Typography>
+            <Typography variant="subtitle2" fontWeight={700} color="text.primary">
+              {trait.label}
+            </Typography>
+          </Box>
           <Typography variant="subtitle2" fontWeight={700} color="primary.main">
             {trait.score} / {trait.max}
           </Typography>
@@ -55,10 +70,13 @@ export function TraitBreakdown({ traits }: { traits: ReportTrait[] }) {
     <Card variant="outlined" sx={{ borderRadius: 3, mb: 4 }}>
       <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
         <Typography variant="h6" fontWeight={700} gutterBottom>
-          Trait Breakdown
+          Detailed Trait Breakdown
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Each trait is scored on a 0–10 scale based on how you responded during the assessment.
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          Each trait below is scored on a 0–10 scale. These scores come from analyzing your 30 responses across interests (what excites you), work habits (how you approach tasks), and personality (your natural style).
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, fontWeight: 500 }}>
+          🟢 8+ = Excellent &nbsp; 🔵 6–7 = Strong &nbsp; 🟡 4–5 = Developing &nbsp; 🔴 0–3 = Growing
         </Typography>
 
         {traits.map((t, i) => (

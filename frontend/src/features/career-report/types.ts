@@ -33,9 +33,17 @@ export interface ReportStudent {
   date_of_birth?: string;
 }
 
+export interface DominantPatternKeyTrait {
+  trait: string;
+  label: string;
+  score: number;
+  max: number;
+}
+
 export interface DominantPattern {
   name: string;
   description: string;
+  key_traits?: DominantPatternKeyTrait[];
 }
 
 export interface LessNaturalCareer {
@@ -52,6 +60,7 @@ export interface AreaToImprove {
   score: number;
   tip: string;
   steps: string[];
+  is_stretch?: boolean;
 }
 
 export interface CareerReport {

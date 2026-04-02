@@ -369,9 +369,20 @@ def _detect_dominant_pattern(traits: dict) -> dict:
             best_score = avg
             best_match = archetype
 
+    key_trait_details = []
+    for t in best_match["key_traits"]:
+        meta = TRAIT_META.get(t, {})
+        key_trait_details.append({
+            "trait": t,
+            "label": meta.get("label", t),
+            "score": round(traits.get(t, 0), 1),
+            "max": 10,
+        })
+
     return {
         "name": best_match["name"],
         "description": best_match["description"],
+        "key_traits": key_trait_details,
     }
 
 
@@ -629,9 +640,41 @@ PRACTICAL_STEPS = {
 }
 
 
+STRETCH_TIPS = {
+    "analytical_reasoning": "Push beyond school-level problems — try competitive math, coding challenges, or case-study analysis to sharpen this elite skill.",
+    "quantitative_comfort": "Explore data science mini-projects or financial modelling to take your quantitative skills from strong to exceptional.",
+    "creativity_innovation": "Enter design competitions, start a creative blog, or build something from scratch — channel your creativity into a portfolio.",
+    "verbal_communication": "Join debate or Model UN, start a podcast, or write for your school magazine to make your communication skills unforgettable.",
+    "social_orientation": "Volunteer to lead community projects or mentor juniors — transform your people skills into measurable leadership impact.",
+    "leadership_drive": "Take on a real leadership challenge: organise a school event, run a club, or start a small student initiative.",
+    "risk_appetite": "Enter startup pitch competitions or take on ambitious personal projects where the outcome isn't guaranteed — this is where growth happens.",
+    "structure_discipline": "Level up your systems: learn project management basics (Trello/Notion), build daily review habits, and track weekly goals.",
+}
+
+
 def _areas_to_improve(traits: dict) -> list:
     sorted_traits = sorted(TRAIT_SLUGS, key=lambda t: traits.get(t, 0))
     areas = []
+    all_strong = all(traits.get(t, 0) >= 7 for t in sorted_traits[:3])
+
+    if all_strong:
+        for t in sorted_traits[:3]:
+            score = traits.get(t, 0)
+            meta = TRAIT_META[t]
+            tip = STRETCH_TIPS.get(t, (
+                f"Your {meta['label']} is already strong. "
+                f"Challenge yourself to go from good to exceptional."
+            ))
+            areas.append({
+                "trait": t,
+                "label": meta["label"],
+                "score": round(score, 1),
+                "tip": tip,
+                "steps": PRACTICAL_STEPS.get(t, []),
+                "is_stretch": True,
+            })
+        return areas
+
     for t in sorted_traits[:3]:
         score = traits.get(t, 0)
         if score >= 7:
@@ -655,6 +698,7 @@ def _areas_to_improve(traits: dict) -> list:
             "score": round(score, 1),
             "tip": tip,
             "steps": steps,
+            "is_stretch": False,
         })
     return areas
 
