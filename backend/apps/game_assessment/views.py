@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import hmac
+import logging
 
 from django.conf import settings
 from django.http import HttpResponse
@@ -37,6 +38,8 @@ from .content.planner_game import get_planner_config
 from .content.scenarios import get_scenario_questions
 from apps.users.models import Profile
 from apps.users.serializers import UserSerializer
+
+logger = logging.getLogger(__name__)
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
@@ -143,12 +146,9 @@ class SaveProgressView(GenericAPIView):
         ser.is_valid(raise_exception=True)
         d = ser.validated_data
 
-        try:
-            session = GameSession.objects.get(id=d["session_id"])
-        except GameSession.DoesNotExist:
-            return Response(
-                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+        session, err = _get_session_for_request(request, d["session_id"])
+        if err:
+            return Response({"detail": err}, status=status.HTTP_404_NOT_FOUND)
 
         if session.is_complete:
             return Response(
@@ -175,12 +175,9 @@ class CreateAccountFromSessionView(GenericAPIView):
 
         User = get_user_model()
 
-        try:
-            session = GameSession.objects.get(id=d["session_id"])
-        except GameSession.DoesNotExist:
-            return Response(
-                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+        session, err = _get_session_for_request(request, d["session_id"])
+        if err:
+            return Response({"detail": err}, status=status.HTTP_404_NOT_FOUND)
 
         if not session.pending_email or session.pending_email.lower() != d["email"].lower():
             return Response(
@@ -299,7 +296,21 @@ class SubmitSessionView(GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        result = run_scoring_pipeline(session)
+        try:
+            result = run_scoring_pipeline(session)
+        except Exception:
+            logger.exception(
+                "run_scoring_pipeline failed for session %s", session.id
+            )
+            return Response(
+                {
+                    "detail": (
+                        "We couldn't process your results right now. "
+                        "Please try again in a moment or contact support if this continues."
+                    )
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         trait_list = [
             {

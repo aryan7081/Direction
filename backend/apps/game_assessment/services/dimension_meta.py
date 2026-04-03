@@ -44,9 +44,9 @@ RIASEC_META = {
         "description": (
             "You enjoy working with your hands, building things, and solving "
             "practical problems. Whether it's fixing a gadget, doing experiments, "
-            "or playing sports — you like action over theory."
+            "or tackling a hands-on project — you like action over theory."
         ),
-        "careers_hint": "Engineering, Architecture, Sports, Robotics, Agriculture",
+        "careers_hint": "Engineering, Architecture, Robotics, Agriculture, Skilled trades",
     },
     "riasec_investigative": {
         "label": "Curious Thinker",

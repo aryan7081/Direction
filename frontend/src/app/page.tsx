@@ -64,7 +64,7 @@ const FEATURES = [
   {
     icon: '💼',
     title: 'Career Matches',
-    desc: 'See which careers from 127+ options align with your natural strengths and personality',
+    desc: 'See which careers from 100+ options align with your natural strengths and personality',
     color: '#16a34a',
   },
   {
@@ -77,7 +77,7 @@ const FEATURES = [
 
 const STATS = [
   { value: '12,847+', label: 'Students Assessed' },
-  { value: '127+', label: 'Careers Matched' },
+  { value: '100+', label: 'Careers Matched' },
   { value: '15', label: 'Trait Dimensions' },
   { value: '~5 min', label: 'To Complete' },
 ];

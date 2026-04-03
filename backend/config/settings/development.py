@@ -5,7 +5,12 @@ import os
 from .base import *
 
 DEBUG = True
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "*"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+_extra_hosts = os.environ.get("DEV_ALLOWED_HOSTS", "")
+if _extra_hosts.strip():
+    ALLOWED_HOSTS.extend(
+        h.strip() for h in _extra_hosts.split(",") if h.strip()
+    )
 
 # Allow localhost and local network IPs for mobile testing (phone accesses via Mac's IP)
 CORS_ALLOWED_ORIGINS = [

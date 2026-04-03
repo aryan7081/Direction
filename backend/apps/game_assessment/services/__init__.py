@@ -3,6 +3,7 @@ Orchestrates the full scoring pipeline:
   events → parse → calculate traits → normalize → match careers → persist
 """
 
+from django.db import transaction
 from django.utils import timezone
 
 from ..models import GameSession, GameEventLog, TraitScore, CareerMatchScore
@@ -39,35 +40,36 @@ def run_scoring_pipeline(session: GameSession) -> dict:
     )
     normalized = normalize_scores(raw_scores)
 
-    TraitScore.objects.filter(session=session).delete()
-    for trait_name, norm_score in normalized.items():
-        TraitScore.objects.create(
-            session=session,
-            trait_name=trait_name,
-            raw_score=raw_scores.get(trait_name, 0),
-            normalized_score=norm_score,
-        )
-
-    career_results = match_careers(normalized)
-
-    CareerMatchScore.objects.filter(session=session).delete()
-    from apps.careers.models import Career
-
-    for cr in career_results:
-        try:
-            career = Career.objects.get(id=cr["career_id"])
-            CareerMatchScore.objects.create(
+    with transaction.atomic():
+        TraitScore.objects.filter(session=session).delete()
+        for trait_name, norm_score in normalized.items():
+            TraitScore.objects.create(
                 session=session,
-                career=career,
-                score=cr["score"],
-                rank=cr["rank"],
+                trait_name=trait_name,
+                raw_score=raw_scores.get(trait_name, 0),
+                normalized_score=norm_score,
             )
-        except Career.DoesNotExist:
-            pass
 
-    session.is_complete = True
-    session.completed_at = timezone.now()
-    session.save()
+        career_results = match_careers(normalized)
+
+        CareerMatchScore.objects.filter(session=session).delete()
+        from apps.careers.models import Career
+
+        for cr in career_results:
+            try:
+                career = Career.objects.get(id=cr["career_id"])
+                CareerMatchScore.objects.create(
+                    session=session,
+                    career=career,
+                    score=cr["score"],
+                    rank=cr["rank"],
+                )
+            except Career.DoesNotExist:
+                pass
+
+        session.is_complete = True
+        session.completed_at = timezone.now()
+        session.save()
 
     return {
         "trait_scores": {

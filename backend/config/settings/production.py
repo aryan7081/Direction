@@ -2,7 +2,11 @@
 Production settings (AWS, etc.).
 """
 import os
+
 from .base import *
+
+# Required in production — no insecure fallback (overrides base.py)
+SECRET_KEY = os.environ["SECRET_KEY"]
 
 DEBUG = False
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "").split(",") if h.strip()]

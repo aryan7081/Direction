@@ -212,29 +212,23 @@ class Command(BaseCommand):
             ("Defence Officer", "defence-officer", "Lead and serve in the Indian Army, Navy, or Air Force — protecting the nation with honour and discipline.", "Science", "NDA/CDS/AFCAT", "₹8-20L", "Stable", "low"),
             ("Police Officer", "police-officer", "Maintain law and order, investigate crimes, and protect citizens at the city and state level.", "Arts", "Graduation", "₹5-15L", "Stable", "low"),
             ("Intelligence Officer", "intelligence-officer", "Gather and analyse intelligence to protect national security — one of the most secretive and strategic roles.", "Science", "Graduation + UPSC", "₹8-20L", "Stable", "low"),
-            # 10. SPORTS (5)
-            ("Athlete", "athlete", "Compete at the highest level in your sport — representing your state, country, or playing in professional leagues.", "Arts", "Any", "Variable", "Variable", "low"),
-            ("Coach", "coach", "Train and develop athletes to reach their full potential — from school teams to Olympic squads.", "Arts", "Certification/Experience", "₹3-15L", "High", "low"),
-            ("Fitness Trainer", "fitness-trainer", "Help people achieve their fitness and health goals through personalised training programmes.", "Arts", "Certification", "₹2-10L", "High", "low"),
-            ("Sports Analyst", "sports-analyst", "Use data and video analysis to improve team performance — the brains behind modern sports strategy.", "Science", "B.Sc/MBA", "₹4-15L", "High", "medium"),
-            ("Sports Manager", "sports-manager", "Manage sports teams, events, and athlete careers — the business side of the sports industry.", "Commerce", "BBA/MBA", "₹5-20L", "High", "medium"),
-            # 11. AGRICULTURE & ENVIRONMENT (5)
+            # 10. AGRICULTURE & ENVIRONMENT (5)
             ("Agricultural Scientist", "agricultural-scientist", "Research new farming techniques, develop better crop varieties, and help feed a growing population.", "Science", "B.Sc/M.Sc Agriculture", "₹5-15L", "High", "medium"),
             ("Horticulturist", "horticulturist", "Specialise in growing fruits, vegetables, and ornamental plants — from gardens to commercial farms.", "Science", "B.Sc Horticulture", "₹3-12L", "High", "low"),
             ("Forestry Officer", "forestry-officer", "Protect and manage India's forests, wildlife reserves, and natural resources.", "Science", "B.Sc Forestry", "₹5-15L", "Stable", "low"),
             ("Environmental Scientist", "environmental-scientist", "Study pollution, climate change, and ecosystems to find solutions that protect our planet.", "Science", "B.Sc/M.Sc Env Science", "₹4-18L", "High", "medium"),
             ("Wildlife Biologist", "wildlife-biologist", "Study and conserve endangered species and their habitats — from tigers to coral reefs.", "Science", "B.Sc/M.Sc Zoology", "₹4-15L", "High", "medium"),
-            # 12. AVIATION & HOSPITALITY (5)
+            # 11. AVIATION & HOSPITALITY (5)
             ("Pilot", "pilot", "Fly commercial aircraft carrying hundreds of passengers, or serve as a fighter pilot in the Air Force.", "Science", "Commercial Pilot License", "₹15-80L", "High", "high"),
             ("Air Traffic Controller", "air-traffic-controller", "Guide aircraft safely through the sky and coordinate takeoffs and landings — lives depend on your precision.", "Science", "Graduation + Training", "₹8-20L", "Stable", "medium"),
             ("Airport Manager", "airport-manager", "Oversee all operations at an airport — from security to logistics to passenger experience.", "Commerce", "MBA/Any", "₹8-25L", "High", "medium"),
             ("Hotel Manager", "hotel-manager", "Run hotels and resorts — managing everything from guest experience to staff to revenue.", "Commerce", "BHM/MBA", "₹5-20L", "High", "medium"),
             ("Event Manager", "event-manager", "Plan and execute events — from corporate conferences to music festivals to weddings.", "Commerce", "Any", "₹4-18L", "High", "medium"),
-            # 13. OPERATIONS & LOGISTICS (3)
+            # 12. OPERATIONS & LOGISTICS (3)
             ("Supply Chain Manager", "supply-chain-manager", "Manage the flow of goods from factory to customer — ensuring products reach you on time, every time.", "Commerce", "MBA/B.Tech", "₹6-25L", "High", "medium"),
             ("Logistics Manager", "logistics-manager", "Coordinate transportation, warehousing, and delivery at scale — the backbone of e-commerce.", "Commerce", "MBA/B.Com", "₹5-20L", "High", "medium"),
             ("Procurement Specialist", "procurement-specialist", "Source and negotiate the best deals on materials and services that companies need to operate.", "Commerce", "B.Com/MBA", "₹4-18L", "High", "medium"),
-            # 14. NEW-AGE DIGITAL (5)
+            # 13. NEW-AGE DIGITAL (5)
             ("Digital Marketer", "digital-marketer", "Promote brands through Google, Instagram, and YouTube — using data to reach the right people at the right time.", "Commerce", "Any", "₹4-20L", "Very High", "low"),
             ("SEO Specialist", "seo-specialist", "Make websites rank #1 on Google — understanding algorithms and content strategy to drive organic traffic.", "Commerce", "Any", "₹3-15L", "High", "low"),
             ("Growth Hacker", "growth-hacker", "Drive explosive user growth for startups using creative experiments, data, and unconventional strategies.", "Commerce", "Any", "₹5-25L", "High", "medium"),
@@ -359,12 +353,6 @@ class Command(BaseCommand):
             "defence-officer":            _p(0.77, 0.52, 0.15, 0.55, 0.62, 0.65, 0.55, 0.92, 0.80, 0.58, 0.80, 0.50, 0.67, 0.85, 0.52),
             "police-officer":             _p(0.55, 0.40, 0.15, 0.65, 0.55, 0.60, 0.45, 0.80, 0.70, 0.60, 0.70, 0.55, 0.50, 0.75, 0.45),
             "intelligence-officer":       _p(0.30, 0.85, 0.20, 0.35, 0.40, 0.65, 0.85, 0.85, 0.70, 0.35, 0.75, 0.30, 0.55, 0.70, 0.75),
-            # ── SPORTS ─────────────────────────────────────────────
-            "athlete":                    _p(0.90, 0.25, 0.15, 0.35, 0.40, 0.35, 0.50, 0.95, 0.85, 0.40, 0.55, 0.55, 0.70, 0.50, 0.75),
-            "coach":                      _p(0.50, 0.35, 0.25, 0.85, 0.60, 0.45, 0.60, 0.80, 0.70, 0.85, 0.70, 0.70, 0.45, 0.60, 0.60),
-            "fitness-trainer":            _p(0.65, 0.30, 0.20, 0.80, 0.50, 0.35, 0.50, 0.70, 0.65, 0.75, 0.55, 0.75, 0.40, 0.45, 0.60),
-            "sports-analyst":             _p(0.25, 0.80, 0.20, 0.35, 0.35, 0.65, 0.80, 0.70, 0.50, 0.30, 0.70, 0.30, 0.40, 0.75, 0.70),
-            "sports-manager":             _p(0.25, 0.35, 0.20, 0.65, 0.80, 0.60, 0.55, 0.70, 0.70, 0.60, 0.75, 0.65, 0.45, 0.65, 0.60),
             # ── AGRICULTURE & ENVIRONMENT ──────────────────────────
             "agricultural-scientist":     _p(0.65, 0.85, 0.20, 0.30, 0.25, 0.50, 0.85, 0.80, 0.55, 0.35, 0.65, 0.30, 0.40, 0.65, 0.75),
             "horticulturist":             _p(0.70, 0.65, 0.30, 0.30, 0.20, 0.45, 0.70, 0.70, 0.50, 0.30, 0.60, 0.30, 0.30, 0.60, 0.65),
@@ -498,12 +486,6 @@ class Command(BaseCommand):
             "defence-officer": {"math": 0.65, "science": 0.7, "english": 0.6, "social_science": 0.5},
             "police-officer": {"math": 0.5, "science": 0.4, "english": 0.6, "social_science": 0.7},
             "intelligence-officer": {"math": 0.8, "science": 0.6, "english": 0.7, "social_science": 0.6},
-            # Sports
-            "athlete": {"math": 0.4, "science": 0.5, "english": 0.5, "social_science": 0.4},
-            "coach": {"math": 0.5, "science": 0.5, "english": 0.6, "social_science": 0.7},
-            "fitness-trainer": {"math": 0.4, "science": 0.6, "english": 0.5, "social_science": 0.5},
-            "sports-analyst": {"math": 0.8, "science": 0.5, "english": 0.6, "social_science": 0.5},
-            "sports-manager": {"math": 0.6, "science": 0.4, "english": 0.7, "social_science": 0.6},
             # Agriculture & Environment
             "agricultural-scientist": {"math": 0.7, "science": 0.9, "english": 0.5, "social_science": 0.4},
             "horticulturist": {"math": 0.5, "science": 0.8, "english": 0.5, "social_science": 0.3},

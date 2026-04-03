@@ -103,29 +103,23 @@ CAREER_TRAIT_MAP = {
     "defence-officer": {"analytical_reasoning": 0.77, "quantitative_comfort": 0.67, "creativity_innovation": 0.4, "verbal_communication": 0.6, "social_orientation": 0.73, "leadership_drive": 0.92, "risk_appetite": 0.65, "structure_discipline": 0.95},
     "police-officer": {"analytical_reasoning": 0.7, "quantitative_comfort": 0.5, "creativity_innovation": 0.4, "verbal_communication": 0.6, "social_orientation": 0.85, "leadership_drive": 0.8, "risk_appetite": 0.6, "structure_discipline": 0.9},
     "intelligence-officer": {"analytical_reasoning": 0.95, "quantitative_comfort": 0.7, "creativity_innovation": 0.5, "verbal_communication": 0.6, "social_orientation": 0.5, "leadership_drive": 0.6, "risk_appetite": 0.5, "structure_discipline": 0.95},
-    # 10. SPORTS
-    "athlete": {"analytical_reasoning": 0.5, "quantitative_comfort": 0.4, "creativity_innovation": 0.4, "verbal_communication": 0.4, "social_orientation": 0.5, "leadership_drive": 0.6, "risk_appetite": 0.5, "structure_discipline": 0.9},
-    "coach": {"analytical_reasoning": 0.6, "quantitative_comfort": 0.5, "creativity_innovation": 0.5, "verbal_communication": 0.7, "social_orientation": 0.9, "leadership_drive": 0.8, "risk_appetite": 0.4, "structure_discipline": 0.8},
-    "fitness-trainer": {"analytical_reasoning": 0.5, "quantitative_comfort": 0.5, "creativity_innovation": 0.4, "verbal_communication": 0.6, "social_orientation": 0.85, "leadership_drive": 0.6, "risk_appetite": 0.4, "structure_discipline": 0.8},
-    "sports-analyst": {"analytical_reasoning": 0.9, "quantitative_comfort": 0.8, "creativity_innovation": 0.4, "verbal_communication": 0.6, "social_orientation": 0.4, "leadership_drive": 0.4, "risk_appetite": 0.4, "structure_discipline": 0.7},
-    "sports-manager": {"analytical_reasoning": 0.7, "quantitative_comfort": 0.6, "creativity_innovation": 0.5, "verbal_communication": 0.7, "social_orientation": 0.8, "leadership_drive": 0.8, "risk_appetite": 0.5, "structure_discipline": 0.8},
-    # 11. AGRICULTURE & ENVIRONMENT
+    # 10. AGRICULTURE & ENVIRONMENT
     "agricultural-scientist": {"analytical_reasoning": 0.9, "quantitative_comfort": 0.7, "creativity_innovation": 0.5, "verbal_communication": 0.5, "social_orientation": 0.4, "leadership_drive": 0.4, "risk_appetite": 0.4, "structure_discipline": 0.8},
     "horticulturist": {"analytical_reasoning": 0.7, "quantitative_comfort": 0.5, "creativity_innovation": 0.5, "verbal_communication": 0.5, "social_orientation": 0.4, "leadership_drive": 0.4, "risk_appetite": 0.4, "structure_discipline": 0.8},
     "forestry-officer": {"analytical_reasoning": 0.7, "quantitative_comfort": 0.5, "creativity_innovation": 0.4, "verbal_communication": 0.5, "social_orientation": 0.5, "leadership_drive": 0.5, "risk_appetite": 0.4, "structure_discipline": 0.8},
     "environmental-scientist": {"analytical_reasoning": 0.9, "quantitative_comfort": 0.7, "creativity_innovation": 0.5, "verbal_communication": 0.6, "social_orientation": 0.5, "leadership_drive": 0.5, "risk_appetite": 0.4, "structure_discipline": 0.8},
     "wildlife-biologist": {"analytical_reasoning": 0.85, "quantitative_comfort": 0.6, "creativity_innovation": 0.5, "verbal_communication": 0.6, "social_orientation": 0.5, "leadership_drive": 0.4, "risk_appetite": 0.5, "structure_discipline": 0.8},
-    # 12. AVIATION & HOSPITALITY
+    # 11. AVIATION & HOSPITALITY
     "pilot": {"analytical_reasoning": 0.8, "quantitative_comfort": 0.7, "creativity_innovation": 0.3, "verbal_communication": 0.5, "social_orientation": 0.4, "leadership_drive": 0.6, "risk_appetite": 0.5, "structure_discipline": 0.95},
     "air-traffic-controller": {"analytical_reasoning": 0.9, "quantitative_comfort": 0.7, "creativity_innovation": 0.3, "verbal_communication": 0.6, "social_orientation": 0.4, "leadership_drive": 0.5, "risk_appetite": 0.4, "structure_discipline": 0.95},
     "airport-manager": {"analytical_reasoning": 0.7, "quantitative_comfort": 0.6, "creativity_innovation": 0.5, "verbal_communication": 0.7, "social_orientation": 0.7, "leadership_drive": 0.8, "risk_appetite": 0.5, "structure_discipline": 0.9},
     "hotel-manager": {"analytical_reasoning": 0.7, "quantitative_comfort": 0.5, "creativity_innovation": 0.5, "verbal_communication": 0.7, "social_orientation": 0.9, "leadership_drive": 0.8, "risk_appetite": 0.5, "structure_discipline": 0.9},
     "event-manager": {"analytical_reasoning": 0.7, "quantitative_comfort": 0.5, "creativity_innovation": 0.7, "verbal_communication": 0.8, "social_orientation": 0.9, "leadership_drive": 0.9, "risk_appetite": 0.6, "structure_discipline": 0.9},
-    # 13. OPERATIONS & LOGISTICS
+    # 12. OPERATIONS & LOGISTICS
     "supply-chain-manager": {"analytical_reasoning": 0.85, "quantitative_comfort": 0.8, "creativity_innovation": 0.4, "verbal_communication": 0.6, "social_orientation": 0.6, "leadership_drive": 0.7, "risk_appetite": 0.5, "structure_discipline": 0.95},
     "logistics-manager": {"analytical_reasoning": 0.8, "quantitative_comfort": 0.7, "creativity_innovation": 0.4, "verbal_communication": 0.6, "social_orientation": 0.6, "leadership_drive": 0.7, "risk_appetite": 0.5, "structure_discipline": 0.95},
     "procurement-specialist": {"analytical_reasoning": 0.8, "quantitative_comfort": 0.7, "creativity_innovation": 0.4, "verbal_communication": 0.6, "social_orientation": 0.6, "leadership_drive": 0.5, "risk_appetite": 0.4, "structure_discipline": 0.9},
-    # 14. NEW-AGE DIGITAL
+    # 13. NEW-AGE DIGITAL
     "digital-marketer": {"analytical_reasoning": 0.7, "quantitative_comfort": 0.6, "creativity_innovation": 0.8, "verbal_communication": 0.8, "social_orientation": 0.8, "leadership_drive": 0.6, "risk_appetite": 0.6, "structure_discipline": 0.6},
     "seo-specialist": {"analytical_reasoning": 0.8, "quantitative_comfort": 0.6, "creativity_innovation": 0.5, "verbal_communication": 0.7, "social_orientation": 0.4, "leadership_drive": 0.4, "risk_appetite": 0.5, "structure_discipline": 0.8},
     "growth-hacker": {"analytical_reasoning": 0.8, "quantitative_comfort": 0.7, "creativity_innovation": 0.8, "verbal_communication": 0.7, "social_orientation": 0.6, "leadership_drive": 0.6, "risk_appetite": 0.7, "structure_discipline": 0.7},
