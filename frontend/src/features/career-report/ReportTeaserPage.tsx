@@ -386,7 +386,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
 
               <Box sx={{ textAlign: 'center' }}>
                 <Typography sx={{ fontSize: '0.7rem', color: '#16a34a', fontWeight: 600, textTransform: 'uppercase' }}>
-                  Direction Report
+                  Outcave Report
                 </Typography>
                 <Typography sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#16a34a' }}>
                   ₹{price}

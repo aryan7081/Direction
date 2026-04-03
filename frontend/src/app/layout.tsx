@@ -25,22 +25,22 @@ const siteUrl =
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: 'Direction by Outcave | Career Discovery for Students',
+  title: 'Outcave | Career Discovery for Students',
   description:
     'Confused about Science, Commerce, or Arts? Take a free 30-question assessment and get stream and career guidance backed by RIASEC and behavioural science.',
   icons: { icon: '/logo.png', apple: '/logo.png' },
   openGraph: {
-    title: 'Direction by Outcave | Career Discovery for Students',
+    title: 'Outcave | Career Discovery for Students',
     description:
       'Science, Commerce, or Arts — get a clear stream recommendation and career matches tailored for Indian students.',
     url: '/',
-    siteName: 'Direction by Outcave',
+    siteName: 'Outcave',
     images: [
       {
         url: '/logo.png',
         width: 512,
         height: 512,
-        alt: 'Direction — career discovery for students',
+        alt: 'Outcave — career discovery for students',
       },
     ],
     locale: 'en_IN',
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Direction by Outcave | Career Discovery for Students',
+    title: 'Outcave | Career Discovery for Students',
     description:
       'Stream and career guidance for Indian students — RIASEC-based assessment and personalised report.',
     images: ['/logo.png'],

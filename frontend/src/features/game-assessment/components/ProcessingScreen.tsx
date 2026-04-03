@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import { Box, Typography, LinearProgress } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CAREER_CATALOG_LABEL } from '@/lib/productCopy';
 
 const ANALYSIS_STEPS = [
   { label: 'Analyzing your RIASEC interests...', icon: '🎯', trait: 'Realistic · Investigative · Artistic · Social · Enterprising · Conventional' },
   { label: 'Measuring your core work traits...', icon: '🧠', trait: 'Curiosity · Persistence · Initiative · Empathy · Planning' },
-  { label: 'Reading your personality style...', icon: '✨', trait: 'Energy · Risk · Structure · Direction' },
-  { label: 'Matching against 100+ career paths...', icon: '💼', trait: 'Computing match scores across all career profiles' },
+  { label: 'Reading your personality style...', icon: '✨', trait: 'Energy · Risk · Structure · Autonomy' },
+  { label: `Matching against ${CAREER_CATALOG_LABEL} career paths...`, icon: '💼', trait: 'Computing match scores across all career profiles' },
   { label: 'Identifying your best-fit stream...', icon: '🎓', trait: 'Science · Commerce · Arts · Humanities' },
   { label: 'Building your personalized report...', icon: '📊', trait: 'Trait analysis · Career cards · Development roadmap' },
 ];

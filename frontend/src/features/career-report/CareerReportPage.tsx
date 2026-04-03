@@ -245,7 +245,7 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
               const stream = report.stream_recommendation?.stream || 'my recommended stream';
               const holland = report.interest_profile?.holland_code || '';
               const text = encodeURIComponent(
-                `🎓 I just took a career assessment on Direction by Outcave!\n\n` +
+                `🎓 I just took a career assessment on Outcave!\n\n` +
                 `My recommended stream: ${stream}\n` +
                 `My #1 career match: ${topCareer}\n` +
                 `${holland ? `My Holland Code: ${holland}\n` : ''}` +

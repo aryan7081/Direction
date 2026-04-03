@@ -6,6 +6,7 @@ import { Box, Typography, Stack, Chip } from '@mui/material';
 import { motion } from 'framer-motion';
 import { GoogleSignInForm } from '@/features/auth/GoogleSignInForm';
 import { ButtonSpinner } from '@/components/ui/Loaders';
+import { CAREER_CATALOG_LABEL, PRODUCT_NAME } from '@/lib/productCopy';
 
 const SPARKS = [
   { top: '18%', left: '12%', delay: 0, size: 6 },
@@ -18,8 +19,8 @@ const SPARKS = [
 const HIGHLIGHTS = [
   { emoji: '🧭', label: 'RIASEC-style interests', sub: '6 dimensions mapped' },
   { emoji: '📚', label: 'Stream clarity', sub: 'Science · Commerce · Arts' },
-  { emoji: '🚀', label: '100+ career paths', sub: 'Matched to your profile' },
-] as const;
+  { emoji: '🚀', label: `${CAREER_CATALOG_LABEL} career paths`, sub: 'Matched to your profile' },
+];
 
 const container = {
   hidden: { opacity: 0 },
@@ -190,7 +191,7 @@ export default function LoginPage() {
                 mb: 2,
               }}
             >
-              Direction · Outcave
+              {PRODUCT_NAME}
             </Typography>
           </motion.div>
           <motion.div variants={item}>
@@ -274,13 +275,13 @@ export default function LoginPage() {
         />
         <Stack spacing={1} sx={{ position: 'relative', zIndex: 1 }}>
           <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(74,222,128,0.95)' }}>
-            Direction
+            {PRODUCT_NAME}
           </Typography>
           <Typography sx={{ fontFamily: 'var(--font-display), sans-serif', fontWeight: 800, fontSize: '1.5rem', color: '#fff', lineHeight: 1.2 }}>
             Continue your career journey
           </Typography>
           <Stack direction="row" flexWrap="wrap" gap={1} sx={{ pt: 0.5 }}>
-            {['30 questions', 'Stream fit', '100+ careers'].map((t) => (
+            {['30 questions', 'Stream fit', `${CAREER_CATALOG_LABEL} careers`].map((t) => (
               <Chip
                 key={t}
                 label={t}
@@ -429,7 +430,7 @@ export default function LoginPage() {
           </Box>
 
           <Typography sx={{ textAlign: 'center', mt: 2.5, fontSize: '0.75rem', color: '#94a3b8', px: 1 }}>
-            By continuing, you agree to our flow of assessment data used only to personalise your Direction experience.
+            By continuing, you agree to our flow of assessment data used only to personalise your {PRODUCT_NAME} experience.
           </Typography>
         </motion.div>
       </Box>

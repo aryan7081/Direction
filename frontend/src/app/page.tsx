@@ -8,6 +8,7 @@ import { Box, Button, Typography, Container, Chip } from '@mui/material';
 import { motion, useInView, useScroll, useTransform } from 'framer-motion';
 import { useAuthStore } from '@/stores/authStore';
 import { fetchGameContent } from '@/features/game-assessment/api';
+import { CAREER_CATALOG_LABEL, PRODUCT_NAME } from '@/lib/productCopy';
 
 /* ── Gradient orbs (subtle, professional) ── */
 function GradientOrbs() {
@@ -64,7 +65,7 @@ const FEATURES = [
   {
     icon: '💼',
     title: 'Career Matches',
-    desc: 'See which careers from 100+ options align with your natural strengths and personality',
+    desc: `See which careers from ${CAREER_CATALOG_LABEL} options align with your natural strengths and personality`,
     color: '#16a34a',
   },
   {
@@ -77,14 +78,14 @@ const FEATURES = [
 
 const STATS = [
   { value: '12,847+', label: 'Students Assessed' },
-  { value: '100+', label: 'Careers Matched' },
+  { value: CAREER_CATALOG_LABEL, label: 'Careers Matched' },
   { value: '15', label: 'Trait Dimensions' },
   { value: '~5 min', label: 'To Complete' },
 ];
 
 const TESTIMONIALS = [
   {
-    quote: 'I was torn between Science and Commerce. Direction showed me I\'m a natural fit for Science with a career in Biotech. My parents were so relieved!',
+    quote: `I was torn between Science and Commerce. ${PRODUCT_NAME} showed me I'm a natural fit for Science with a career in Biotech. My parents were so relieved!`,
     name: 'Priya S.',
     detail: 'Class 10, Mumbai',
   },
@@ -94,7 +95,7 @@ const TESTIMONIALS = [
     detail: 'Class 10, Bangalore',
   },
   {
-    quote: 'I always thought I should do Science because of marks. Direction helped me realize Commerce suits my personality way better.',
+    quote: `I always thought I should do Science because of marks. ${PRODUCT_NAME} helped me realize Commerce suits my personality way better.`,
     name: 'Sneha K.',
     detail: 'Class 9, Delhi',
   },
@@ -223,7 +224,7 @@ function SocialProofStrip() {
             ))}
           </Box>
           <Typography sx={{ fontSize: { xs: '0.78rem', sm: '0.85rem' }, color: '#6b7280', fontWeight: 500 }}>
-            <Box component="span" sx={{ fontWeight: 700, color: '#111827' }}>12,847+</Box> students found their direction
+            <Box component="span" sx={{ fontWeight: 700, color: '#111827' }}>12,847+</Box> students found clarity with {PRODUCT_NAME}
           </Typography>
         </Box>
         <Chip
@@ -275,7 +276,7 @@ export default function LandingPage() {
         <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: { xs: 0, sm: 2 }, gap: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <Box sx={{ width: { xs: 112, sm: 128 }, height: { xs: 48, sm: 56 }, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Box component="img" src="/logo.png" alt="Direction by Outcave" sx={{ height: { xs: 96, sm: 112 }, width: 'auto', minWidth: { xs: 96, sm: 112 }, objectFit: 'cover', objectPosition: 'center' }} />
+              <Box component="img" src="/logo.png" alt={PRODUCT_NAME} sx={{ height: { xs: 96, sm: 112 }, width: 'auto', minWidth: { xs: 96, sm: 112 }, objectFit: 'cover', objectPosition: 'center' }} />
             </Box>
           </Box>
           <Box sx={{ display: 'flex', gap: { xs: 1, sm: 1.5 }, alignItems: 'center', flexShrink: 0, ml: 'auto' }}>
@@ -515,7 +516,7 @@ export default function LandingPage() {
         <Container maxWidth="lg">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
             <Typography variant="h3" sx={{ fontWeight: 800, textAlign: 'center', mb: 1.5, fontSize: { xs: '1.6rem', sm: '2.2rem' }, color: '#111827', letterSpacing: '-0.02em' }}>
-              Students Love Direction
+              Students Love {PRODUCT_NAME}
             </Typography>
             <Typography sx={{ textAlign: 'center', color: '#6b7280', mb: 6, fontSize: { xs: '0.95rem', sm: '1.1rem' }, maxWidth: 500, mx: 'auto' }}>
               Real stories from students who found clarity about their career path.
@@ -547,7 +548,7 @@ export default function LandingPage() {
               </Typography>
               <Typography sx={{ color: '#6b7280', lineHeight: 1.7, mb: 3, maxWidth: 520, mx: 'auto', fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                 Making the right stream choice after Class 10 is one of the most important decisions in your child&apos;s academic life.
-                Direction uses scientifically-backed assessment methodology — no guesswork, no bias. The report is shareable and easy to discuss with school counsellors.
+                {PRODUCT_NAME} uses scientifically-backed assessment methodology — no guesswork, no bias. The report is shareable and easy to discuss with school counsellors.
               </Typography>
               <Box sx={{ display: 'flex', justifyContent: 'center', gap: { xs: 2, sm: 3 }, flexWrap: 'wrap', mb: 3 }}>
                 {['🔒 Data stays private', '📊 Science-backed methodology', '📄 Shareable PDF report'].map((item) => (
@@ -577,7 +578,7 @@ export default function LandingPage() {
         <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
             <Typography variant="h4" sx={{ fontWeight: 800, mb: 2, fontSize: { xs: '1.5rem', sm: '2rem' }, color: '#111827', letterSpacing: '-0.02em' }}>
-              Ready to discover your direction?
+              Ready to discover your path with {PRODUCT_NAME}?
             </Typography>
             <Typography sx={{ color: '#6b7280', mb: 4, lineHeight: 1.7 }}>
               {user

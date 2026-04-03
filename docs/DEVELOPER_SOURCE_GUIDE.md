@@ -29,7 +29,7 @@ Both paths share **canonical item definitions** in `backend/apps/assessments/con
 ## 2. Repository layout
 
 ```
-Direction/
+outcave/   # repository root (your clone folder may differ)
 ├── backend/
 │   ├── config/                 # Django project: settings, root urls, WSGI
 │   │   ├── settings/           # base.py + development.py / production.py

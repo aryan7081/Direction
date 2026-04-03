@@ -21,7 +21,7 @@ const GAMES = [
   {
     icon: '✨',
     title: 'Personality style',
-    desc: 'Energy, risk, structure, and how you like direction',
+    desc: 'Energy, risk, structure, and how much independence you prefer',
     tag: '8 items',
   },
 ];

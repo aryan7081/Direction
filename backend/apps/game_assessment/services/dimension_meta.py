@@ -349,7 +349,7 @@ PATTERN_ARCHETYPES_V2: List[dict] = [
             "found among startup founders, field engineers, and leaders who lead from "
             "the front."
         ),
-        "career_examples": "Entrepreneur, Civil Engineer, Pilot, Chef, Fitness Trainer",
+        "career_examples": "Entrepreneur, Civil Engineer, Pilot, Chef, Field Technician",
     },
     {
         "top_codes": ("R", "C"),
