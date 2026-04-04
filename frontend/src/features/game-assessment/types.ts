@@ -72,6 +72,7 @@ export interface CareerMatch {
   career_id: number;
   career_name: string;
   career_slug: string;
+  career_category?: string;
   stream: string;
   description: string;
   score: number;

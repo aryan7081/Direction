@@ -17,7 +17,7 @@ class CareerCategoryWeightSerializer(serializers.ModelSerializer):
 class CareerListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Career
-        fields = ("id", "name", "slug", "stream", "description", "order")
+        fields = ("id", "name", "slug", "category", "stream", "description", "order")
 
 
 class CareerDetailSerializer(serializers.ModelSerializer):
@@ -29,6 +29,7 @@ class CareerDetailSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "slug",
+            "category",
             "description",
             "stream",
             "min_education",

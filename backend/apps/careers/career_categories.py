@@ -1,0 +1,122 @@
+"""Display category / domain labels for careers (aligned with seed_data groupings)."""
+
+from typing import Dict
+
+SLUG_TO_CATEGORY: Dict[str, str] = {
+    # Tech & Engineering
+    "software-engineer": "Tech & Engineering",
+    "web-developer": "Tech & Engineering",
+    "ai-engineer": "Tech & Engineering",
+    "machine-learning-engineer": "Tech & Engineering",
+    "cybersecurity-analyst": "Tech & Engineering",
+    "cloud-devops-engineer": "Tech & Engineering",
+    "game-developer": "Tech & Engineering",
+    "blockchain-developer": "Tech & Engineering",
+    "database-administrator": "Tech & Engineering",
+    "network-engineer": "Tech & Engineering",
+    "robotics-engineer": "Tech & Engineering",
+    "electronics-hardware-engineer": "Tech & Engineering",
+    "data-scientist": "Tech & Engineering",
+    "data-engineer": "Tech & Engineering",
+    "mechanical-engineer": "Tech & Engineering",
+    "civil-engineer": "Tech & Engineering",
+    "aerospace-engineer": "Tech & Engineering",
+    "biomedical-engineer": "Tech & Engineering",
+    # Architecture & Design
+    "architect": "Architecture & Design",
+    "interior-designer": "Architecture & Design",
+    "landscape-architect": "Architecture & Design",
+    "urban-planner": "Architecture & Design",
+    "industrial-designer": "Architecture & Design",
+    "product-designer": "Architecture & Design",
+    # Medical, Healthcare & Biotech
+    "doctor": "Medical, Healthcare & Biotech",
+    "dentist": "Medical, Healthcare & Biotech",
+    "pharmacist": "Medical, Healthcare & Biotech",
+    "nurse": "Medical, Healthcare & Biotech",
+    "physiotherapist": "Medical, Healthcare & Biotech",
+    "psychologist": "Medical, Healthcare & Biotech",
+    "psychiatrist": "Medical, Healthcare & Biotech",
+    "nutritionist": "Medical, Healthcare & Biotech",
+    "radiologist": "Medical, Healthcare & Biotech",
+    "occupational-therapist": "Medical, Healthcare & Biotech",
+    "speech-therapist": "Medical, Healthcare & Biotech",
+    "biotechnologist": "Medical, Healthcare & Biotech",
+    "forensic-scientist": "Medical, Healthcare & Biotech",
+    # Commerce & Business
+    "accountant": "Commerce & Business",
+    "chartered-accountant": "Commerce & Business",
+    "business-analyst": "Commerce & Business",
+    "marketing-manager": "Commerce & Business",
+    "investment-banker": "Commerce & Business",
+    "financial-analyst": "Commerce & Business",
+    "stock-trader": "Commerce & Business",
+    "economist": "Commerce & Business",
+    "risk-manager": "Commerce & Business",
+    "sales-manager": "Commerce & Business",
+    "hr-manager": "Commerce & Business",
+    "operations-manager": "Commerce & Business",
+    "product-manager": "Commerce & Business",
+    "entrepreneur": "Commerce & Business",
+    "management-consultant": "Commerce & Business",
+    "actuarial-scientist": "Commerce & Business",
+    # Arts & Creative
+    "graphic-designer": "Arts & Creative",
+    "writer": "Arts & Creative",
+    "animator": "Arts & Creative",
+    "fashion-designer": "Arts & Creative",
+    "photographer": "Arts & Creative",
+    "filmmaker": "Arts & Creative",
+    "video-editor": "Arts & Creative",
+    "vfx-artist": "Arts & Creative",
+    "ui-ux-designer": "Arts & Creative",
+    "content-creator": "Arts & Creative",
+    "sound-engineer": "Arts & Creative",
+    # Media & Communication
+    "journalist": "Media & Communication",
+    "news-anchor": "Media & Communication",
+    "pr-specialist": "Media & Communication",
+    "copywriter": "Media & Communication",
+    "social-media-manager": "Media & Communication",
+    # Law
+    "lawyer": "Law",
+    "corporate-lawyer": "Law",
+    "judge": "Law",
+    "company-secretary": "Law",
+    # Education & Research
+    "teacher": "Education & Research",
+    "professor": "Education & Research",
+    "education-counselor": "Education & Research",
+    "academic-researcher": "Education & Research",
+    # Government & Defence
+    "civil-services-officer": "Government & Defence",
+    "defence-officer": "Government & Defence",
+    "police-officer": "Government & Defence",
+    "intelligence-officer": "Government & Defence",
+    # Agriculture & Environment
+    "agricultural-scientist": "Agriculture & Environment",
+    "horticulturist": "Agriculture & Environment",
+    "forestry-officer": "Agriculture & Environment",
+    "environmental-scientist": "Agriculture & Environment",
+    "wildlife-biologist": "Agriculture & Environment",
+    # Aviation & Hospitality
+    "pilot": "Aviation & Hospitality",
+    "air-traffic-controller": "Aviation & Hospitality",
+    "airport-manager": "Aviation & Hospitality",
+    "hotel-manager": "Aviation & Hospitality",
+    "event-manager": "Aviation & Hospitality",
+    # Operations & Logistics
+    "supply-chain-manager": "Operations & Logistics",
+    "logistics-manager": "Operations & Logistics",
+    "procurement-specialist": "Operations & Logistics",
+    # New-Age Digital
+    "digital-marketer": "New-Age Digital",
+    "seo-specialist": "New-Age Digital",
+    "growth-hacker": "New-Age Digital",
+    "influencer": "New-Age Digital",
+    "ethical-hacker": "New-Age Digital",
+}
+
+
+def category_label_for_slug(slug: str) -> str:
+    return SLUG_TO_CATEGORY.get(slug, "")

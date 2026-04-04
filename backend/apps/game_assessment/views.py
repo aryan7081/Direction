@@ -29,6 +29,7 @@ from .serializers import (
 )
 from .services import run_scoring_pipeline
 from .services.report_builder import build_report
+from apps.careers.career_categories import category_label_for_slug
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -57,6 +58,7 @@ def _build_teaser(session) -> dict:
     report = build_report(session)
 
     top_career = report["hero"]["career_name"]
+    top_category = report["hero"].get("career_category", "")
     confidence = report["hero"]["confidence"]
     pattern = report.get("dominant_pattern", {})
 
@@ -72,6 +74,7 @@ def _build_teaser(session) -> dict:
         if i == 0 and careers:
             career_preview.append({
                 "rank": 1,
+                "career_category": careers[0].get("career_category", ""),
                 "career_name": careers[0].get("career_name", ""),
                 "stream": careers[0].get("stream", ""),
             })
@@ -90,6 +93,7 @@ def _build_teaser(session) -> dict:
         "session_id": report["session_id"],
         "student_name": report["student"].get("name", "Student"),
         "hero_career": top_career,
+        "hero_career_category": top_category,
         "hero_confidence": confidence,
         "dominant_pattern": pattern.get("name", ""),
         "dominant_pattern_description": pattern.get("description", ""),
@@ -359,6 +363,8 @@ class SessionResultView(GenericAPIView):
                 "career_id": m.career.id,
                 "career_name": m.career.name,
                 "career_slug": m.career.slug,
+                "career_category": (m.career.category or "").strip()
+                or category_label_for_slug(m.career.slug),
                 "stream": m.career.stream,
                 "description": (m.career.description[:200] if m.career.description else ""),
                 "score": m.score,

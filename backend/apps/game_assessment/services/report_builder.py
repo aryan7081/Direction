@@ -18,6 +18,7 @@ from ..models import (
     TRAIT_CHOICES,
     TRAIT_SLUGS,
 )
+from apps.careers.career_categories import category_label_for_slug
 from apps.careers.models import Career
 
 from .dimension_meta import (
@@ -751,11 +752,13 @@ def build_report(session: GameSession) -> dict:
         c = m.career
         slug = c.slug
         pct = round(m.score * 100, 1) if m.score <= 1 else round(m.score, 1)
+        cat = (c.category or "").strip() or category_label_for_slug(slug)
         careers.append({
             "rank": m.rank,
             "career_id": c.id,
             "career_name": c.name,
             "career_slug": slug,
+            "career_category": cat,
             "stream": c.stream,
             "description": c.description or "",
             "score_percent": pct,
@@ -820,6 +823,7 @@ def build_report(session: GameSession) -> dict:
         "generated_at": date.today().strftime("%d %B %Y"),
         "student": profile_data,
         "hero": {
+            "career_category": top.get("career_category", ""),
             "career_name": top.get("career_name", "—"),
             "score_percent": top.get("score_percent", 0),
             "confidence": hero_confidence,

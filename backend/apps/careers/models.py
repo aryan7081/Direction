@@ -17,6 +17,8 @@ class Career(TimeStampedModel):
 
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
+    # Broad domain (e.g. "Tech & Engineering") — shown before the specific role in reports.
+    category = models.CharField(max_length=120, blank=True)
     description = models.TextField()
     stream = models.CharField(max_length=50)  # Science, Commerce, Arts
     min_education = models.CharField(max_length=100, blank=True)

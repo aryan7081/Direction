@@ -301,6 +301,11 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                   <Box>
                     <Typography sx={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>#1 Career Match</Typography>
                     <motion.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}>
+                      {teaser.hero_career_category ? (
+                        <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: '#15803d', display: 'block', mb: 0.25 }}>
+                          {teaser.hero_career_category}
+                        </Typography>
+                      ) : null}
                       <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>
                         {teaser.hero_career}
                       </Typography>
@@ -480,9 +485,16 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                       #{c.rank}
                     </Typography>
                     {isRevealed ? (
-                      <Typography sx={{ fontSize: '0.88rem', fontWeight: 600, color: '#111827' }}>
-                        {c.career_name}
-                      </Typography>
+                      <Box>
+                        {c.career_category ? (
+                          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d', display: 'block' }}>
+                            {c.career_category}
+                          </Typography>
+                        ) : null}
+                        <Typography sx={{ fontSize: '0.88rem', fontWeight: 600, color: '#111827' }}>
+                          {c.career_name}
+                        </Typography>
+                      </Box>
                     ) : (
                       <Typography sx={{ fontSize: '0.82rem', color: '#94a3b8' }}>
                         🔒 Unlock to reveal

@@ -210,7 +210,7 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
     ),
     _mcq(
         "Q14", SECTION_SLUG_TRAITS, "quick_pick", "",
-        "What makes you happiest?",
+        "After a normal school week, what actually makes you happiest?",
         [
             ("🔍 Learning how something works", {"trait_curiosity": 5}),
             ("📋 Finishing tasks on my list", {"trait_curiosity": 2}),

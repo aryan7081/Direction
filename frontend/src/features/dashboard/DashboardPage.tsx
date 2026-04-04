@@ -334,7 +334,13 @@ export function DashboardPage() {
               <Typography sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#111827', mb: 0.5 }}>
                 Your Career Match
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <Box sx={{ mb: 2 }}>
+                {teaser.hero_career_category ? (
+                  <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#15803d', mb: 0.5 }}>
+                    {teaser.hero_career_category}
+                  </Typography>
+                ) : null}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Typography sx={{ fontSize: '1.25rem', fontWeight: 800, color: '#16a34a' }}>
                   {teaser.hero_career}
                 </Typography>
@@ -350,6 +356,7 @@ export function DashboardPage() {
                     border: '1px solid #bbf7d0',
                   }}
                 />
+              </Box>
               </Box>
               <Button
                 variant="contained"

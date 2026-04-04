@@ -7,6 +7,7 @@ aligns with the career's weight profile — not just raw magnitude.
 import math
 
 from ..models import GameCareerTraitWeight, TRAIT_SLUGS
+from apps.careers.career_categories import category_label_for_slug
 from apps.careers.models import Career
 
 
@@ -43,11 +44,13 @@ def match_careers(
         similarity = _cosine_similarity(user_vec, career_vec)
         score_percent = round(similarity * 100, 1)
 
+        _cat = (career.category or "").strip() or category_label_for_slug(career.slug)
         career_scores.append(
             {
                 "career_id": career.id,
                 "career_name": career.name,
                 "career_slug": career.slug,
+                "career_category": _cat,
                 "stream": career.stream,
                 "description": career.description[:200] if career.description else "",
                 "score": round(similarity, 4),

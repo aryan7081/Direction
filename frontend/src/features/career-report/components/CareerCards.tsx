@@ -35,6 +35,11 @@ function CareerCard({ career, index }: { career: ReportCareer; index: number }) 
                 sx={{ bgcolor: color, color: '#fff', fontWeight: 700, fontSize: '0.75rem', height: 26 }}
               />
               <Box>
+                {career.career_category ? (
+                  <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, color: '#15803d', mb: 0.25 }}>
+                    {career.career_category}
+                  </Typography>
+                ) : null}
                 <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2 }}>
                   {career.career_name}
                 </Typography>

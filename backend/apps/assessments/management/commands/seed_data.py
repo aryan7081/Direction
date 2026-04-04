@@ -10,6 +10,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 
 from apps.assessments.models import AnswerOption, Category, Question
+from apps.careers.career_categories import category_label_for_slug
 from apps.careers.models import Career, CareerCategoryWeight, CareerSubjectWeight
 
 # ── 15-dimension helper ─────────────────────────────────────────────
@@ -246,6 +247,7 @@ class Command(BaseCommand):
                     "salary_range": salary,
                     "growth_outlook": growth,
                     "education_cost_tier": cost_tier,
+                    "category": category_label_for_slug(slug),
                     "order": i + 1,
                     "is_active": True,
                     "managed_by_seed": True,

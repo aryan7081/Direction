@@ -46,6 +46,7 @@ class CareerMatchSerializer(serializers.Serializer):
     career_id = serializers.IntegerField()
     career_name = serializers.CharField()
     career_slug = serializers.CharField()
+    career_category = serializers.CharField(required=False, allow_blank=True)
     stream = serializers.CharField()
     description = serializers.CharField()
     score = serializers.FloatField()

@@ -143,7 +143,14 @@ export function GameResultsPage({ result }: { result: SessionResult }) {
                         border: `1px solid ${RANK_COLORS[i]}33`,
                       }}
                     />
-                    <Typography sx={{ fontWeight: 700, color: '#111827' }}>{c.career_name}</Typography>
+                    <Box>
+                      {c.career_category ? (
+                        <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d', display: 'block', mb: 0.25 }}>
+                          {c.career_category}
+                        </Typography>
+                      ) : null}
+                      <Typography sx={{ fontWeight: 700, color: '#111827' }}>{c.career_name}</Typography>
+                    </Box>
                   </Box>
                   <Chip
                     label={c.stream}

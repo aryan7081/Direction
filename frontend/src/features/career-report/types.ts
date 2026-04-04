@@ -106,6 +106,7 @@ export interface ReportCareer {
   career_id: number;
   career_name: string;
   career_slug: string;
+  career_category?: string;
   stream: string;
   description: string;
   score_percent: number;
@@ -152,6 +153,7 @@ export interface CareerReport {
   generated_at: string;
   student: ReportStudent;
   hero: {
+    career_category?: string;
     career_name: string;
     score_percent: number;
     confidence: string;
