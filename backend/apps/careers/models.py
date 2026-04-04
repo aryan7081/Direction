@@ -29,6 +29,9 @@ class Career(TimeStampedModel):
         default=EducationCostTier.MEDIUM,
     )
     is_active = models.BooleanField(default=True)
+    # If True, seed_data may deactivate this row when its slug is removed from the catalogue.
+    # Admin-created careers should keep this False so they are not auto-retired.
+    managed_by_seed = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
 
     class Meta:

@@ -143,7 +143,7 @@ class ReportOrder(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name="report_orders",
     )
-    amount = models.PositiveIntegerField(default=299, help_text="Amount in INR")
+    amount = models.PositiveIntegerField(default=49, help_text="Amount in INR")
     status = models.CharField(
         max_length=10, choices=PAYMENT_STATUS_CHOICES, default="pending"
     )

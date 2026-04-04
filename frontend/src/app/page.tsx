@@ -8,7 +8,12 @@ import { Box, Button, Typography, Container, Chip } from '@mui/material';
 import { motion, useInView, useScroll, useTransform } from 'framer-motion';
 import { useAuthStore } from '@/stores/authStore';
 import { fetchGameContent } from '@/features/game-assessment/api';
-import { CAREER_CATALOG_LABEL, PRODUCT_NAME } from '@/lib/productCopy';
+import {
+  CAREER_CATALOG_LABEL,
+  LANDING_STUDENTS_STAT_LABEL,
+  LANDING_STUDENTS_STAT_VALUE,
+  PRODUCT_NAME,
+} from '@/lib/productCopy';
 
 /* ── Gradient orbs (subtle, professional) ── */
 function GradientOrbs() {
@@ -77,7 +82,7 @@ const FEATURES = [
 ];
 
 const STATS = [
-  { value: '12,847+', label: 'Students Assessed' },
+  { value: LANDING_STUDENTS_STAT_VALUE, label: LANDING_STUDENTS_STAT_LABEL },
   { value: CAREER_CATALOG_LABEL, label: 'Careers Matched' },
   { value: '15', label: 'Trait Dimensions' },
   { value: '~5 min', label: 'To Complete' },
@@ -86,17 +91,17 @@ const STATS = [
 const TESTIMONIALS = [
   {
     quote: `I was torn between Science and Commerce. ${PRODUCT_NAME} showed me I'm a natural fit for Science with a career in Biotech. My parents were so relieved!`,
-    name: 'Priya S.',
-    detail: 'Class 10, Mumbai',
+    name: 'Siddhartha',
+    detail: 'Class 10, Gorakhpur',
   },
   {
-    quote: 'The report was incredibly detailed — my counsellor at school was impressed. Best ₹299 my parents ever spent.',
-    name: 'Arjun M.',
-    detail: 'Class 10, Bangalore',
+    quote: 'The report was incredibly detailed — my counsellor at school was impressed. Best ₹49 my parents ever spent.',
+    name: 'Juhi',
+    detail: 'Class 10, Lucknow',
   },
   {
     quote: `I always thought I should do Science because of marks. ${PRODUCT_NAME} helped me realize Commerce suits my personality way better.`,
-    name: 'Sneha K.',
+    name: 'Ayush',
     detail: 'Class 9, Delhi',
   },
 ];
@@ -224,7 +229,8 @@ function SocialProofStrip() {
             ))}
           </Box>
           <Typography sx={{ fontSize: { xs: '0.78rem', sm: '0.85rem' }, color: '#6b7280', fontWeight: 500 }}>
-            <Box component="span" sx={{ fontWeight: 700, color: '#111827' }}>12,847+</Box> students found clarity with {PRODUCT_NAME}
+            <Box component="span" sx={{ fontWeight: 700, color: '#111827' }}>Many students</Box>
+            {' '}are finding clarity with {PRODUCT_NAME}
           </Typography>
         </Box>
         <Chip

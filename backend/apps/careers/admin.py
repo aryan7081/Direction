@@ -9,8 +9,8 @@ class CareerCategoryWeightInline(admin.TabularInline):
 
 @admin.register(Career)
 class CareerAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "stream", "order", "is_active")
-    list_filter = ("stream", "is_active")
+    list_display = ("name", "slug", "stream", "order", "is_active", "managed_by_seed")
+    list_filter = ("stream", "is_active", "managed_by_seed")
     prepopulated_fields = {"slug": ("name",)}
     inlines = [CareerCategoryWeightInline]
     ordering = ("order", "name")

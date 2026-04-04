@@ -19,6 +19,7 @@ import { fetchReportTeaser, createPaymentOrder, verifyPayment } from './api';
 import { googleAuth } from '@/features/auth/api';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
 import type { ReportTeaser } from './api';
+import { REPORT_PRICE_INR } from '@/lib/productCopy';
 
 declare global {
   interface Window {
@@ -187,7 +188,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
     );
   }
 
-  const price = teaser.price ?? 299;
+  const price = REPORT_PRICE_INR;
   const streamColor = STREAM_COLORS[teaser.stream_recommendation] || STREAM_COLORS.Science;
 
   if (showSignInStep) {

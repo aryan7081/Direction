@@ -247,8 +247,26 @@ class Command(BaseCommand):
                     "growth_outlook": growth,
                     "education_cost_tier": cost_tier,
                     "order": i + 1,
+                    "is_active": True,
+                    "managed_by_seed": True,
                 },
             )
+
+        catalogue_slugs = {row[1] for row in careers_data}
+        retired_qs = Career.objects.filter(managed_by_seed=True).exclude(
+            slug__in=catalogue_slugs
+        ).filter(is_active=True)
+        retired_slugs = list(retired_qs.values_list("slug", flat=True))
+        n_retired = retired_qs.update(is_active=False)
+        if n_retired:
+            self.stdout.write(
+                self.style.WARNING(
+                    "Retired "
+                    f"{n_retired} seed-managed career(s) no longer in catalogue: "
+                    f"{', '.join(sorted(retired_slugs))}"
+                )
+            )
+
         self.stdout.write(f"Careers seeded ({len(careers_data)} total).")
 
     # ── 15-dimension career weights ─────────────────────────────────
