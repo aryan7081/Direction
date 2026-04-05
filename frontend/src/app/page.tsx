@@ -251,7 +251,10 @@ export default function LandingPage() {
   const logout = useAuthStore((s) => s.logout);
 
   useEffect(() => {
-    queryClient.prefetchQuery({ queryKey: ['game-content'], queryFn: fetchGameContent });
+    queryClient.prefetchQuery({
+      queryKey: ['game-content', 'free'],
+      queryFn: () => fetchGameContent(),
+    });
     router.prefetch('/game-assessment');
   }, [queryClient, router]);
 

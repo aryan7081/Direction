@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Box, Alert, Container } from '@mui/material';
+import { Box, Alert, Button, Container, Typography } from '@mui/material';
 import { PageLoader } from '@/components/ui/Loaders';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -16,6 +16,8 @@ import {
   logEvents,
   submitSession,
   fetchResumeSession,
+  fetchPremiumExtensionContent,
+  submitPremiumExtension,
 } from '../api';
 import { GameProgressBar } from './GameProgressBar';
 import { IntroScreen } from './IntroScreen';
@@ -25,33 +27,43 @@ import { RiskSimulator } from './RiskSimulator';
 import { PlannerGame } from './PlannerGame';
 import { ScenarioSection } from './ScenarioSection';
 import { ProcessingScreen } from './ProcessingScreen';
+import { DirectionalSnapshotModal } from './DirectionalSnapshotModal';
 import type { GamePhase } from '../types';
 
-/** Single phase: 30-question RIASEC + traits + personality (was multi-game flow). */
 const GAME_PHASES: GamePhase[] = ['scenario'];
 
 interface GameEngineProps {
   resumeSessionId?: string | null;
   viewSessionId?: string | null;
+  /** After ₹99 bundle: continue with premium-only questions for this session. */
+  premiumContinueSessionId?: string | null;
 }
 
-export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) {
+export function GameEngine({
+  resumeSessionId,
+  viewSessionId,
+  premiumContinueSessionId,
+}: GameEngineProps) {
+  if (premiumContinueSessionId) {
+    return <PremiumExtensionEngine sessionId={premiumContinueSessionId} />;
+  }
+  return (
+    <MainAssessmentEngine resumeSessionId={resumeSessionId} viewSessionId={viewSessionId} />
+  );
+}
+
+/** Extra questions after premium bundle payment (authenticated). */
+function PremiumExtensionEngine({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const isAuthenticated = !!user;
   const {
-    sessionId,
     phase,
-    content,
-    result,
     error,
     scenarioStartIndex,
     scenarioGateCompletedCount,
     setSessionId,
     setPhase,
-    setContent,
     drainEvents,
-    setResult,
     setError,
     setScenarioStartIndex,
     setScenarioGateCompletedCount,
@@ -61,11 +73,210 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
   const [subProgress, setSubProgress] = useState(0);
   const [initializing, setInitializing] = useState(true);
   const initDoneRef = useRef(false);
-  const precreateSessionRef = useRef<Promise<{ session_id: string }> | null>(null);
+
+  const { data, isLoading, error: qError } = useQuery({
+    queryKey: ['game-premium-extension', sessionId],
+    queryFn: () => fetchPremiumExtensionContent(sessionId),
+    enabled: !!sessionId && !!user,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!user || !data || initDoneRef.current) return;
+    initDoneRef.current = true;
+    reset();
+    setSessionId(sessionId);
+    setPhase('scenario');
+    setScenarioStartIndex(0);
+    setScenarioGateCompletedCount(0);
+    setSubProgress(0);
+    setInitializing(false);
+  }, [user, data, sessionId, reset, setSessionId, setPhase, setScenarioStartIndex, setScenarioGateCompletedCount]);
+
+  const flushEvents = useCallback(async () => {
+    const events = drainEvents();
+    if (events.length > 0) {
+      try {
+        await logEvents(sessionId, events);
+      } catch {
+        setError('Failed to save progress. Please try again.');
+      }
+    }
+  }, [sessionId, drainEvents, setError]);
+
+  const advancePhase = useCallback(async () => {
+    await flushEvents();
+    setPhase('processing');
+  }, [flushEvents, setPhase]);
+
+  const handleProcessingDone = useCallback(async () => {
+    try {
+      await flushEvents();
+      await submitPremiumExtension(sessionId);
+      router.replace(`/report?session=${sessionId}`);
+    } catch {
+      setError('Could not update your profile. Please try again.');
+      setPhase('scenario');
+    }
+  }, [sessionId, flushEvents, setPhase, setError, router]);
+
+  const handleScenarioAuthGate = useCallback(
+    async (resumeAtIndex: number, completedCount: number) => {
+      await flushEvents();
+      setScenarioStartIndex(resumeAtIndex);
+      setScenarioGateCompletedCount(completedCount);
+      const qLen = data?.scenario_questions?.length ?? 20;
+      setSubProgress(completedCount / qLen);
+      setPhase('save_progress');
+    },
+    [flushEvents, data, setScenarioStartIndex, setScenarioGateCompletedCount, setPhase]
+  );
+
+  const [linkingAccount, setLinkingAccount] = useState(false);
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const handleGoogleSignIn = useCallback(
+    async (credential: string) => {
+      setLinkingAccount(true);
+      try {
+        const res = await googleAuth(credential, sessionId);
+        setAuth(res.user, res.access, res.refresh);
+        const idx = useGameStore.getState().scenarioStartIndex;
+        const qLen = data?.scenario_questions?.length ?? 20;
+        setSubProgress(Math.min(idx, qLen) / qLen);
+        setPhase('scenario');
+      } catch {
+        setError('Sign in failed. Please try again.');
+      } finally {
+        setLinkingAccount(false);
+      }
+    },
+    [sessionId, setPhase, setError, setAuth, data]
+  );
+
+  if (!user) {
+    return (
+      <Container maxWidth="sm" sx={{ py: 6 }}>
+        <Typography sx={{ mb: 2, fontWeight: 700 }}>Sign in required</Typography>
+        <Typography sx={{ color: 'text.secondary', mb: 2 }}>
+          Sign in to continue your premium assessment for this session.
+        </Typography>
+        <Button variant="contained" href="/login" sx={{ textTransform: 'none' }}>
+          Go to sign in
+        </Button>
+      </Container>
+    );
+  }
+
+  if (qError || (!isLoading && !data)) {
+    return (
+      <Container maxWidth="sm" sx={{ py: 6 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {(qError as Error)?.message || 'Could not load premium questions. Check payment or try again.'}
+        </Alert>
+        <Button variant="outlined" onClick={() => router.push(`/report?session=${sessionId}`)}>
+          Back to results
+        </Button>
+      </Container>
+    );
+  }
+
+  if (initializing || isLoading || !data) {
+    return <PageLoader message="Loading premium questions..." />;
+  }
+
+  const qCount = data.scenario_questions.length;
+
+  return (
+    <Box sx={{ position: 'relative', minHeight: '80vh' }}>
+      <AnimatedBackground theme="scenario" />
+      <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 }, position: 'relative', zIndex: 2 }}>
+        {error && (
+          <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2, borderRadius: 2 }}>
+            {error}
+          </Alert>
+        )}
+        {phase !== 'processing' && (
+          <GameProgressBar phase={phase} subProgress={subProgress} scenarioQuestionTotal={qCount} />
+        )}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={phase}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.18 }}
+          >
+            {phase === 'save_progress' && (
+              <SaveProgressScreen
+                onGoogleSignIn={handleGoogleSignIn}
+                loading={linkingAccount}
+                questionsCompleted={scenarioGateCompletedCount || 5}
+              />
+            )}
+            {phase === 'scenario' && (
+              <ScenarioSection
+                questions={data.scenario_questions}
+                startIndex={scenarioStartIndex}
+                isAuthenticated={!!user}
+                onAuthGate={handleScenarioAuthGate}
+                onComplete={advancePhase}
+                onProgress={setSubProgress}
+              />
+            )}
+            {phase === 'processing' && <ProcessingScreen onDone={handleProcessingDone} />}
+          </motion.div>
+        </AnimatePresence>
+      </Container>
+    </Box>
+  );
+}
+
+function MainAssessmentEngine({
+  resumeSessionId,
+  viewSessionId,
+}: {
+  resumeSessionId?: string | null;
+  viewSessionId?: string | null;
+}) {
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = !!user;
+  const {
+    sessionId,
+    phase,
+    content,
+    error,
+    scenarioStartIndex,
+    scenarioGateCompletedCount,
+    setSessionId,
+    setPhase,
+    setContent,
+    drainEvents,
+    setError,
+    setScenarioStartIndex,
+    setScenarioGateCompletedCount,
+    reset,
+  } = useGameStore();
+
+  const [subProgress, setSubProgress] = useState(0);
+  const [initializing, setInitializing] = useState(true);
+  const initDoneRef = useRef(false);
+
+  const needsResumeData = Boolean(resumeSessionId && isAuthenticated);
+
+  const { data: resumeInfo, isFetched: resumeFetched } = useQuery({
+    queryKey: ['game-resume'],
+    queryFn: fetchResumeSession,
+    enabled: needsResumeData,
+    staleTime: 60 * 1000,
+  });
+
+  const contentQueryEnabled = !needsResumeData || resumeFetched;
 
   const { data: contentData } = useQuery({
-    queryKey: ['game-content'],
+    queryKey: ['game-content', 'free'],
     queryFn: fetchGameContent,
+    enabled: contentQueryEnabled,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -74,22 +285,17 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
   }, [contentData, setContent]);
 
   useEffect(() => {
-    if (phase === 'intro' && !precreateSessionRef.current) {
-      precreateSessionRef.current = startGameSession();
-    }
-  }, [phase]);
-
-  useEffect(() => {
     if (viewSessionId) {
       setInitializing(false);
       router.replace(`/report?session=${viewSessionId}`);
       return;
     }
 
-    if (!contentData) return;
+    if (!contentData || !contentQueryEnabled) return;
 
     if (initDoneRef.current) return;
     initDoneRef.current = true;
+
     reset();
     setContent(contentData);
 
@@ -99,15 +305,18 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
           setSessionId(resumeSessionId);
           if (isAuthenticated) {
             try {
-              const resumeInfo = await fetchResumeSession();
-              if (resumeInfo.session && resumeInfo.session.session_id === resumeSessionId) {
-                const rp = resumeInfo.session.resume_phase;
+              const ri = resumeInfo;
+              if (ri?.session && ri.session.session_id === resumeSessionId) {
+                const rp = ri.session.resume_phase;
                 const validPhases: GamePhase[] = ['scenario', 'processing'];
-                setPhase(validPhases.includes(rp as GamePhase) ? (rp as GamePhase) : 'scenario');
-                const idx = resumeInfo.session.scenario_answer_index ?? 0;
+                setPhase(
+                  validPhases.includes(rp as GamePhase) ? (rp as GamePhase) : 'scenario'
+                );
+                const idx = ri.session.scenario_answer_index ?? 0;
                 const qLen = contentData.scenario_questions?.length ?? 1;
-                setScenarioStartIndex(Math.min(idx, qLen));
-                setSubProgress(Math.min(idx, qLen) / qLen);
+                const maxIndex = Math.max(0, qLen - 1);
+                setScenarioStartIndex(Math.min(idx, maxIndex));
+                setSubProgress(qLen > 0 ? Math.min(idx, qLen) / qLen : 0);
               } else {
                 setPhase('scenario');
               }
@@ -125,7 +334,7 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contentData, viewSessionId, resumeSessionId, isAuthenticated]);
+  }, [contentData, contentQueryEnabled, viewSessionId, resumeSessionId, isAuthenticated, resumeInfo]);
 
   const flushEvents = useCallback(async () => {
     if (!sessionId) return;
@@ -139,19 +348,21 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
     }
   }, [sessionId, drainEvents, setError]);
 
+  const activeContent = content ?? contentData;
+  const scenarioQCount = activeContent?.scenario_questions?.length ?? 30;
+
   const handleScenarioAuthGate = useCallback(
     async (resumeAtIndex: number, completedCount: number) => {
       await flushEvents();
       setScenarioStartIndex(resumeAtIndex);
       setScenarioGateCompletedCount(completedCount);
-      const qLen = (content ?? contentData)?.scenario_questions.length ?? 30;
+      const qLen = activeContent?.scenario_questions.length ?? 30;
       setSubProgress(completedCount / qLen);
       setPhase('save_progress');
     },
     [
       flushEvents,
-      content,
-      contentData,
+      activeContent,
       setScenarioStartIndex,
       setScenarioGateCompletedCount,
       setPhase,
@@ -160,16 +371,8 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
 
   const handleStart = useCallback(async () => {
     try {
-      let session_id: string;
-      if (precreateSessionRef.current) {
-        const result = await precreateSessionRef.current;
-        session_id = result.session_id;
-      } else {
-        const result = await startGameSession();
-        session_id = result.session_id;
-      }
-      precreateSessionRef.current = null;
-      setSessionId(session_id);
+      const result = await startGameSession();
+      setSessionId(result.session_id);
       setScenarioStartIndex(0);
       setScenarioGateCompletedCount(0);
       setSubProgress(0);
@@ -186,13 +389,7 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
           : 'Failed to start session. Please try again.'
       );
     }
-  }, [
-    setSessionId,
-    setPhase,
-    setError,
-    setScenarioStartIndex,
-    setScenarioGateCompletedCount,
-  ]);
+  }, [setSessionId, setPhase, setError, setScenarioStartIndex, setScenarioGateCompletedCount]);
 
   const advancePhase = useCallback(async () => {
     await flushEvents();
@@ -222,8 +419,7 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
         const res = await googleAuth(credential, sessionId);
         setAuth(res.user, res.access, res.refresh);
         const idx = useGameStore.getState().scenarioStartIndex;
-        const qLen =
-          (content ?? contentData)?.scenario_questions.length ?? 30;
+        const qLen = activeContent?.scenario_questions.length ?? 30;
         setSubProgress(Math.min(idx, qLen) / qLen);
         setPhase('scenario');
       } catch {
@@ -232,7 +428,7 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
         setLinkingAccount(false);
       }
     },
-    [sessionId, setPhase, setError, setAuth, content, contentData]
+    [sessionId, setPhase, setError, setAuth, activeContent]
   );
 
   const handleProcessingDone = useCallback(async () => {
@@ -240,28 +436,50 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
     try {
       await flushEvents();
       await submitSession(sessionId);
-      router.replace(`/report?session=${sessionId}`);
+      setPhase('results');
     } catch {
       setError('Scoring failed. Please try again.');
       setPhase('scenario');
     }
-  }, [sessionId, flushEvents, setPhase, setError, router]);
+  }, [sessionId, flushEvents, setPhase, setError]);
 
-  if (initializing || !contentData) {
+  const handleDirectionalSnapshotContinue = useCallback(() => {
+    if (!sessionId) return;
+    router.replace(`/report?session=${sessionId}`);
+  }, [sessionId, router]);
+
+  if (!contentQueryEnabled || initializing || !contentData) {
     return <PageLoader message="Preparing your assessment..." />;
   }
 
   const bgTheme =
-    phase === 'logic' || phase === 'save_progress' ? 'logic'
-    : phase === 'risk' ? 'risk'
-    : phase === 'planner' ? 'planner'
-    : phase === 'scenario' ? 'scenario'
-    : 'dashboard';
+    phase === 'logic' || phase === 'save_progress'
+      ? 'logic'
+      : phase === 'risk'
+        ? 'risk'
+        : phase === 'planner'
+          ? 'planner'
+          : phase === 'scenario'
+            ? 'scenario'
+            : 'dashboard';
 
   return (
     <Box sx={{ position: 'relative', minHeight: '80vh' }}>
+      <DirectionalSnapshotModal
+        open={phase === 'results' && !!sessionId}
+        onContinue={handleDirectionalSnapshotContinue}
+      />
       <AnimatedBackground theme={bgTheme} />
-      <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 }, position: 'relative', zIndex: 2, isolation: 'isolate' }}>
+      <Container
+        maxWidth="md"
+        sx={{
+          py: { xs: 2, sm: 4 },
+          px: { xs: 2, sm: 3 },
+          position: 'relative',
+          zIndex: 2,
+          isolation: 'isolate',
+        }}
+      >
         {error && (
           <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2, borderRadius: 2 }}>
             {error}
@@ -269,7 +487,11 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
         )}
 
         {phase !== 'intro' && phase !== 'results' && (
-          <GameProgressBar phase={phase} subProgress={subProgress} />
+          <GameProgressBar
+            phase={phase}
+            subProgress={subProgress}
+            scenarioQuestionTotal={scenarioQCount}
+          />
         )}
 
         <AnimatePresence mode="wait">
@@ -280,10 +502,16 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.18 }}
           >
-            {phase === 'intro' && <IntroScreen onStart={handleStart} />}
+            {phase === 'intro' && (
+              <IntroScreen questionCounts={contentData.question_counts} onStart={handleStart} />
+            )}
 
-            {phase === 'logic' && (content ?? contentData) && (
-              <LogicGame tasks={(content ?? contentData)!.logic_tasks} onComplete={handleLogicComplete} onProgress={setSubProgress} />
+            {phase === 'logic' && activeContent && (
+              <LogicGame
+                tasks={activeContent.logic_tasks}
+                onComplete={handleLogicComplete}
+                onProgress={setSubProgress}
+              />
             )}
 
             {phase === 'save_progress' && (
@@ -291,24 +519,30 @@ export function GameEngine({ resumeSessionId, viewSessionId }: GameEngineProps) 
                 onGoogleSignIn={handleGoogleSignIn}
                 loading={linkingAccount}
                 questionsCompleted={
-                  scenarioGateCompletedCount ||
-                  (content ?? contentData)?.logic_tasks?.length ||
-                  5
+                  scenarioGateCompletedCount || activeContent?.logic_tasks?.length || 5
                 }
               />
             )}
 
-            {phase === 'risk' && (content ?? contentData) && (
-              <RiskSimulator scenarios={(content ?? contentData)!.risk_scenarios} onComplete={advancePhase} onProgress={setSubProgress} />
+            {phase === 'risk' && activeContent && (
+              <RiskSimulator
+                scenarios={activeContent.risk_scenarios}
+                onComplete={advancePhase}
+                onProgress={setSubProgress}
+              />
             )}
 
-            {phase === 'planner' && (content ?? contentData) && (
-              <PlannerGame config={(content ?? contentData)!.planner_config} onComplete={advancePhase} onProgress={setSubProgress} />
+            {phase === 'planner' && activeContent && (
+              <PlannerGame
+                config={activeContent.planner_config}
+                onComplete={advancePhase}
+                onProgress={setSubProgress}
+              />
             )}
 
-            {phase === 'scenario' && (content ?? contentData) && (
+            {phase === 'scenario' && activeContent && (
               <ScenarioSection
-                questions={(content ?? contentData)!.scenario_questions}
+                questions={activeContent.scenario_questions}
                 startIndex={scenarioStartIndex}
                 isAuthenticated={isAuthenticated}
                 onAuthGate={handleScenarioAuthGate}

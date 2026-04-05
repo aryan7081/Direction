@@ -37,7 +37,7 @@ function ReportGate({ sessionId }: { sessionId: string }) {
 
   if (isLoading) return <PageLoader message="Loading report..." />;
 
-  if (teaser?.is_paid) {
+  if (teaser?.report_accessible ?? teaser?.is_paid) {
     return <CareerReportPage sessionId={sessionId} />;
   }
 

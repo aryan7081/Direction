@@ -1,9 +1,10 @@
 """
-30 career MCQs → 15 scoring dimensions:
+Career MCQs → 15 scoring dimensions:
 
-  RIASEC (6)     — Q01–Q12 interest types
-  Traits (5)     — Q13–Q22 work habits
-  Personality (4) — Q23–Q30 style
+  Core (free)    — Q01–Q30: RIASEC (12) + traits (10) + personality (8)
+  Premium extra  — Q31–Q50: deeper interests, values, and study/work context
+
+Free tier uses Q01–Q30 only; premium uses all items for a fuller profile.
 
 Each chosen option adds weights. Scoring builds a user profile; careers
 are matched using similarity with each career's profile.
@@ -47,6 +48,7 @@ def _mcq(
     options: List[Tuple[str, Dict[str, int]]],
     primary_focus: str = "",
     secondary_signal: str = "",
+    premium_only: bool = False,
 ) -> Dict[str, Any]:
     meta: Dict[str, Any] = {
         "code": code,
@@ -58,13 +60,18 @@ def _mcq(
         meta["primary_focus"] = primary_focus
     if secondary_signal:
         meta["secondary_signal"] = secondary_signal
-    return {
+    if premium_only:
+        meta["premium_only"] = True
+    row: Dict[str, Any] = {
         "code": code,
         "section_category_slug": section_slug,
         "text": text,
         "metadata": meta,
         "options": options,
     }
+    if premium_only:
+        row["premium_only"] = True
+    return row
 
 
 # ====================================================================
@@ -414,3 +421,332 @@ MCQ_ITEMS: List[Dict[str, Any]] = [
         "self_directed_externally_guided",
     ),
 ]
+
+# ====================================================================
+#  PREMIUM_MCQ_ITEMS — 20 additional questions (premium tier only)
+# ====================================================================
+
+PREMIUM_MCQ_ITEMS: List[Dict[str, Any]] = [
+    _mcq(
+        "Q31",
+        SECTION_SLUG_RIASEC,
+        "scenario",
+        "school",
+        "You can join one club for the whole year. Which sounds most like you?",
+        [
+            ("🛠 Robotics, woodwork, or fixing/building things", _h("R")),
+            ("🔬 Science lab, quiz, or research club", _h("I")),
+            ("🎨 Drama, art, music, or design club", _h("A")),
+            ("👥 Volunteering, peer support, or teaching younger students", _h("S")),
+        ],
+        "R",
+        "A",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q32",
+        SECTION_SLUG_RIASEC,
+        "quick_pick",
+        "future",
+        "In ten years, what kind of day would make you feel proud?",
+        [
+            ("💼 Running or growing something I started", _h("E")),
+            ("📊 Systems running smoothly because I organised the work", _h("C")),
+            ("🔬 Solving a hard problem others gave up on", _h("I")),
+            ("🎨 Shipping something I designed or created", _h("A")),
+        ],
+        "E",
+        "I",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q33",
+        SECTION_SLUG_RIASEC,
+        "scenario",
+        "daily_life",
+        "A big family decision needs a spokesperson. You:",
+        [
+            ("📢 Volunteer to present and persuade", _h("E")),
+            ("📝 Prefer to write points clearly for someone else to say", _h("C")),
+            ("🤝 Suggest talking as a group so everyone is heard", _h("S")),
+            ("🔍 Research facts first, then share calmly", _h("I")),
+        ],
+        "E",
+        "S",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q34",
+        SECTION_SLUG_RIASEC,
+        "puzzle",
+        "hobby",
+        "You enjoy content that is mostly:",
+        [
+            ("🛠 How things are built or repaired", _h("R")),
+            ("📈 Data, strategy, and how decisions are made", _h("E")),
+            ("🎭 Stories about people and relationships", _h("S")),
+            ("🧪 Deep explanations and ‘why’ behind events", _h("I")),
+        ],
+        "I",
+        "E",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q35",
+        SECTION_SLUG_TRAITS,
+        "scenario",
+        "school",
+        "A topic you find boring is still on the exam. You:",
+        [
+            ("📋 Make a small plan and finish it in chunks", {"trait_planning": 5, "trait_persistence": 4}),
+            ("🔍 Find one interesting angle so it feels less dull", {"trait_curiosity": 5, "trait_persistence": 3}),
+            ("👥 Study with friends to stay on track", {"trait_empathy_teamwork": 5, "trait_persistence": 3}),
+            ("🚀 Rush near the deadline — I work better under pressure", {"trait_persistence": 2, "trait_initiative": 4}),
+        ],
+        "planning_organization",
+        "",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q36",
+        SECTION_SLUG_TRAITS,
+        "scenario",
+        "home",
+        "Someone criticises your work in front of others. You tend to:",
+        [
+            ("🛡️ Feel hurt but stay quiet until later", {"trait_empathy_teamwork": 2, "trait_persistence": 3}),
+            ("💬 Ask calmly what to improve", {"trait_initiative": 4, "trait_empathy_teamwork": 4}),
+            ("🔍 Analyse whether they are right before reacting", {"trait_curiosity": 5, "trait_persistence": 4}),
+            ("🚀 Defend my choices on the spot", {"trait_initiative": 5, "trait_empathy_teamwork": 2}),
+        ],
+        "initiative",
+        "",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q37",
+        SECTION_SLUG_TRAITS,
+        "quick_pick",
+        "daily_life",
+        "When you get stuck on something hard, you usually:",
+        [
+            ("🔁 Keep trying different approaches", {"trait_persistence": 5}),
+            ("📚 Look for a video, book, or teacher explanation", {"trait_curiosity": 5}),
+            ("👥 Ask someone who knows", {"trait_empathy_teamwork": 5}),
+            ("⏸️ Pause and come back with fresh energy", {"trait_planning": 4, "trait_persistence": 3}),
+        ],
+        "persistence",
+        "",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q38",
+        SECTION_SLUG_TRAITS,
+        "scenario",
+        "school",
+        "Group project: one person is not doing their part. You:",
+        [
+            ("📋 Divide tasks clearly and check in", {"trait_planning": 5, "trait_initiative": 4}),
+            ("👥 Talk to them privately first", {"trait_empathy_teamwork": 5}),
+            ("🚀 Take on extra work so the grade is safe", {"trait_persistence": 5, "trait_initiative": 3}),
+            ("📣 Tell the teacher if nothing changes", {"trait_initiative": 5, "trait_empathy_teamwork": 2}),
+        ],
+        "empathy_teamwork",
+        "",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q39",
+        SECTION_SLUG_TRAITS,
+        "role_choice",
+        "future",
+        "Money vs meaning — if you had to lean one way at 25, you’d pick:",
+        [
+            ("💰 Higher pay, even if the work is not my dream", {"trait_planning": 4, "trait_initiative": 3}),
+            ("❤️ Meaningful work, even if pay grows slowly", {"trait_curiosity": 4, "trait_initiative": 4}),
+            ("⚖️ Balance — enough money and some purpose", {"trait_planning": 5}),
+            ("🚀 Whichever path has the fastest growth", {"trait_initiative": 5, "personality_risk_taking": 4}),
+        ],
+        "planning_organization",
+        "",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q40",
+        SECTION_SLUG_TRAITS,
+        "scenario",
+        "hobby",
+        "You have one free hour before sleep. You:",
+        [
+            ("📖 Read or watch something to learn", {"trait_curiosity": 5}),
+            ("🎯 Finish a small task so tomorrow is easier", {"trait_planning": 5}),
+            ("👥 Call or message someone", {"trait_empathy_teamwork": 5}),
+            ("🎨 Create, play music, or journal", {"trait_curiosity": 4, "trait_persistence": 3}),
+        ],
+        "curiosity",
+        "",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q41",
+        SECTION_SLUG_PERSONALITY,
+        "scenario",
+        "school",
+        "Exam week stress is high. You cope best by:",
+        [
+            ("📋 A strict timetable and checklist", {"personality_structure": 5}),
+            ("🎨 Short breaks with music or movement", {"personality_structure": 2, "personality_extroversion": 3}),
+            ("👥 Studying with others", {"personality_extroversion": 4, "trait_empathy_teamwork": 4}),
+            ("🧘 Studying alone in a quiet corner", {"personality_extroversion": 2}),
+        ],
+        "structure_flexibility",
+        "",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q42",
+        SECTION_SLUG_PERSONALITY,
+        "quick_pick",
+        "daily_life",
+        "Rules you disagree with — you usually:",
+        [
+            ("📋 Follow them while finding a proper way to change them", {"personality_structure": 5, "personality_risk_taking": 2}),
+            ("🤔 Question them openly if they feel unfair", {"personality_risk_taking": 4, "personality_self_direction": 4}),
+            ("🛡️ Follow them to avoid trouble", {"personality_risk_taking": 1, "personality_structure": 4}),
+            ("🎨 Work around them quietly in my own way", {"personality_self_direction": 5, "personality_structure": 2}),
+        ],
+        "risk_cautious",
+        "",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q43",
+        SECTION_SLUG_PERSONALITY,
+        "scenario",
+        "future",
+        "Your ideal first job environment is closer to:",
+        [
+            ("🏢 Clear role, stable hours, known expectations", {"personality_structure": 5, "personality_risk_taking": 2}),
+            ("🚀 Fast-changing, lots of new problems weekly", {"personality_risk_taking": 5, "personality_structure": 2}),
+            ("🤝 Lots of collaboration and meetings", {"personality_extroversion": 5}),
+            ("🏠 Mostly independent work with check-ins", {"personality_self_direction": 5, "personality_extroversion": 2}),
+        ],
+        "structure_flexibility",
+        "",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q44",
+        SECTION_SLUG_PERSONALITY,
+        "scenario",
+        "friends",
+        "You disagree with a close friend’s big decision. You:",
+        [
+            ("💬 Say it directly — honesty matters", {"personality_extroversion": 4, "trait_empathy_teamwork": 3}),
+            ("🤫 Support them unless it’s unsafe", {"trait_empathy_teamwork": 5, "personality_risk_taking": 2}),
+            ("🔍 Ask questions so they think it through", {"personality_self_direction": 4, "trait_curiosity": 4}),
+            ("⏳ Wait — they may change their mind", {"personality_structure": 3, "personality_risk_taking": 2}),
+        ],
+        "introversion_extroversion",
+        "",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q45",
+        SECTION_SLUG_RIASEC,
+        "scenario",
+        "school",
+        "You must pick a summer activity. You lean toward:",
+        [
+            ("🛠 Internship or hands-on training", _h("R")),
+            ("📚 Academic course or competitive exam prep", _h("I")),
+            ("🎨 Portfolio project or creative workshop", _h("A")),
+            ("🤝 Camp, NGO, or community work", _h("S")),
+        ],
+        "R",
+        "S",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q46",
+        SECTION_SLUG_RIASEC,
+        "scenario",
+        "daily_life",
+        "You’d rather spend a Saturday:",
+        [
+            ("🛠 Fixing, building, or sports outdoors", _h("R")),
+            ("🧪 Visiting a museum, lab open day, or tech talk", _h("I")),
+            ("🎤 Hosting, performing, or content creation", _h("A")),
+            ("📊 Organising an event budget or schedule", _h("C")),
+        ],
+        "R",
+        "C",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q47",
+        SECTION_SLUG_TRAITS,
+        "scenario",
+        "school",
+        "A new subject is added mid-year. You:",
+        [
+            ("🔍 Read ahead before class", {"trait_curiosity": 5, "trait_initiative": 4}),
+            ("📋 Wait for the teacher’s plan and follow it", {"trait_planning": 4, "trait_persistence": 3}),
+            ("👥 Form a study group quickly", {"trait_empathy_teamwork": 5}),
+            ("🚀 Try practice problems first, theory later", {"trait_initiative": 5, "trait_curiosity": 3}),
+        ],
+        "curiosity",
+        "",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q48",
+        SECTION_SLUG_TRAITS,
+        "quick_pick",
+        "future",
+        "Success for you in college mainly means:",
+        [
+            ("🎯 Strong grades and clear next step (exam, job)", {"trait_planning": 5, "trait_persistence": 4}),
+            ("🌱 Learning skills I care about, grades second", {"trait_curiosity": 5}),
+            ("🤝 Great friends, clubs, and network", {"trait_empathy_teamwork": 5}),
+            ("🚀 Leading projects or starting something", {"trait_initiative": 5, "personality_self_direction": 4}),
+        ],
+        "initiative",
+        "",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q49",
+        SECTION_SLUG_PERSONALITY,
+        "scenario",
+        "school",
+        "Teacher pairs you randomly. Unknown partner. You:",
+        [
+            ("👋 Introduce yourself and suggest a plan", {"personality_extroversion": 5, "trait_initiative": 4}),
+            ("📝 Let them speak first, then align", {"personality_extroversion": 2, "trait_empathy_teamwork": 4}),
+            ("🔍 Focus on the task sheet immediately", {"personality_self_direction": 4, "trait_curiosity": 3}),
+            ("😬 Feel awkward but push through politely", {"personality_extroversion": 3, "trait_persistence": 3}),
+        ],
+        "introversion_extroversion",
+        "",
+        premium_only=True,
+    ),
+    _mcq(
+        "Q50",
+        SECTION_SLUG_PERSONALITY,
+        "role_choice",
+        "future",
+        "If you could design your week, you’d want:",
+        [
+            ("📅 Same rhythm — I like knowing the pattern", {"personality_structure": 5}),
+            ("🎲 Variety — new places or tasks often", {"personality_structure": 1, "personality_risk_taking": 4}),
+            ("🤝 Lots of people time", {"personality_extroversion": 5}),
+            ("🧩 Deep focus blocks with few interruptions", {"personality_self_direction": 5, "personality_extroversion": 2}),
+        ],
+        "structure_flexibility",
+        "",
+        premium_only=True,
+    ),
+]
+
+ALL_MCQ_ITEMS: List[Dict[str, Any]] = MCQ_ITEMS + PREMIUM_MCQ_ITEMS

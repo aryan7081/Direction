@@ -41,10 +41,18 @@ const CTA_BUTTON_SX = {
   },
 };
 
-export function IntroScreen({ onStart }: { onStart: () => void }) {
+export function IntroScreen({
+  onStart,
+  questionCounts,
+}: {
+  onStart: () => void;
+  questionCounts?: { free: number; premium: number };
+}) {
   const [starting, setStarting] = useState(false);
   const [showStickyCta, setShowStickyCta] = useState(false);
   const inlineCtaRef = useRef<HTMLDivElement>(null);
+
+  const nFree = questionCounts?.free ?? 30;
 
   useEffect(() => {
     const el = inlineCtaRef.current;
@@ -115,7 +123,7 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
                 mb: { xs: 0, sm: 0.75 },
               }}
             >
-              30 questions on interests, work habits, and style — no trick answers.
+              {nFree} questions on interests, work habits, and style — no trick answers.
             </Typography>
             <Typography
               sx={{
@@ -126,6 +134,18 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
               }}
             >
               We map RIASEC interests, five core traits, and basic personality to your career matches.
+            </Typography>
+            <Typography
+              sx={{
+                color: '#9ca3af',
+                fontSize: { xs: '0.82rem', sm: '0.85rem' },
+                lineHeight: 1.55,
+                mt: 1,
+                px: { xs: 1, sm: 0 },
+              }}
+            >
+              After you finish, you&apos;ll see your direction. If you want maximum accuracy before big
+              decisions, you can add our premium assessment later — we&apos;ll explain on your results page.
             </Typography>
           </Box>
 

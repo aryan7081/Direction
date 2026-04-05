@@ -55,7 +55,10 @@ export function DashboardPage() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    queryClient.prefetchQuery({ queryKey: ['game-content'], queryFn: fetchGameContent });
+    queryClient.prefetchQuery({
+      queryKey: ['game-content', 'free'],
+      queryFn: () => fetchGameContent(),
+    });
     router.prefetch('/game-assessment');
   }, [queryClient, router]);
 

@@ -10,6 +10,16 @@ urlpatterns = [
     path("game/log-event/", views.LogEventView.as_view(), name="game-log-event"),
     path("game/submit/", views.SubmitSessionView.as_view(), name="game-submit"),
     path(
+        "game/premium-extension/content/",
+        views.PremiumExtensionContentView.as_view(),
+        name="game-premium-extension-content",
+    ),
+    path(
+        "game/premium-extension/submit/",
+        views.SubmitPremiumExtensionView.as_view(),
+        name="game-premium-extension-submit",
+    ),
+    path(
         "game/results/<uuid:session_id>/",
         views.SessionResultView.as_view(),
         name="game-results",

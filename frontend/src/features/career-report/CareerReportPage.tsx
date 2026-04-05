@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import type { AxiosError } from 'axios';
 import { Box, Button, Container, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import { PageLoader, ButtonSpinner } from '@/components/ui/Loaders';
@@ -49,11 +50,46 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
     return <PageLoader message="Generating your career report..." />;
   }
 
-  if (error || !report) {
+  if (error) {
+    const ax = error as AxiosError<{ code?: string; detail?: string }>;
+    if (ax.response?.status === 402 && ax.response.data?.code === 'PREMIUM_EXTENSION_REQUIRED') {
+      return (
+        <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
+          <Typography sx={{ fontWeight: 800, mb: 1 }}>Almost there</Typography>
+          <Typography color="text.secondary" sx={{ mb: 3, maxWidth: 420, mx: 'auto' }}>
+            {ax.response.data?.detail ||
+              'Complete your premium assessment to unlock the full report included in your bundle.'}
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => router.push(`/game-assessment?premium_continue=${sessionId}`)}
+            sx={{ textTransform: 'none', fontWeight: 700, mr: 1 }}
+          >
+            Continue premium assessment
+          </Button>
+          <Button variant="outlined" onClick={() => router.push('/dashboard')} sx={{ textTransform: 'none' }}>
+            Dashboard
+          </Button>
+        </Container>
+      );
+    }
     return (
       <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
         <Typography color="error" gutterBottom>
           Failed to load report. The session may not be completed yet.
+        </Typography>
+        <Button variant="outlined" onClick={() => router.push('/dashboard')} sx={{ mt: 2 }}>
+          Go to Dashboard
+        </Button>
+      </Container>
+    );
+  }
+
+  if (!report) {
+    return (
+      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
+        <Typography color="error" gutterBottom>
+          No report data.
         </Typography>
         <Button variant="outlined" onClick={() => router.push('/dashboard')} sx={{ mt: 2 }}>
           Go to Dashboard

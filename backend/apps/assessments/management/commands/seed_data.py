@@ -87,7 +87,7 @@ class Command(BaseCommand):
     # ── Questions ───────────────────────────────────────────────────
 
     def _seed_questions(self):
-        from apps.assessments.content.mcq_items import MCQ_ITEMS
+        from apps.assessments.content.mcq_items import ALL_MCQ_ITEMS
 
         section_slugs = {"riasec-interests", "work-traits", "work-personality"}
         categories = {c.slug: c for c in Category.objects.filter(slug__in=section_slugs)}
@@ -97,10 +97,10 @@ class Command(BaseCommand):
             )
             return
 
-        self.stdout.write("Loading 30-question assessment (RIASEC + traits + personality)...")
+        self.stdout.write("Loading assessment items (free + premium) from MCQ catalogue...")
         Question.objects.all().delete()
 
-        for i, item in enumerate(MCQ_ITEMS, start=1):
+        for i, item in enumerate(ALL_MCQ_ITEMS, start=1):
             cat = categories[item["section_category_slug"]]
             q = Question.objects.create(
                 category=cat,
@@ -117,7 +117,7 @@ class Command(BaseCommand):
                     order=j,
                     category_weights=weights,
                 )
-        self.stdout.write(f"Questions seeded ({len(MCQ_ITEMS)} items).")
+        self.stdout.write(f"Questions seeded ({len(ALL_MCQ_ITEMS)} items).")
 
     # ── Careers ─────────────────────────────────────────────────────
 

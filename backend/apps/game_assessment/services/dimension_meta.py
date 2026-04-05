@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Tuple
 
-from apps.assessments.content.mcq_items import MCQ_ITEMS
+from apps.assessments.content.mcq_items import ALL_MCQ_ITEMS
 
 # ── Dimension slugs ─────────────────────────────────────────────────
 
@@ -466,9 +466,9 @@ _LETTERS = ("a", "b", "c", "d")
 
 
 def _build_15d_option_lookup() -> Dict[str, Dict[str, int]]:
-    """Map option_id → original 15-dimension weights from MCQ_ITEMS."""
+    """Map option_id → original 15-dimension weights from all MCQ items."""
     lookup = {}
-    for item in MCQ_ITEMS:
+    for item in ALL_MCQ_ITEMS:
         qid = item["code"].lower()
         for i, (_text, weights) in enumerate(item["options"]):
             option_id = f"{qid}_{_LETTERS[i]}"

@@ -1,3 +1,5 @@
+export type AssessmentTier = 'free' | 'premium';
+
 // ─── Game Content ───
 
 export interface LogicTask {
@@ -49,6 +51,8 @@ export interface GameContent {
   risk_scenarios: RiskScenario[];
   planner_config: PlannerConfig;
   scenario_questions: ScenarioQuestion[];
+  assessment_tier?: AssessmentTier;
+  question_counts?: { free: number; premium: number };
 }
 
 // ─── Events ───

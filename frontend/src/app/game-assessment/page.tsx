@@ -9,11 +9,13 @@ function GameAssessmentInner() {
   const searchParams = useSearchParams();
   const resumeSessionId = searchParams.get('resume');
   const viewSessionId = searchParams.get('view');
+  const premiumContinueSessionId = searchParams.get('premium_continue');
 
   return (
     <GameEngine
       resumeSessionId={resumeSessionId}
       viewSessionId={viewSessionId}
+      premiumContinueSessionId={premiumContinueSessionId}
     />
   );
 }

@@ -129,7 +129,7 @@ CORS_ALLOW_CREDENTIALS = True
 # Razorpay
 RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
-from ..pricing import REPORT_PRICE_INR
+from ..pricing import PREMIUM_BUNDLE_PRICE_INR, REPORT_PRICE_INR
 
 # Google OAuth (for Sign in with Google)
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")

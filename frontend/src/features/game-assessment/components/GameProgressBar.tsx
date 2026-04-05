@@ -15,17 +15,19 @@ const GAME_LABELS: Record<string, string> = {
   processing: 'Analyzing...',
 };
 
-const STEP_LABELS: { phase: GamePhase; label: string }[] = [
-  { phase: 'scenario', label: '30 questions' },
-];
-
 export function GameProgressBar({
   phase,
   subProgress,
+  scenarioQuestionTotal = 30,
 }: {
   phase: GamePhase;
   subProgress: number;
+  /** Total scenario questions for this assessment tier (shown in the step chip). */
+  scenarioQuestionTotal?: number;
 }) {
+  const stepLabels: { phase: GamePhase; label: string }[] = [
+    { phase: 'scenario', label: `${scenarioQuestionTotal} questions` },
+  ];
   const phaseIdx = ACTIVE_PHASES.indexOf(phase as GamePhase);
   const totalPhases = ACTIVE_PHASES.length;
 
@@ -71,7 +73,7 @@ export function GameProgressBar({
       </motion.div>
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1.5 }}>
-        {STEP_LABELS.map((step, i) => {
+        {stepLabels.map((step, i) => {
           const stepIdx = ACTIVE_PHASES.indexOf(step.phase);
           const isDone = phaseIdx > stepIdx || phase === 'processing';
           const isCurrent = phaseIdx === stepIdx && phase !== 'processing';
