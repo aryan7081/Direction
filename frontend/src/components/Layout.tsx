@@ -13,7 +13,16 @@ const NAV_ITEMS = [
   { href: '/careers', label: 'Careers' },
 ];
 
-export function Layout({ children, bgTheme = 'dashboard' }: { children: React.ReactNode; bgTheme?: AnimatedBackgroundTheme }) {
+export function Layout({
+  children,
+  bgTheme = 'dashboard',
+  noMainPadding = false,
+}: {
+  children: React.ReactNode;
+  bgTheme?: AnimatedBackgroundTheme;
+  /** Remove main vertical padding so content sits flush under the app bar (e.g. report teaser). */
+  noMainPadding?: boolean;
+}) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -125,7 +134,15 @@ export function Layout({ children, bgTheme = 'dashboard' }: { children: React.Re
         </List>
       </Drawer>
 
-      <Box component="main" sx={{ minHeight: { xs: 'calc(100vh - 56px)', sm: 'calc(100vh - 64px)' }, py: { xs: 2, sm: 4 }, position: 'relative', zIndex: 1 }}>
+      <Box
+        component="main"
+        sx={{
+          minHeight: { xs: 'calc(100vh - 56px)', sm: 'calc(100vh - 64px)' },
+          py: noMainPadding ? 0 : { xs: 2, sm: 4 },
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
         {children}
       </Box>
     </Box>

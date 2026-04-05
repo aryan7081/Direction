@@ -16,12 +16,14 @@ function ReportInner() {
 
   if (!sessionId) {
     return (
-      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
-        <Typography color="error">No session ID provided.</Typography>
-        <Button href="/dashboard" sx={{ mt: 2 }}>
-          Go to Dashboard
-        </Button>
-      </Container>
+      <Layout>
+        <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
+          <Typography color="error">No session ID provided.</Typography>
+          <Button href="/dashboard" sx={{ mt: 2 }}>
+            Go to Dashboard
+          </Button>
+        </Container>
+      </Layout>
     );
   }
 
@@ -35,21 +37,33 @@ function ReportGate({ sessionId }: { sessionId: string }) {
     enabled: !!sessionId,
   });
 
-  if (isLoading) return <PageLoader message="Loading report..." />;
-
-  if (teaser?.report_accessible ?? teaser?.is_paid) {
-    return <CareerReportPage sessionId={sessionId} />;
+  if (isLoading) {
+    return (
+      <Layout>
+        <PageLoader message="Loading report..." />
+      </Layout>
+    );
   }
 
-  return <ReportTeaserPage sessionId={sessionId} />;
+  if (teaser?.report_accessible ?? teaser?.is_paid) {
+    return (
+      <Layout>
+        <CareerReportPage sessionId={sessionId} />
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout noMainPadding>
+      <ReportTeaserPage sessionId={sessionId} />
+    </Layout>
+  );
 }
 
 export default function ReportPage() {
   return (
-    <Layout>
-      <Suspense fallback={<PageLoader message="Loading report..." />}>
-        <ReportInner />
-      </Suspense>
-    </Layout>
+    <Suspense fallback={<PageLoader message="Loading report..." />}>
+      <ReportInner />
+    </Suspense>
   );
 }

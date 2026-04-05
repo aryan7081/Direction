@@ -67,13 +67,109 @@ const UNLOCK_FEATURES = [
 const pageBg =
   'linear-gradient(165deg, #f0fdf4 0%, #ecfeff 28%, #eff6ff 55%, #faf5ff 100%)';
 
-function BulletRow({ children }: { children: React.ReactNode }) {
+function LockIcon({ size = 14 }: { size?: number }) {
   return (
-    <Stack direction="row" spacing={1.25} alignItems="flex-start" sx={{ py: 0.35 }}>
-      <Typography sx={{ color: '#16a34a', fontWeight: 800, fontSize: '0.95rem', lineHeight: 1.4, flexShrink: 0 }} aria-hidden>
+    <Box
+      component="svg"
+      viewBox="0 0 24 24"
+      aria-hidden
+      sx={{ width: size, height: size, flexShrink: 0, fill: 'currentColor', color: '#64748b', display: 'block' }}
+    >
+      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z" />
+    </Box>
+  );
+}
+
+function CheckoutTrustFooter({ compact }: { compact?: boolean }) {
+  return (
+    <Box
+      sx={{
+        mt: compact ? 1.25 : 2.5,
+        pt: compact ? 1.25 : 2.5,
+        borderTop: '1px solid',
+        borderColor: alpha('#0f172a', 0.08),
+        textAlign: 'center',
+      }}
+    >
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={0}
+        alignItems="center"
+        justifyContent="center"
+        sx={{ gap: { xs: compact ? 0.5 : 1, sm: 1.5 }, flexWrap: 'wrap' }}
+      >
+        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ color: '#64748b' }}>
+          <LockIcon size={compact ? 12 : 14} />
+          <Typography
+            sx={{
+              fontSize: compact ? '0.65rem' : '0.75rem',
+              fontWeight: 600,
+              color: '#475569',
+              letterSpacing: '0.01em',
+            }}
+          >
+            Encrypted checkout
+          </Typography>
+        </Stack>
+        <Typography
+          component="span"
+          sx={{ display: { xs: 'none', sm: 'inline' }, fontSize: '0.7rem', color: '#cbd5e1', fontWeight: 700, px: 0.25 }}
+          aria-hidden
+        >
+          ·
+        </Typography>
+        <Typography sx={{ fontSize: compact ? '0.65rem' : '0.75rem', fontWeight: 500, color: '#64748b' }}>
+          UPI · Cards · Netbanking · Wallets
+        </Typography>
+        <Typography
+          component="span"
+          sx={{ display: { xs: 'none', sm: 'inline' }, fontSize: '0.7rem', color: '#cbd5e1', fontWeight: 700, px: 0.25 }}
+          aria-hidden
+        >
+          ·
+        </Typography>
+        <Typography sx={{ fontSize: compact ? '0.65rem' : '0.75rem', fontWeight: 600, color: '#64748b' }}>Powered by Razorpay</Typography>
+      </Stack>
+      <Typography
+        sx={{
+          fontSize: compact ? '0.62rem' : '0.7rem',
+          color: '#94a3b8',
+          fontWeight: 500,
+          mt: compact ? 0.75 : 1.25,
+          lineHeight: 1.45,
+        }}
+      >
+        One-time purchase · No subscription · Unlocks immediately after payment
+      </Typography>
+    </Box>
+  );
+}
+
+function BulletRow({ children, dense }: { children: React.ReactNode; dense?: boolean }) {
+  return (
+    <Stack direction="row" spacing={dense ? 0.75 : 1.25} alignItems="flex-start" sx={{ py: dense ? 0.08 : 0.35 }}>
+      <Typography
+        sx={{
+          color: '#16a34a',
+          fontWeight: 800,
+          fontSize: dense ? '0.78rem' : '0.95rem',
+          lineHeight: 1.35,
+          flexShrink: 0,
+        }}
+        aria-hidden
+      >
         ✓
       </Typography>
-      <Typography sx={{ fontSize: '0.84rem', color: '#374151', lineHeight: 1.55, fontWeight: 500 }}>{children}</Typography>
+      <Typography
+        sx={{
+          fontSize: dense ? '0.68rem' : '0.84rem',
+          color: '#374151',
+          lineHeight: dense ? 1.4 : 1.55,
+          fontWeight: 500,
+        }}
+      >
+        {children}
+      </Typography>
     </Stack>
   );
 }
@@ -234,7 +330,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const reportPrice = teaser.report_price_inr ?? REPORT_PRICE_INR;
   const bundlePrice = teaser.premium_bundle_price_inr ?? PREMIUM_BUNDLE_PRICE_INR;
   const streamColor = STREAM_COLORS[teaser.stream_recommendation] || STREAM_COLORS.Science;
-  const firstName = teaser.student_name?.split(/\s+/)[0] || 'there';
+  const firstNameToken = teaser.student_name?.split(/\s+/)[0]?.trim();
 
   if (showSignInStep) {
     return (
@@ -281,231 +377,569 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
 
   return (
     <>
-      <Box sx={{ minHeight: '100vh', background: pageBg, pb: 6 }}>
-        <Container maxWidth="md" sx={{ py: { xs: 2.5, sm: 4 }, px: { xs: 2, sm: 3 } }}>
+      <Box
+        sx={{
+          minHeight: { xs: 'calc(100dvh - 56px)', sm: 'calc(100dvh - 64px)' },
+          background: pageBg,
+          pb: { xs: 3, sm: 4 },
+        }}
+      >
+        <Container
+          maxWidth="lg"
+          sx={{ pt: { xs: 2, sm: 2.5 }, pb: { xs: 1.25, sm: 1.75, md: 2 }, px: { xs: 1.5, sm: 2.5 } }}
+        >
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
-            <Box sx={{ textAlign: 'center', mb: { xs: 2.5, sm: 3.5 } }}>
-              <motion.div
-                initial={{ scale: 0.85, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 280, damping: 22 }}
-              >
-                <Typography sx={{ fontSize: { xs: 40, sm: 44 }, lineHeight: 1, mb: 1.5 }} aria-hidden>
-                  ✨
-                </Typography>
-              </motion.div>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 800,
-                  color: '#0f172a',
-                  letterSpacing: '-0.03em',
-                  fontSize: { xs: '1.55rem', sm: '2rem' },
-                  lineHeight: 1.2,
-                  mb: 1,
-                }}
-              >
-                {firstName}, your snapshot is ready
-              </Typography>
-              <Typography
-                sx={{
-                  color: '#475569',
-                  fontSize: { xs: '0.92rem', sm: '1rem' },
-                  maxWidth: 520,
-                  mx: 'auto',
-                  lineHeight: 1.65,
-                }}
-              >
-                You&apos;ve done the hard part. Unlock the full story — structured scores, career matches, and a roadmap
-                you can actually use with {PRODUCT_NAME}.
-              </Typography>
-            </Box>
-
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={{ xs: 1, sm: 0 }}
-              justifyContent="center"
-              alignItems="center"
-              sx={{ mb: 3, gap: { sm: 2 } }}
+            <Box
+              sx={{
+                minHeight: { xs: 'auto', md: 'min(920px, calc(100dvh - 32px))' },
+                display: { md: 'flex' },
+                flexDirection: { md: 'column' },
+                justifyContent: { md: 'center' },
+                mb: { xs: 2, md: 2.5 },
+              }}
             >
-              {[
-                { emoji: '🛡️', label: 'Razorpay checkout' },
-                { emoji: '⚡', label: 'Instant access after pay' },
-                { emoji: '🔒', label: 'Your data stays private' },
-              ].map(({ emoji, label }) => (
-                <Chip
-                  key={label}
-                  icon={
-                    <Box component="span" sx={{ pl: 0.75, display: 'flex', fontSize: '0.95rem' }} aria-hidden>
-                      {emoji}
-                    </Box>
-                  }
-                  label={label}
-                  size="small"
-                  sx={{
-                    bgcolor: alpha('#fff', 0.85),
-                    border: '1px solid',
-                    borderColor: alpha('#16a34a', 0.2),
-                    fontWeight: 600,
-                    fontSize: '0.75rem',
-                    color: '#166534',
-                    py: 2.25,
-                  }}
-                />
-              ))}
-            </Stack>
-
-            <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.4 }}>
               <Box
                 sx={{
-                  borderRadius: 4,
-                  overflow: 'hidden',
-                  border: '1px solid',
-                  borderColor: alpha('#0f172a', 0.08),
-                  mb: 2.5,
-                  bgcolor: '#fff',
-                  boxShadow: '0 4px 24px -8px rgba(15,23,42,0.12)',
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) minmax(0, 1.05fr)' },
+                  gap: { xs: 1.75, md: 2.5 },
+                  alignItems: 'start',
                 }}
               >
-                <Box
-                  sx={{
-                    px: 2.5,
-                    py: 1.25,
-                    background: 'linear-gradient(90deg, #ecfdf5 0%, #f0fdf4 100%)',
-                    borderBottom: '1px solid',
-                    borderColor: alpha('#16a34a', 0.15),
-                  }}
-                >
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-                    Your free preview
+                <Box sx={{ textAlign: { xs: 'center', md: 'left' }, minWidth: 0 }}>
+                  {firstNameToken ? (
+                    <Typography
+                      sx={{
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        color: '#94a3b8',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.14em',
+                        mb: 0.5,
+                      }}
+                    >
+                      {firstNameToken}
+                    </Typography>
+                  ) : null}
+                  <Typography
+                    variant="h4"
+                    component="h1"
+                    sx={{
+                      fontWeight: 800,
+                      color: '#0f172a',
+                      letterSpacing: '-0.03em',
+                      fontSize: { xs: '1.35rem', sm: '1.55rem', md: '1.75rem' },
+                      lineHeight: 1.15,
+                      mb: 0.5,
+                    }}
+                  >
+                    Your career report is ready
                   </Typography>
-                </Box>
+                  <Typography
+                    sx={{
+                      color: '#64748b',
+                      fontSize: { xs: '0.8rem', sm: '0.85rem' },
+                      maxWidth: { xs: 400, md: 'none' },
+                      mx: { xs: 'auto', md: 0 },
+                      lineHeight: 1.45,
+                      fontWeight: 500,
+                      mb: { xs: 1.25, md: 1.5 },
+                    }}
+                  >
+                    Unlock the full breakdown, top matches, and PDF from {PRODUCT_NAME}. One payment — instant access.
+                  </Typography>
 
-                <Box sx={{ p: { xs: 2, sm: 2.5 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {teaser.stream_recommendation && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04, duration: 0.35 }}>
+                    <Box
+                      sx={{
+                        borderRadius: 3,
+                        overflow: 'hidden',
+                        border: '1px solid',
+                        borderColor: alpha('#0f172a', 0.08),
+                        bgcolor: '#fff',
+                        boxShadow: '0 4px 20px -8px rgba(15,23,42,0.12)',
+                        textAlign: 'left',
+                      }}
+                    >
                       <Box
                         sx={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: 2,
-                          bgcolor: streamColor.bg,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 22,
-                          flexShrink: 0,
-                          border: `1px solid ${streamColor.border}`,
+                          px: 1.5,
+                          py: 0.65,
+                          background: 'linear-gradient(90deg, #ecfdf5 0%, #f0fdf4 100%)',
+                          borderBottom: '1px solid',
+                          borderColor: alpha('#16a34a', 0.15),
                         }}
                       >
-                        🎓
-                      </Box>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography sx={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                          Stream signal
+                        <Typography
+                          sx={{
+                            fontSize: '0.62rem',
+                            fontWeight: 800,
+                            color: '#15803d',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.1em',
+                          }}
+                        >
+                          Your free preview
                         </Typography>
-                        <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
-                          <Typography sx={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
-                            {teaser.stream_recommendation}
-                          </Typography>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          p: { xs: 1.15, sm: 1.35 },
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1,
+                          textAlign: 'left',
+                          alignItems: 'stretch',
+                        }}
+                      >
+                        {teaser.stream_recommendation && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box
+                              sx={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 1.5,
+                                bgcolor: streamColor.bg,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 18,
+                                flexShrink: 0,
+                                border: `1px solid ${streamColor.border}`,
+                              }}
+                            >
+                              🎓
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography
+                                sx={{
+                                  fontSize: '0.62rem',
+                                  color: '#64748b',
+                                  fontWeight: 700,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.05em',
+                                }}
+                              >
+                                Stream signal
+                              </Typography>
+                              <Stack direction="row" alignItems="center" gap={0.75} flexWrap="wrap">
+                                <Typography sx={{ fontSize: '0.98rem', fontWeight: 800, color: '#0f172a' }}>
+                                  {teaser.stream_recommendation}
+                                </Typography>
+                                <Chip
+                                  label="Preview"
+                                  size="small"
+                                  sx={{
+                                    height: 20,
+                                    fontSize: '0.6rem',
+                                    fontWeight: 800,
+                                    bgcolor: streamColor.bg,
+                                    color: streamColor.text,
+                                    border: `1px solid ${streamColor.border}`,
+                                  }}
+                                />
+                              </Stack>
+                            </Box>
+                          </Box>
+                        )}
+
+                        {teaser.dominant_pattern && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box
+                              sx={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 1.5,
+                                bgcolor: '#f5f3ff',
+                                border: '1px solid #ddd6fe',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 18,
+                                flexShrink: 0,
+                              }}
+                            >
+                              🧠
+                            </Box>
+                            <Box sx={{ minWidth: 0 }}>
+                              <Typography
+                                sx={{
+                                  fontSize: '0.62rem',
+                                  color: '#64748b',
+                                  fontWeight: 700,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.05em',
+                                }}
+                              >
+                                Working style
+                              </Typography>
+                              <Typography sx={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>
+                                {teaser.dominant_pattern}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        )}
+
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                          <Box
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: 1.5,
+                              bgcolor: '#ecfdf5',
+                              border: '1px solid #bbf7d0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 18,
+                              flexShrink: 0,
+                              mt: 0.15,
+                            }}
+                          >
+                            🏆
+                          </Box>
+                          <Box
+                            sx={{
+                              flex: 1,
+                              minWidth: 0,
+                              textAlign: 'left',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'flex-start',
+                            }}
+                          >
+                            <Typography
+                              sx={{
+                                fontSize: '0.62rem',
+                                color: '#64748b',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                width: '100%',
+                                textAlign: 'left',
+                              }}
+                            >
+                              Top career match (preview)
+                            </Typography>
+                            <motion.div
+                              initial={{ opacity: 0, y: 4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.15 }}
+                              style={{ width: '100%', textAlign: 'left' }}
+                            >
+                              {teaser.hero_career_category ? (
+                                <Typography
+                                  sx={{
+                                    fontSize: '0.72rem',
+                                    fontWeight: 700,
+                                    color: '#15803d',
+                                    display: 'block',
+                                    mb: 0.15,
+                                    textAlign: 'left',
+                                    width: '100%',
+                                  }}
+                                >
+                                  {teaser.hero_career_category}
+                                </Typography>
+                              ) : null}
+                              <Typography
+                                sx={{
+                                  fontSize: '0.92rem',
+                                  fontWeight: 800,
+                                  color: '#0f172a',
+                                  textAlign: 'left',
+                                  width: '100%',
+                                }}
+                              >
+                                {teaser.hero_career}
+                              </Typography>
+                            </motion.div>
+                          </Box>
                           <Chip
-                            label="Preview"
+                            label={teaser.hero_confidence}
                             size="small"
                             sx={{
                               height: 22,
-                              fontSize: '0.65rem',
+                              fontSize: '0.62rem',
                               fontWeight: 800,
-                              bgcolor: streamColor.bg,
-                              color: streamColor.text,
-                              border: `1px solid ${streamColor.border}`,
+                              bgcolor: '#ecfdf5',
+                              color: '#15803d',
+                              border: '1px solid #bbf7d0',
+                              flexShrink: 0,
+                              alignSelf: 'flex-start',
+                              mt: 0.15,
                             }}
                           />
-                        </Stack>
+                        </Box>
                       </Box>
                     </Box>
-                  )}
+                  </motion.div>
+                </Box>
 
-                  {teaser.dominant_pattern && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ minWidth: 0 }}>
+                  {teaser.premium_unlocked && !teaser.premium_extension_complete && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                       <Box
                         sx={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: 2,
-                          bgcolor: '#f5f3ff',
-                          border: '1px solid #ddd6fe',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 22,
-                          flexShrink: 0,
+                          borderRadius: 2.5,
+                          mb: 1.25,
+                          p: { xs: 1.25, sm: 1.5 },
+                          textAlign: 'center',
+                          background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                          border: '2px solid #93c5fd',
+                          boxShadow: '0 8px 28px -14px rgba(37,99,235,0.4)',
                         }}
                       >
-                        🧠
-                      </Box>
-                      <Box>
-                        <Typography sx={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                          Working style
+                        <Typography sx={{ fontWeight: 800, color: '#1e40af', mb: 0.35, fontSize: '0.92rem' }}>
+                          You&apos;re almost there
                         </Typography>
-                        <Typography sx={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>{teaser.dominant_pattern}</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#1e3a8a', mb: 1.25, lineHeight: 1.45 }}>
+                          Finish the premium questions — then your full report unlocks with our most confident read.
+                        </Typography>
+                        <Button
+                          variant="contained"
+                          href={`/game-assessment?premium_continue=${sessionId}`}
+                          size="medium"
+                          sx={{
+                            textTransform: 'none',
+                            fontWeight: 800,
+                            px: 2,
+                            py: 0.85,
+                            borderRadius: 2,
+                            fontSize: '0.82rem',
+                            bgcolor: '#2563eb',
+                            boxShadow: '0 6px 18px rgba(37,99,235,0.3)',
+                            '&:hover': { bgcolor: '#1d4ed8' },
+                          }}
+                        >
+                          Continue premium assessment
+                        </Button>
                       </Box>
-                    </Box>
+                    </motion.div>
                   )}
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box
+                  <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.35 }}>
+                    <Typography
+                      component="h2"
                       sx={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 2,
-                        bgcolor: '#ecfdf5',
-                        border: '1px solid #bbf7d0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 22,
-                        flexShrink: 0,
+                        fontWeight: 800,
+                        color: '#0f172a',
+                        mb: 0.35,
+                        fontSize: { xs: '1.05rem', sm: '1.2rem' },
+                        letterSpacing: '-0.02em',
+                        textAlign: { xs: 'center', md: 'left' },
                       }}
                     >
-                      🏆
-                    </Box>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        Top career match (preview)
-                      </Typography>
-                      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                        {teaser.hero_career_category ? (
-                          <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#15803d', display: 'block', mb: 0.25 }}>
-                            {teaser.hero_career_category}
-                          </Typography>
-                        ) : null}
-                        <Typography sx={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>{teaser.hero_career}</Typography>
-                      </motion.div>
-                    </Box>
-                    <Chip
-                      label={teaser.hero_confidence}
-                      size="small"
+                      Choose an option
+                    </Typography>
+                    <Typography
                       sx={{
-                        height: 26,
-                        fontSize: '0.7rem',
-                        fontWeight: 800,
-                        bgcolor: '#ecfdf5',
-                        color: '#15803d',
-                        border: '1px solid #bbf7d0',
+                        textAlign: { xs: 'center', md: 'left' },
+                        color: '#64748b',
+                        fontSize: { xs: '0.78rem', sm: '0.84rem' },
+                        mb: { xs: 1.15, md: 1.25 },
+                        maxWidth: { md: 440 },
+                        lineHeight: 1.45,
+                        mx: { xs: 'auto', md: 0 },
                       }}
-                    />
-                  </Box>
+                    >
+                      Same full report either way — unlock now, or add a short assessment first for our strongest match read.
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr 1fr', md: '1fr' },
+                        gap: { xs: 1, md: 2 },
+                        maxWidth: { md: 720 },
+                        mx: { md: 0 },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          borderRadius: 3,
+                          p: { xs: 1.15, sm: 1.75, md: 2.25 },
+                          bgcolor: '#fff',
+                          border: '2px solid',
+                          borderColor: '#60a5fa',
+                          boxShadow: '0 12px 36px -20px rgba(37,99,235,0.35), 0 0 0 1px rgba(37,99,235,0.06) inset',
+                          order: { xs: -1, md: 0 },
+                          display: 'flex',
+                          flexDirection: 'column',
+                          minWidth: 0,
+                        }}
+                      >
+                        <Stack
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="flex-start"
+                          spacing={0.75}
+                          sx={{ mb: 1, flexWrap: 'nowrap', gap: 0.75 }}
+                        >
+                          <Box sx={{ minWidth: 0, flex: '1 1 0%', pr: 0.5 }}>
+                            <Stack direction="row" alignItems="center" gap={0.5} flexWrap="wrap" sx={{ mb: 0.25 }}>
+                              <Typography
+                                sx={{
+                                  fontWeight: 800,
+                                  color: '#0f172a',
+                                  fontSize: { xs: '0.82rem', sm: '1.05rem' },
+                                  letterSpacing: '-0.02em',
+                                }}
+                              >
+                                Premium bundle
+                              </Typography>
+                              <Chip
+                                label="Most accurate"
+                                size="small"
+                                sx={{
+                                  height: 20,
+                                  fontWeight: 800,
+                                  fontSize: '0.58rem',
+                                  bgcolor: '#2563eb',
+                                  color: '#fff',
+                                }}
+                              />
+                            </Stack>
+                            <Typography sx={{ fontSize: { xs: '0.65rem', sm: '0.78rem' }, color: '#64748b', lineHeight: 1.35 }}>
+                              Extra assessment + full report
+                            </Typography>
+                          </Box>
+                          <Box sx={{ textAlign: 'right', flexShrink: 0, flexGrow: 0, ml: 'auto' }}>
+                            <Typography
+                              sx={{
+                                fontWeight: 800,
+                                fontSize: { xs: '1.1rem', sm: '1.55rem', md: '1.7rem' },
+                                color: '#1d4ed8',
+                                lineHeight: 1,
+                                letterSpacing: '-0.03em',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              ₹{bundlePrice}
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                              one-time
+                            </Typography>
+                          </Box>
+                        </Stack>
+                        <Stack sx={{ mb: { xs: 1, md: 1.5 }, flex: 1 }}>
+                          {PREMIUM_BULLETS.map((t) => (
+                            <BulletRow key={t} dense>
+                              {t}
+                            </BulletRow>
+                          ))}
+                        </Stack>
+                        <Button
+                          variant="contained"
+                          fullWidth
+                          disabled={paying}
+                          onClick={() => handleUnlockClick('premium_bundle')}
+                          sx={{
+                            py: { xs: 1.1, sm: 1.35 },
+                            textTransform: 'none',
+                            fontWeight: 800,
+                            fontSize: { xs: '0.72rem', sm: '0.88rem', md: '0.95rem' },
+                            borderRadius: 2,
+                            minHeight: 44,
+                            bgcolor: '#2563eb',
+                            boxShadow: '0 8px 22px rgba(37,99,235,0.32)',
+                            '&:hover': { bgcolor: '#1d4ed8', boxShadow: '0 10px 26px rgba(37,99,235,0.38)' },
+                          }}
+                        >
+                          {paying ? <ButtonSpinner size={22} /> : `Premium — ₹${bundlePrice}`}
+                        </Button>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          borderRadius: 3,
+                          p: { xs: 1.15, sm: 1.75, md: 2.25 },
+                          bgcolor: '#fff',
+                          border: '1px solid',
+                          borderColor: alpha('#0f172a', 0.1),
+                          boxShadow: '0 6px 24px -16px rgba(15,23,42,0.14)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          minWidth: 0,
+                        }}
+                      >
+                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1} sx={{ mb: 1 }}>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography
+                              sx={{
+                                fontWeight: 800,
+                                color: '#0f172a',
+                                fontSize: { xs: '0.82rem', sm: '1.02rem' },
+                                letterSpacing: '-0.02em',
+                                mb: 0.15,
+                              }}
+                            >
+                              Report only
+                            </Typography>
+                            <Typography sx={{ fontSize: { xs: '0.65rem', sm: '0.78rem' }, color: '#64748b', lineHeight: 1.35 }}>
+                              From this run — unlock now
+                            </Typography>
+                          </Box>
+                          <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+                            <Typography
+                              sx={{
+                                fontWeight: 800,
+                                fontSize: { xs: '1.1rem', sm: '1.45rem', md: '1.55rem' },
+                                color: '#15803d',
+                                lineHeight: 1,
+                                letterSpacing: '-0.03em',
+                              }}
+                            >
+                              ₹{reportPrice}
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 600 }}>one-time</Typography>
+                          </Box>
+                        </Stack>
+                        <Stack sx={{ mb: { xs: 1, md: 1.5 }, flex: 1 }}>
+                          {REPORT_BULLETS.map((t) => (
+                            <BulletRow key={t} dense>
+                              {t}
+                            </BulletRow>
+                          ))}
+                        </Stack>
+                        <Button
+                          variant="contained"
+                          fullWidth
+                          disabled={paying}
+                          onClick={() => handleUnlockClick('report')}
+                          sx={{
+                            py: { xs: 1.1, sm: 1.35 },
+                            textTransform: 'none',
+                            fontWeight: 800,
+                            fontSize: { xs: '0.72rem', sm: '0.88rem', md: '0.95rem' },
+                            borderRadius: 2,
+                            minHeight: 44,
+                            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                            boxShadow: '0 8px 22px rgba(22,163,74,0.28)',
+                            '&:hover': {
+                              background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                              boxShadow: '0 10px 26px rgba(22,163,74,0.32)',
+                            },
+                          }}
+                        >
+                          {paying ? <ButtonSpinner size={22} /> : `Unlock — ₹${reportPrice}`}
+                        </Button>
+                      </Box>
+                    </Box>
+                    <CheckoutTrustFooter compact />
+                  </motion.div>
                 </Box>
               </Box>
-            </motion.div>
+            </Box>
 
             {teaser.profile_depth_detail && (
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
                 <Box
                   sx={{
                     borderRadius: 3,
-                    mb: 2.5,
-                    p: { xs: 2, sm: 2.25 },
+                    mb: 2,
+                    p: { xs: 1.75, sm: 2.25 },
                     bgcolor: teaser.assessment_tier === 'premium' ? alpha('#16a34a', 0.08) : alpha('#f59e0b', 0.1),
                     border: '1px solid',
                     borderColor: teaser.assessment_tier === 'premium' ? alpha('#16a34a', 0.25) : alpha('#f59e0b', 0.35),
@@ -530,195 +964,22 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
               </motion.div>
             )}
 
-            {teaser.premium_unlocked && !teaser.premium_extension_complete && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                <Box
-                  sx={{
-                    borderRadius: 3,
-                    mb: 3,
-                    p: 2.5,
-                    textAlign: 'center',
-                    background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-                    border: '2px solid #93c5fd',
-                    boxShadow: '0 12px 40px -16px rgba(37,99,235,0.45)',
-                  }}
-                >
-                  <Typography sx={{ fontWeight: 800, color: '#1e40af', mb: 0.5, fontSize: '1.05rem' }}>You&apos;re almost there</Typography>
-                  <Typography sx={{ fontSize: '0.9rem', color: '#1e3a8a', mb: 2, lineHeight: 1.55 }}>
-                    Finish the premium questions — then your full report unlocks with our most confident read.
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    href={`/game-assessment?premium_continue=${sessionId}`}
-                    size="large"
-                    sx={{
-                      textTransform: 'none',
-                      fontWeight: 800,
-                      px: 3,
-                      borderRadius: 2,
-                      bgcolor: '#2563eb',
-                      boxShadow: '0 8px 24px rgba(37,99,235,0.35)',
-                      '&:hover': { bgcolor: '#1d4ed8' },
-                    }}
-                  >
-                    Continue premium assessment
-                  </Button>
-                </Box>
-              </motion.div>
-            )}
-
             <Box
               sx={{
                 textAlign: 'center',
-                py: 1.75,
-                px: 2,
-                mb: 3,
+                py: 1.35,
+                px: 1.75,
+                mb: 2.5,
                 borderRadius: 3,
                 bgcolor: alpha('#fff', 0.75),
                 border: '1px dashed',
                 borderColor: alpha('#64748b', 0.35),
               }}
             >
-              <Typography sx={{ fontSize: { xs: '0.82rem', sm: '0.88rem' }, color: '#475569', fontWeight: 600, lineHeight: 1.55 }}>
-                One-on-one counselling often starts around <strong>{COUNSELLING_ANCHOR_LABEL}</strong>. Both options below are built for students — clear, structured, and a fraction of that cost.
+              <Typography sx={{ fontSize: { xs: '0.78rem', sm: '0.85rem' }, color: '#475569', fontWeight: 600, lineHeight: 1.5 }}>
+                One-on-one counselling often starts around <strong>{COUNSELLING_ANCHOR_LABEL}</strong>. Both options above are built for students — clear, structured, and a fraction of that cost.
               </Typography>
             </Box>
-
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-              <Typography
-                sx={{
-                  fontWeight: 800,
-                  color: '#0f172a',
-                  mb: 0.5,
-                  fontSize: { xs: '1.2rem', sm: '1.35rem' },
-                  letterSpacing: '-0.02em',
-                  textAlign: 'center',
-                }}
-              >
-                Pick what fits you right now
-              </Typography>
-              <Typography sx={{ textAlign: 'center', color: '#64748b', fontSize: '0.9rem', mb: 3, maxWidth: 480, mx: 'auto', lineHeight: 1.55 }}>
-                Same full report format — choose speed today or maximum accuracy after a few more questions.
-              </Typography>
-
-              <Stack spacing={2.5} sx={{ mb: 3, maxWidth: 720, mx: 'auto' }}>
-                <Box
-                  sx={{
-                    position: 'relative',
-                    borderRadius: 4,
-                    p: { xs: 2.25, sm: 2.75 },
-                    pt: { xs: 3.25, sm: 3.5 },
-                    bgcolor: '#fff',
-                    border: '2px solid',
-                    borderColor: '#60a5fa',
-                    boxShadow: '0 20px 50px -24px rgba(37,99,235,0.35), 0 0 0 1px rgba(37,99,235,0.08) inset',
-                    order: { xs: -1, md: 0 },
-                  }}
-                >
-                  <Chip
-                    label="Most accurate"
-                    size="small"
-                    sx={{
-                      position: 'absolute',
-                      top: 12,
-                      right: 16,
-                      fontWeight: 800,
-                      fontSize: '0.68rem',
-                      bgcolor: '#2563eb',
-                      color: '#fff',
-                      height: 26,
-                    }}
-                  />
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2} sx={{ mb: 1.5, pr: { xs: 0, sm: 10 } }}>
-                    <Box>
-                      <Typography sx={{ fontWeight: 800, color: '#0f172a', fontSize: '1.15rem', letterSpacing: '-0.02em' }}>
-                        Premium bundle
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.82rem', color: '#64748b', mt: 0.35, lineHeight: 1.5 }}>
-                        Extra assessment + full report
-                      </Typography>
-                    </Box>
-                    <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-                      <Typography sx={{ fontWeight: 800, fontSize: '1.75rem', color: '#1d4ed8', lineHeight: 1, letterSpacing: '-0.03em' }}>
-                        ₹{bundlePrice}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>one-time</Typography>
-                    </Box>
-                  </Stack>
-                  <Stack sx={{ mb: 2 }}>{PREMIUM_BULLETS.map((t) => <BulletRow key={t}>{t}</BulletRow>)}</Stack>
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    size="large"
-                    disabled={paying}
-                    onClick={() => handleUnlockClick('premium_bundle')}
-                    sx={{
-                      py: 1.6,
-                      textTransform: 'none',
-                      fontWeight: 800,
-                      fontSize: '1rem',
-                      borderRadius: 2.5,
-                      bgcolor: '#2563eb',
-                      boxShadow: '0 10px 28px rgba(37,99,235,0.35)',
-                      '&:hover': { bgcolor: '#1d4ed8', boxShadow: '0 12px 32px rgba(37,99,235,0.4)' },
-                    }}
-                  >
-                    {paying ? <ButtonSpinner size={24} /> : `Get premium bundle — ₹${bundlePrice}`}
-                  </Button>
-                </Box>
-
-                <Box
-                  sx={{
-                    borderRadius: 4,
-                    p: { xs: 2.25, sm: 2.75 },
-                    bgcolor: '#fff',
-                    border: '1px solid',
-                    borderColor: alpha('#0f172a', 0.1),
-                    boxShadow: '0 8px 30px -18px rgba(15,23,42,0.15)',
-                  }}
-                >
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2} sx={{ mb: 1.5 }}>
-                    <Box>
-                      <Typography sx={{ fontWeight: 800, color: '#0f172a', fontSize: '1.1rem', letterSpacing: '-0.02em' }}>
-                        Career report only
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.82rem', color: '#64748b', mt: 0.35, lineHeight: 1.5 }}>
-                        From this 30-question run — unlock now
-                      </Typography>
-                    </Box>
-                    <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-                      <Typography sx={{ fontWeight: 800, fontSize: '1.6rem', color: '#15803d', lineHeight: 1, letterSpacing: '-0.03em' }}>
-                        ₹{reportPrice}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>one-time</Typography>
-                    </Box>
-                  </Stack>
-                  <Stack sx={{ mb: 2 }}>{REPORT_BULLETS.map((t) => <BulletRow key={t}>{t}</BulletRow>)}</Stack>
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    size="large"
-                    disabled={paying}
-                    onClick={() => handleUnlockClick('report')}
-                    sx={{
-                      py: 1.6,
-                      textTransform: 'none',
-                      fontWeight: 800,
-                      fontSize: '1rem',
-                      borderRadius: 2.5,
-                      background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                      boxShadow: '0 10px 28px rgba(22,163,74,0.3)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                        boxShadow: '0 12px 32px rgba(22,163,74,0.35)',
-                      },
-                    }}
-                  >
-                    {paying ? <ButtonSpinner size={24} /> : `Unlock full report — ₹${reportPrice}`}
-                  </Button>
-                </Box>
-              </Stack>
-            </motion.div>
 
             <Box
               sx={{
@@ -735,7 +996,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                   Inside the full report
                 </Typography>
                 <Typography sx={{ fontSize: '0.82rem', color: '#64748b', mt: 0.5, fontWeight: 500 }}>
-                  Everything below is included whether you choose ₹{reportPrice} or ₹{bundlePrice}.
+                  Included with both ₹{reportPrice} and ₹{bundlePrice} — same full report format.
                 </Typography>
               </Box>
               <Box sx={{ p: { xs: 2, sm: 2.5 }, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: { xs: 1.5, sm: 2 } }}>
