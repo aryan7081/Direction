@@ -1,19 +1,19 @@
 """
-15-dimension metadata, scoring, and derived insights.
+15-dimension student-facing profile (derived insights).
 
-Dimensions are grouped into three sections:
-  RIASEC Interests (6)  — What excites you
-  Core Work Traits (5)  — How you work
-  Personality Style (4) — Who you are
+Report sections:
+  RIASEC interests (6)
+  Core work-style summary (5) — derived from interests + Big Five–style personality
+  Personality style sliders (4)
 
-Career matching still uses the internal 8-trait system (cosine similarity).
-This module powers the student-facing profile display.
+Questionnaire sources include RIASEC items, personality (Big Five–style),
+career values, readiness, and aptitude. Career matching uses an internal
+8-trait representation derived from that psychometric profile.
 """
 from __future__ import annotations
 
 from typing import Dict, List, Tuple
 
-from apps.assessments.content.mcq_items import ALL_MCQ_ITEMS
 
 # ── Dimension slugs ─────────────────────────────────────────────────
 
@@ -462,98 +462,46 @@ _ARTS_SUBJECTS = {
 
 # ── Scoring functions ───────────────────────────────────────────────
 
-_LETTERS = ("a", "b", "c", "d")
-
-
-def _build_15d_option_lookup() -> Dict[str, Dict[str, int]]:
-    """Map option_id → original 15-dimension weights from all MCQ items."""
-    lookup = {}
-    for item in ALL_MCQ_ITEMS:
-        qid = item["code"].lower()
-        for i, (_text, weights) in enumerate(item["options"]):
-            option_id = f"{qid}_{_LETTERS[i]}"
-            lookup[option_id] = weights
-    return lookup
-
-
-_15D_OPTION_LOOKUP = _build_15d_option_lookup()
-
-
-def calculate_15d_scores(session) -> Tuple[dict, dict, dict]:
+def calculate_15d_scores(session) -> Tuple[dict, dict, dict, float]:
     """
-    Calculate raw 15-dimension scores from stored scenario events.
-
-    Returns (riasec_normalized, traits_normalized, personality_raw).
-    RIASEC and traits are normalized 0-10; personality stays 1-5 for spectrum display.
+    Student-facing 15-dimension display derived from the psychometric profile
+    (RIASEC + Big Five + values), mapped into legacy section labels for UI.
+    Fourth return value is readiness on 0–1 (not used in career fit score).
     """
-    from ..models import GameEventLog
+    from .psychometric_scoring import build_student_psych_profile
 
-    events = GameEventLog.objects.filter(
-        session=session,
-        game_name="scenario",
-        event_type="answer",
+    prof = build_student_psych_profile(session)
+    r = prof["riasec"]
+    bf = prof["personality"]
+    v = prof["values"]
+
+    riasec_norm = {
+        slug: round(max(1.0, min(10.0, 1.0 + 9.0 * r.get(slug, 0.5))), 1)
+        for slug in RIASEC_SLUGS
+    }
+
+    r_e = r.get("riasec_enterprising", 0.5)
+    traits_norm = {
+        "trait_curiosity": round(max(1.0, min(10.0, 1.0 + 9.0 * bf.get("personality_O", 0.5))), 1),
+        "trait_persistence": round(max(1.0, min(10.0, 1.0 + 9.0 * bf.get("personality_C", 0.5))), 1),
+        "trait_initiative": round(max(1.0, min(10.0, 1.0 + 9.0 * (0.55 * r_e + 0.45 * bf.get("personality_E", 0.5)))), 1),
+        "trait_empathy_teamwork": round(max(1.0, min(10.0, 1.0 + 9.0 * bf.get("personality_A", 0.5))), 1),
+        "trait_planning": round(max(1.0, min(10.0, 1.0 + 9.0 * bf.get("personality_C", 0.5))), 1),
+    }
+
+    risk_taking = max(
+        0.0,
+        min(1.0, 0.45 * bf.get("personality_O", 0.5) + 0.35 * r_e + 0.2 * (1.0 - v.get("values_security", 0.5))),
     )
+    personality_raw = {
+        "personality_extroversion": round(max(1.0, min(5.0, 1.0 + 4.0 * bf.get("personality_E", 0.5))), 1),
+        "personality_risk_taking": round(max(1.0, min(5.0, 1.0 + 4.0 * risk_taking)), 1),
+        "personality_structure": round(max(1.0, min(5.0, 1.0 + 4.0 * bf.get("personality_C", 0.5))), 1),
+        "personality_self_direction": round(max(1.0, min(5.0, 1.0 + 4.0 * bf.get("personality_O", 0.5))), 1),
+    }
 
-    riasec_sums: Dict[str, float] = {s: 0.0 for s in RIASEC_SLUGS}
-    riasec_counts: Dict[str, int] = {s: 0 for s in RIASEC_SLUGS}
-
-    trait_values: Dict[str, list] = {s: [] for s in CORE_TRAIT_SLUGS}
-    personality_values: Dict[str, list] = {s: [] for s in PERSONALITY_SLUGS}
-
-    for ev in events:
-        option_id = ev.payload.get("selected_option_id")
-        if not option_id:
-            continue
-        weights = _15D_OPTION_LOOKUP.get(option_id, {})
-        for dim, val in weights.items():
-            if dim in riasec_sums:
-                riasec_sums[dim] += val
-                riasec_counts[dim] += 1
-            elif dim in trait_values:
-                trait_values[dim].append(val)
-            elif dim in personality_values:
-                personality_values[dim].append(val)
-
-    # --- RIASEC: normalize sums to 0-10 ---
-    r_vals = [v for v in riasec_sums.values() if v > 0]
-    r_min = min(r_vals) if r_vals else 0
-    r_max = max(r_vals) if r_vals else 1
-    r_range = r_max - r_min
-
-    riasec_norm = {}
-    for slug, total in riasec_sums.items():
-        if r_range > 0.01:
-            pct = (total - r_min) / r_range
-            riasec_norm[slug] = round(max(1.0, min(10.0, 3.0 + pct * 6.5)), 1)
-        else:
-            riasec_norm[slug] = 6.0
-
-    # --- Core traits: average then normalize 0-10 ---
-    trait_avgs = {}
-    for slug, vals in trait_values.items():
-        trait_avgs[slug] = sum(vals) / len(vals) if vals else 0
-
-    t_vals = [v for v in trait_avgs.values() if v > 0]
-    t_min = min(t_vals) if t_vals else 0
-    t_max = max(t_vals) if t_vals else 1
-    t_range = t_max - t_min
-
-    traits_norm = {}
-    for slug, avg in trait_avgs.items():
-        if avg <= 0.01:
-            traits_norm[slug] = 1.0
-        elif t_range > 0.01:
-            pct = (avg - t_min) / t_range
-            traits_norm[slug] = round(max(1.0, min(10.0, 3.0 + pct * 6.5)), 1)
-        else:
-            traits_norm[slug] = 6.0
-
-    # --- Personality: average raw (keep 1-5 for spectrum) ---
-    personality_raw = {}
-    for slug, vals in personality_values.items():
-        personality_raw[slug] = round(sum(vals) / len(vals), 1) if vals else 3.0
-
-    return riasec_norm, traits_norm, personality_raw
+    readiness = float(prof.get("readiness", 0.5))
+    return riasec_norm, traits_norm, personality_raw, readiness
 
 
 def derive_holland_code(riasec_scores: dict) -> str:

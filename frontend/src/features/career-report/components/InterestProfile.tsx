@@ -117,8 +117,8 @@ export function InterestProfile({ profile }: { profile: InterestProfileType }) {
                 Your Interest Profile
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                Based on 12 scenario questions exploring what activities excite you most.
-                Your top interests reveal the kind of work that will feel naturally engaging.
+                Based on your RIASEC interest responses (scenario-style items in the questionnaire).
+                Your top codes show the kinds of work that will feel most naturally engaging.
               </Typography>
             </Box>
           </Box>

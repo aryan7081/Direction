@@ -99,8 +99,8 @@ export function WorkDNA({ traits }: { traits: CoreTrait[] }) {
             Your Work DNA
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            These 5 traits describe how you naturally approach work, learning, and challenges.
-            They were measured through 10 direct questions about your habits and preferences.
+            These five dimensions summarize how you tend to approach work and learning. They are derived from
+            your personality, values, and interest pattern — not from one isolated habit checklist.
           </Typography>
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

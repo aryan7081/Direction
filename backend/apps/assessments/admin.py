@@ -4,7 +4,8 @@ from .models import Category, Question, AnswerOption, AssessmentAttempt, UserRes
 
 class AnswerOptionInline(admin.TabularInline):
     model = AnswerOption
-    extra = 1
+    extra = 0
+    fields = ("order", "api_id", "text", "score", "category_weights")
 
 
 @admin.register(Category)
@@ -15,10 +16,25 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ("text", "category", "order", "is_active")
-    list_filter = ("category", "is_active")
+    list_display = ("code", "order", "category", "premium_only", "is_active", "text_preview")
+    list_filter = ("category", "is_active", "premium_only")
+    search_fields = ("code", "text")
     inlines = [AnswerOptionInline]
     ordering = ("order",)
+    fields = (
+        "code",
+        "category",
+        "order",
+        "is_active",
+        "premium_only",
+        "text",
+        "metadata",
+    )
+
+    @admin.display(description="Text (preview)")
+    def text_preview(self, obj):
+        t = obj.text or ""
+        return f"{t[:72]}…" if len(t) > 72 else t
 
 
 @admin.register(AssessmentAttempt)

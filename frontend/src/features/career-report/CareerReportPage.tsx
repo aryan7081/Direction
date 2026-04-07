@@ -22,6 +22,7 @@ import { LessNaturalCareers } from './components/LessNaturalCareers';
 import { DevelopmentRoadmap } from './components/DevelopmentRoadmap';
 import { AreasToImprove } from './components/AreasToImprove';
 import { NextSteps } from './components/NextSteps';
+import { TraitRadarChart } from './components/TraitRadarChart';
 
 export function CareerReportPage({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -99,6 +100,15 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
   }
 
   const studentName = report.student?.name || 'Student';
+  const snap = report.assessment_snapshot;
+  const nAnswered = snap?.answered_count;
+  const tierNote = snap?.premium_extension_complete
+    ? 'Phase 1 + premium extension'
+    : 'Phase 1';
+  const responseNote =
+    typeof nAnswered === 'number' && nAnswered > 0
+      ? `${nAnswered} questionnaire responses`
+      : 'Your questionnaire responses';
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
@@ -132,7 +142,8 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
             {report.completed_at && ` · Assessment completed ${report.completed_at}`}
           </Typography>
           <Typography sx={{ color: '#9ca3af', fontSize: '0.72rem', mt: 0.5 }}>
-            Assessed across 15 scientifically-backed dimensions · 30 questions · RIASEC + Work Traits + Personality
+            15 profile dimensions · {responseNote} · {tierNote} · RIASEC, personality (Big Five–style), values,
+            readiness & aptitude
           </Typography>
         </Box>
       </motion.div>
@@ -191,6 +202,34 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
 
       <StreamSection streamRecommendation={report.stream_recommendation} />
 
+      {report.readiness && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+        >
+          <Box
+            sx={{
+              mb: 3,
+              p: 2.5,
+              borderRadius: 2,
+              bgcolor: '#f8fafc',
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1, mb: 0.5 }}>
+              Career readiness
+            </Typography>
+            <Typography sx={{ fontWeight: 800, color: '#111827', fontSize: '1rem', mb: 0.75 }}>
+              {report.readiness.headline}
+            </Typography>
+            <Typography sx={{ color: '#475569', fontSize: '0.88rem', lineHeight: 1.6 }}>
+              {report.readiness.detail}
+            </Typography>
+          </Box>
+        </motion.div>
+      )}
+
       {report.subject_recommendation && (
         <SubjectRecommendationSection
           recommendation={report.subject_recommendation}
@@ -221,6 +260,10 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
 
       {report.working_style && report.working_style.length > 0 && (
         <WorkingStyleSection items={report.working_style} />
+      )}
+
+      {report.traits && report.traits.length > 0 && (
+        <TraitRadarChart traits={report.traits} answeredCount={nAnswered} />
       )}
 
       {/* ══════════════════════════════════════════════════════════════

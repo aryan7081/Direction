@@ -9,20 +9,20 @@ const GAMES = [
   {
     icon: '🎯',
     title: 'RIASEC interests',
-    desc: 'How you like to work — realistic, investigative, artistic, social, enterprising, conventional',
-    tag: '12 items',
+    desc: 'Scenario-style items map how you like to work — realistic, investigative, artistic, social, enterprising, conventional',
+    tag: '~18 items',
   },
   {
     icon: '🧠',
-    title: 'Core work traits',
-    desc: 'Curiosity, persistence, initiative, empathy, and planning',
-    tag: '10 items',
+    title: 'Personality & values',
+    desc: 'Big Five–style traits plus what you care about in study and work (e.g. stability, impact, mastery)',
+    tag: '~9 items',
   },
   {
     icon: '✨',
-    title: 'Personality style',
-    desc: 'Energy, risk, structure, and how much independence you prefer',
-    tag: '8 items',
+    title: 'Readiness & aptitude',
+    desc: 'How clear you feel about next steps, plus short verbal/numeric/logic taps — not a school exam',
+    tag: '~3 items',
   },
 ];
 
@@ -133,7 +133,8 @@ export function IntroScreen({
                 display: { xs: 'none', sm: 'block' },
               }}
             >
-              We map RIASEC interests, five core traits, and basic personality to your career matches.
+              We combine RIASEC interests, Big Five–style personality, career values, readiness, and aptitude
+              into your stream and career matches. Optional premium adds more items later if you want finer detail.
             </Typography>
             <Typography
               sx={{
@@ -275,7 +276,7 @@ export function IntroScreen({
               order: { xs: 5, sm: 4 },
             }}
           >
-            Takes about 5–10 minutes • Your answers stay private
+            Phase 1 usually takes about 8–15 minutes • Your answers stay private
           </Typography>
 
           {/* 6. TRUST MICROCOPY - order 6 on desktop */}

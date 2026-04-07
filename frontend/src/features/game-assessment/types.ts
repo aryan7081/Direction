@@ -44,6 +44,9 @@ export interface ScenarioQuestion {
   id: string;
   prompt: string;
   options: ScenarioOption[];
+  /** Premium Phase 2: show transition copy before this question (first behavioral scenario). */
+  show_scenario_intro_before?: boolean;
+  scenario_behavioral?: boolean;
 }
 
 export interface GameContent {

@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: 'Outcave | Career Discovery for Students',
   description:
-    'Confused about Science, Commerce, or Arts? Take a free 30-question assessment and get stream and career guidance backed by RIASEC and behavioural science.',
+    'Confused about Science, Commerce, or Arts? Take a free career questionnaire (RIASEC, Big Five–style personality, values, readiness, aptitude) and get stream and career guidance.',
   icons: { icon: '/logo.png', apple: '/logo.png' },
   openGraph: {
     title: 'Outcave | Career Discovery for Students',

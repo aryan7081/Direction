@@ -149,7 +149,7 @@ def _build_teaser(session) -> dict:
         "career_preview": career_preview,
         "top_two_gap": top_two_gap,
         "total_traits": len(report["traits"]),
-        "total_sections": 8,
+        "total_sections": 15,
         "is_paid": False,
         "assessment_tier": tier,
         "scenario_questions_answered": n_answered,
@@ -157,6 +157,7 @@ def _build_teaser(session) -> dict:
         "profile_depth": profile_depth,
         "profile_depth_title": profile_depth_title,
         "profile_depth_detail": profile_depth_detail,
+        "readiness": report.get("readiness", {}),
     }
     if hasattr(session, "pending_email") and session.pending_email:
         result["pending_email"] = session.pending_email
@@ -552,9 +553,7 @@ class SessionResultView(GenericAPIView):
                 "stream": m.career.stream,
                 "description": (m.career.description[:200] if m.career.description else ""),
                 "score": m.score,
-                "score_percent": round(m.score / max(m.score, 1) * 100, 1)
-                if m.score
-                else 0,
+                "score_percent": round(m.score * 100, 1) if m.score <= 1 else round(m.score, 1),
                 "rank": m.rank,
             }
             for m in matches
@@ -890,14 +889,22 @@ class CreatePaymentOrderView(GenericAPIView):
             auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
         )
 
+        from apps.common.razorpay_text import (
+            razorpay_safe_customer_name,
+            razorpay_safe_email,
+            razorpay_safe_note_value,
+        )
+
         rz_order = client.order.create(
             {
                 "amount": amount_inr * 100,
                 "currency": "INR",
                 "receipt": str(order.id),
                 "notes": {
-                    "session_id": str(session.id),
-                    "user_email": request.user.email,
+                    "session_id": razorpay_safe_note_value(str(session.id), max_length=80),
+                    "user_email": razorpay_safe_note_value(
+                        request.user.email or "", max_length=254
+                    ),
                     "product_type": product_type,
                 },
             }
@@ -906,14 +913,19 @@ class CreatePaymentOrderView(GenericAPIView):
         order.razorpay_order_id = rz_order["id"]
         order.save(update_fields=["razorpay_order_id"])
 
+        safe_name = razorpay_safe_customer_name(
+            request.user.get_full_name() or request.user.email or ""
+        )
+        safe_email = razorpay_safe_email(request.user.email)
+
         return Response(
             {
                 "order_id": rz_order["id"],
                 "amount": amount_inr,
                 "currency": "INR",
                 "key_id": settings.RAZORPAY_KEY_ID,
-                "user_email": request.user.email,
-                "user_name": request.user.get_full_name() or request.user.email,
+                "user_email": safe_email,
+                "user_name": safe_name,
                 "product_type": product_type,
             },
             status=status.HTTP_201_CREATED,

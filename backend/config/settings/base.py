@@ -14,6 +14,9 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-key-change-in-pro
 DEBUG = False
 ALLOWED_HOSTS = []
 
+# When True and the Question table is empty, load items from psychometric_items.py (dev/tests only).
+MCQ_CATALOG_ALLOW_STATIC_FALLBACK = False
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -30,7 +33,7 @@ INSTALLED_APPS = [
     # Local apps
     "apps.common",
     "apps.users",
-    "apps.assessments",
+    "apps.assessments.apps.AssessmentsConfig",
     "apps.careers",
     "apps.recommendations",
     "apps.reports",

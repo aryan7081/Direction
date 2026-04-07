@@ -18,7 +18,7 @@ const PHASE_LABELS: Record<string, string> = {
   logic: 'Assessment',
   risk: 'Assessment',
   planner: 'Assessment',
-  scenario: '30 questions',
+  scenario: 'Career questionnaire',
   processing: 'Analyzing',
 };
 

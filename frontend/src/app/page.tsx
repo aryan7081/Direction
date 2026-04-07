@@ -57,26 +57,26 @@ function GridPattern() {
 const FEATURES = [
   {
     icon: '🧠',
-    title: '30 Smart Questions',
-    desc: 'Quick scenarios that map your interests, personality, and work traits — no right or wrong answers',
+    title: 'Science-backed questionnaire',
+    desc: 'Phase 1 maps RIASEC interests, Big Five–style personality, career values, readiness, and short aptitude items — about 30 questions, honest answers only',
     color: '#6366f1',
   },
   {
     icon: '🎯',
-    title: 'Stream Recommendation',
-    desc: 'Get a clear Science, Commerce, or Arts recommendation backed by your unique trait profile',
+    title: 'Stream recommendation',
+    desc: 'Science, Commerce, or Arts — grounded in your interest and personality pattern, not just marks',
     color: '#3b82f6',
   },
   {
     icon: '💼',
-    title: 'Career Matches',
-    desc: `See which careers from ${CAREER_CATALOG_LABEL} options align with your natural strengths and personality`,
+    title: 'Career matches',
+    desc: `See which careers from ${CAREER_CATALOG_LABEL} options fit your profile — optional premium adds more items and refines the match`,
     color: '#16a34a',
   },
   {
     icon: '📊',
-    title: 'Detailed Report & PDF',
-    desc: 'Download a comprehensive report with trait analysis, career roadmap, and share with parents',
+    title: 'Report & PDF',
+    desc: '15 profile dimensions plus 8 career-trait scores, top matches, roadmap — share with parents or counsellors',
     color: '#f59e0b',
   },
 ];
@@ -84,8 +84,8 @@ const FEATURES = [
 const STATS = [
   { value: LANDING_STUDENTS_STAT_VALUE, label: LANDING_STUDENTS_STAT_LABEL },
   { value: CAREER_CATALOG_LABEL, label: 'Careers Matched' },
-  { value: '15', label: 'Trait Dimensions' },
-  { value: '~5 min', label: 'To Complete' },
+  { value: '15', label: 'Profile dimensions' },
+  { value: '~8–12 min', label: 'Phase 1' },
 ];
 
 const TESTIMONIALS = [
@@ -398,7 +398,7 @@ export default function LandingPage() {
               <Typography sx={{ fontSize: { xs: '1rem', sm: '1.2rem' }, color: '#6b7280', maxWidth: 560, mx: 'auto', mb: 4, lineHeight: 1.7 }}>
                 {user
                   ? 'Access your dashboard to view your career report, retake the assessment, or explore career paths.'
-                  : 'Get clarity in 5 minutes. Our free assessment maps your interests, traits, and personality to tell you exactly which stream — Science, Commerce, or Arts — fits you best.'}
+                  : 'Get clarity in under 15 minutes. Our free assessment maps RIASEC interests, personality (Big Five–style), values, readiness, and aptitude to recommend Science, Commerce, or Arts — and careers that fit.'}
               </Typography>
             </motion.div>
 

@@ -5,6 +5,7 @@ import os
 from .base import *
 
 DEBUG = True
+MCQ_CATALOG_ALLOW_STATIC_FALLBACK = True
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 _extra_hosts = os.environ.get("DEV_ALLOWED_HOSTS", "")
 if _extra_hosts.strip():

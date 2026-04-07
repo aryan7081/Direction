@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Box, Button, Typography, Chip } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store';
@@ -39,16 +39,36 @@ export function ScenarioSection({
   onAuthGate?: (resumeAtIndex: number, completedCount: number) => void | Promise<void>;
 }) {
   const pushEvent = useGameStore((s) => s.pushEvent);
+  const firstScenarioIntroIndex = useMemo(
+    () => questions.findIndex((q) => q.show_scenario_intro_before),
+    [questions]
+  );
+  const openIntroInitially =
+    firstScenarioIntroIndex >= 0 && startIndex === firstScenarioIntroIndex;
+
   const [current, setCurrent] = useState(startIndex);
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
   const [milestone, setMilestone] = useState<{ emoji: string; title: string; subtitle: string } | null>(null);
+  const [scenarioIntroOpen, setScenarioIntroOpen] = useState(openIntroInitially);
+  const scenarioIntroShownRef = useRef(openIntroInitially);
 
   const question = questions[current];
 
   useEffect(() => {
     setCurrent(startIndex);
   }, [startIndex]);
+
+  useEffect(() => {
+    if (firstScenarioIntroIndex < 0) return;
+    const reachedFirstScenario =
+      current === firstScenarioIntroIndex ||
+      startIndex === firstScenarioIntroIndex;
+    if (reachedFirstScenario && !scenarioIntroShownRef.current) {
+      scenarioIntroShownRef.current = true;
+      setScenarioIntroOpen(true);
+    }
+  }, [current, startIndex, firstScenarioIntroIndex]);
 
   useEffect(() => {
     setSelected(null);
@@ -114,6 +134,43 @@ export function ScenarioSection({
   );
 
   if (!question) return null;
+
+  if (scenarioIntroOpen) {
+    return (
+      <motion.div
+        key="scenario-intro"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Box
+          sx={{
+            textAlign: 'center',
+            py: { xs: 5, sm: 7 },
+            px: 2,
+            bgcolor: 'rgba(255,255,255,0.98)',
+            borderRadius: 3,
+            border: '1px solid rgba(99,102,241,0.2)',
+            boxShadow: '0 8px 32px rgba(79,70,229,0.12)',
+          }}
+        >
+          <Typography sx={{ fontSize: '2.25rem', mb: 2 }} aria-hidden>
+            🧭
+          </Typography>
+          <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.2rem', sm: '1.35rem' }, color: '#1e1b4b', mb: 1.5, lineHeight: 1.35 }}>
+            Real-life situations
+          </Typography>
+          <Typography sx={{ color: '#4b5563', fontSize: { xs: '0.95rem', sm: '1rem' }, lineHeight: 1.65, maxWidth: 420, mx: 'auto', mb: 3 }}>
+            Now we will show you a few real-life situations to understand how you think and act.
+          </Typography>
+          <Button variant="contained" size="large" onClick={() => setScenarioIntroOpen(false)} sx={{ textTransform: 'none', fontWeight: 700, px: 4, borderRadius: 2, bgcolor: '#4f46e5', '&:hover': { bgcolor: '#4338ca' } }}>
+            Continue
+          </Button>
+        </Box>
+      </motion.div>
+    );
+  }
 
   return (
     <AnimatePresence mode="wait">

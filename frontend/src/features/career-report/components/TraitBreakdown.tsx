@@ -65,7 +65,13 @@ function TraitRow({ trait, index }: { trait: ReportTrait; index: number }) {
   );
 }
 
-export function TraitBreakdown({ traits }: { traits: ReportTrait[] }) {
+export function TraitBreakdown({
+  traits,
+  answeredCount,
+}: {
+  traits: ReportTrait[];
+  answeredCount?: number;
+}) {
   return (
     <Card variant="outlined" sx={{ borderRadius: 3, mb: 4 }}>
       <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
@@ -73,7 +79,11 @@ export function TraitBreakdown({ traits }: { traits: ReportTrait[] }) {
           Detailed Trait Breakdown
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          Each trait below is scored on a 0–10 scale. These scores come from analyzing your 30 responses across interests (what excites you), work habits (how you approach tasks), and personality (your natural style).
+          Each trait is scored 0–10 from your RIASEC, personality, values, readiness, and aptitude responses,
+          consolidated for career matching.
+          {answeredCount != null && answeredCount > 0
+            ? ` This session includes ${answeredCount} logged questionnaire responses.`
+            : ''}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3, fontWeight: 500 }}>
           🟢 8+ = Excellent &nbsp; 🔵 6–7 = Strong &nbsp; 🟡 4–5 = Developing &nbsp; 🔴 0–3 = Growing

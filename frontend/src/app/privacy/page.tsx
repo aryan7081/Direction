@@ -23,7 +23,7 @@ export default function PrivacyPolicy() {
             <P>When you use Outcave, we may collect:</P>
             <Ul>
               <li>Your name and email address (via Google Sign-In)</li>
-              <li>Your assessment responses (30 questions)</li>
+              <li>Your assessment responses (Phase 1 questionnaire; optional premium add-on if you purchase it)</li>
               <li>Basic device information (browser type, screen size) for improving the experience</li>
             </Ul>
             <P>We do NOT collect sensitive personal data such as Aadhaar numbers, financial details, or biometric data.</P>

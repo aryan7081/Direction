@@ -145,6 +145,19 @@ export interface AreaToImprove {
   is_stretch?: boolean;
 }
 
+export interface ReadinessInsight {
+  score: number;
+  level: string;
+  headline: string;
+  detail: string;
+}
+
+export interface AssessmentSnapshot {
+  answered_count: number;
+  tier: string;
+  premium_extension_complete: boolean;
+}
+
 /* ── Full Report ─────────────────────────────────────────────────── */
 
 export interface CareerReport {
@@ -182,5 +195,7 @@ export interface CareerReport {
     after_12th: string;
   };
   areas_to_improve: AreaToImprove[];
+  readiness?: ReadinessInsight | null;
+  assessment_snapshot?: AssessmentSnapshot | null;
   disclaimer: string;
 }

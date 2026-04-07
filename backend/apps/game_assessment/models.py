@@ -151,8 +151,8 @@ class ReportOrder(TimeStampedModel):
     """Tracks payment for a career report or premium bundle."""
 
     class ProductType(models.TextChoices):
-        REPORT = "report", "Career report (30Q)"
-        PREMIUM_BUNDLE = "premium_bundle", "Premium assessment + report"
+        REPORT = "report", "Career report (Phase 1)"
+        PREMIUM_BUNDLE = "premium_bundle", "Premium extension + report"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(

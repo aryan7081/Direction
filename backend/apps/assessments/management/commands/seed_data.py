@@ -77,45 +77,69 @@ class Command(BaseCommand):
 
         section_cats = [
             ("Interests (RIASEC)", "riasec-interests", "Holland-style interest items."),
-            ("Traits",             "work-traits",      "Curiosity, persistence, initiative, empathy, planning."),
-            ("Personality",        "work-personality",  "Energy, risk, structure, autonomy."),
+            ("Traits", "work-traits", "Legacy section (optional)."),
+            ("Personality", "work-personality", "Big Five–style items for the game assessment."),
+            ("Values", "values", "Career values items."),
+            ("Readiness", "readiness", "Career readiness and planning."),
+            ("Aptitude", "aptitude", "Verbal, numerical, abstract, spatial items."),
+            ("Behavioral scenarios", "behavioral-scenarios", "Premium situational items."),
         ]
         for name, slug, desc in section_cats:
             Category.objects.get_or_create(slug=slug, defaults={"name": name, "description": desc})
-        self.stdout.write("Categories seeded (15 scoring + 3 sections).")
+        self.stdout.write("Categories seeded (15 scoring + section groups).")
 
     # ── Questions ───────────────────────────────────────────────────
 
     def _seed_questions(self):
-        from apps.assessments.content.mcq_items import ALL_MCQ_ITEMS
+        from apps.assessments.content.psychometric_items import ALL_MCQ_ITEMS
 
-        section_slugs = {"riasec-interests", "work-traits", "work-personality"}
+        section_slugs = {
+            "riasec-interests",
+            "work-personality",
+            "values",
+            "readiness",
+            "aptitude",
+            "behavioral-scenarios",
+        }
         categories = {c.slug: c for c in Category.objects.filter(slug__in=section_slugs)}
-        if len(categories) != 3:
+        if len(categories) != len(section_slugs):
             self.stdout.write(
-                self.style.WARNING("Seed categories first; missing RIASEC/trait/personality sections.")
+                self.style.WARNING(
+                    "Seed categories first; missing one of: "
+                    + ", ".join(sorted(section_slugs))
+                )
             )
             return
 
-        self.stdout.write("Loading assessment items (free + premium) from MCQ catalogue...")
+        self.stdout.write(
+            "Loading assessment items (free + premium) into Question rows (game catalog source)..."
+        )
         Question.objects.all().delete()
 
+        letters = ("a", "b", "c", "d")
         for i, item in enumerate(ALL_MCQ_ITEMS, start=1):
-            cat = categories[item["section_category_slug"]]
+            slug = item["section_category_slug"]
+            cat = categories[slug]
+            meta = dict(item["metadata"])
             q = Question.objects.create(
                 category=cat,
                 text=item["text"],
                 order=i,
                 is_active=True,
-                metadata=item["metadata"],
+                metadata=meta,
+                code=item["code"],
+                premium_only=bool(item.get("premium_only")),
             )
             for j, (opt_text, weights) in enumerate(item["options"], start=1):
+                code_lower = item["code"].lower()
+                letter = letters[j - 1] if j <= len(letters) else str(j)
                 AnswerOption.objects.create(
                     question=q,
                     text=opt_text[:500],
                     score=3,
                     order=j,
                     category_weights=weights,
+                    api_id=f"{code_lower}_{letter}",
                 )
         self.stdout.write(f"Questions seeded ({len(ALL_MCQ_ITEMS)} items).")
 

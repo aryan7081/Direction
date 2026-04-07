@@ -2,15 +2,17 @@
 Builds the full career report data structure from a completed GameSession.
 Uses stored TraitScore and CareerMatchScore — never modifies scoring.
 
-Report payload now includes the student-facing 15-dimension profile
-(RIASEC 6 + Core Traits 5 + Personality 4) alongside the internal
-8-trait system used for career matching.
+Report payload includes the student-facing 15-dimension profile
+(RIASEC 6 + work-style summary 5 + behavioural sliders 4), derived from
+RIASEC interests, Big Five–style personality, values, readiness, and aptitude.
+The internal 8-trait scores power career matching and the radar summary.
 """
 from __future__ import annotations
 
 from datetime import date
 
 from ..models import (
+    GameEventLog,
     GameSession,
     TraitScore,
     CareerMatchScore,
@@ -718,6 +720,41 @@ def _areas_to_improve(traits: dict) -> list:
     return areas
 
 
+def _readiness_insight(readiness: float) -> dict:
+    """Guidance from readiness 0–1 (excluded from career fit formula)."""
+    r = max(0.0, min(1.0, float(readiness)))
+    base = {"score": round(r, 3)}
+    if r < 0.4:
+        return {
+            **base,
+            "level": "explore",
+            "headline": "Keep exploring career options",
+            "detail": (
+                "Your answers suggest you are still building clarity about next steps. "
+                "Treat career ideas as starting points to discuss with a counsellor or family — "
+                "not as firm recommendations."
+            ),
+        }
+    if r > 0.7:
+        return {
+            **base,
+            "level": "streams",
+            "headline": "Ready to compare streams",
+            "detail": (
+                "You have been reflecting on careers and study paths. "
+                "A useful next step is to compare Science, Commerce, and Arts against your strengths and interests."
+            ),
+        }
+    return {
+        **base,
+        "level": "building",
+        "headline": "Building career clarity",
+        "detail": (
+            "Keep combining research, conversations, and school experiences to refine what fits you."
+        ),
+    }
+
+
 # ── Main builder ────────────────────────────────────────────────────
 
 def build_report(session: GameSession) -> dict:
@@ -804,8 +841,18 @@ def build_report(session: GameSession) -> dict:
     if session.completed_at:
         completed_fmt = session.completed_at.strftime("%d %B %Y, %I:%M %p")
 
+    n_answered = GameEventLog.objects.filter(
+        session=session, game_name="scenario", event_type="answer"
+    ).count()
+    assessment_snapshot = {
+        "answered_count": n_answered,
+        "tier": session.assessment_tier,
+        "premium_extension_complete": bool(session.premium_extension_complete),
+    }
+
     # ── 15-dimension profile (student-facing) ──────────────────────
-    riasec_scores, core_trait_scores, personality_scores = calculate_15d_scores(session)
+    riasec_scores, core_trait_scores, personality_scores, readiness_score = calculate_15d_scores(session)
+    readiness_insight = _readiness_insight(readiness_score)
     recommended_stream = stream_rec.get("stream", "General")
 
     interest_profile = build_interest_profile(riasec_scores)
@@ -845,10 +892,12 @@ def build_report(session: GameSession) -> dict:
         "stream_recommendation": stream_rec,
         "roadmap": roadmap,
         "areas_to_improve": improvements,
+        "readiness": readiness_insight,
+        "assessment_snapshot": assessment_snapshot,
         "disclaimer": (
-            "This report is generated from a 30-question behavioral assessment "
-            "across 15 scientifically-backed dimensions. It is intended for "
-            "educational guidance purposes and works best when discussed with "
+            "This report is generated from a guided assessment across interests, "
+            "personality, values, readiness, and aptitude, shown here in 15 profile dimensions. "
+            "It is intended for educational guidance and works best when discussed with "
             "a parent or school counsellor."
         ),
     }

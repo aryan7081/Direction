@@ -281,7 +281,7 @@ export default function LoginPage() {
             Continue your career journey
           </Typography>
           <Stack direction="row" flexWrap="wrap" gap={1} sx={{ pt: 0.5 }}>
-            {['30 questions', 'Stream fit', `${CAREER_CATALOG_LABEL} careers`].map((t) => (
+            {['Career questionnaire', 'Stream fit', `${CAREER_CATALOG_LABEL} careers`].map((t) => (
               <Chip
                 key={t}
                 label={t}

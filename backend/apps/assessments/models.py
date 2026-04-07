@@ -31,6 +31,12 @@ class Question(TimeStampedModel):
     order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
     metadata = models.JSONField(default=dict, blank=True)
+    # Stable item code (e.g. P1_R1) — used in game events and API question ids; must match metadata["code"].
+    code = models.CharField(max_length=40, unique=True, null=True, blank=True, db_index=True)
+    premium_only = models.BooleanField(
+        default=False,
+        help_text="If true, only shown after premium unlock (Phase 2 extension).",
+    )
 
     class Meta:
         db_table = "questions"
@@ -38,10 +44,20 @@ class Question(TimeStampedModel):
         indexes = [
             models.Index(fields=["category", "is_active"]),
             models.Index(fields=["order"]),
+            models.Index(fields=["code"]),
         ]
 
     def __str__(self):
-        return f"{self.text[:50]}..."
+        label = self.code or self.text[:50]
+        return f"{label}..."
+
+    def save(self, *args, **kwargs):
+        if self.code and self.metadata is not None:
+            meta = dict(self.metadata)
+            if meta.get("code") != self.code:
+                meta["code"] = self.code
+                self.metadata = meta
+        super().save(*args, **kwargs)
 
 
 class AnswerOption(TimeStampedModel):
@@ -52,6 +68,8 @@ class AnswerOption(TimeStampedModel):
     score = models.PositiveSmallIntegerField()
     order = models.PositiveIntegerField(default=0)
     category_weights = models.JSONField(default=dict, blank=True)
+    # Client-facing option id (e.g. p1_r1_a) — must stay stable for logged game events.
+    api_id = models.CharField(max_length=80, unique=True, null=True, blank=True, db_index=True)
 
     class Meta:
         db_table = "answer_options"

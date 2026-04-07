@@ -324,7 +324,7 @@
   <div class="header-top">
     {% if logo_uri %}<img src="{{ logo_uri }}" alt="Outcave" style="width:64px; height:64px; margin-bottom:8px; object-fit:contain; object-position:center;">{% endif %}
     <h1>Career Intelligence Report</h1>
-    <p class="subtitle">Behavioral &amp; Trait-Based Analysis</p>
+    <p class="subtitle">RIASEC, personality, values, readiness &amp; aptitude — psychometric profile</p>
   </div>
   <div class="header-body">
     <div class="header-student">
@@ -340,6 +340,10 @@
       <div class="dates">
         {% if report.completed_at %}Assessed: {{ report.completed_at }}<br>{% endif %}
         Generated: {{ report.generated_at }}
+        {% if report.assessment_snapshot %}
+        <br><span style="color:#9ca3af;">{{ report.assessment_snapshot.answered_count }} questionnaire responses
+        {% if report.assessment_snapshot.premium_extension_complete %} · includes premium extension{% endif %}</span>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -382,11 +386,20 @@
 </div>
 {% endif %}
 
+{% if report.readiness %}
+<div class="info-box info-box-green">
+  <div class="box-title" style="color:#15803d;">Career readiness</div>
+  <div class="box-heading" style="color:#1e40af;">{{ report.readiness.headline }}</div>
+  <div class="box-text">{{ report.readiness.detail }}</div>
+</div>
+{% endif %}
+
 <!-- ═══ RADAR CHART ═══ -->
-<h2>Your 8-Trait Profile</h2>
+<h2>Career-matching profile (8 traits)</h2>
 <p class="section-intro">
-  This radar chart shows how your natural abilities spread across 8 core traits.
-  The further a point extends outward, the stronger that trait.
+  These eight scores summarize your questionnaire for career matching. The report narrative uses a separate
+  15-dimension student-facing profile (interests, work-style summary, personality sliders).
+  The further a point extends outward on the chart, the stronger that trait.
 </p>
 <div class="chart-container">
   {{ radar_svg|safe }}
@@ -396,8 +409,8 @@
 <div class="page-break"></div>
 <h2>Trait Breakdown</h2>
 <p class="section-intro">
-  Each trait is scored on a 0–10 scale based on your gameplay behaviour.
-  Scores above 7 indicate strong natural ability; 4–7 show developing potential.
+  Each trait is scored 0–10 from your questionnaire responses (RIASEC, personality, values, readiness, aptitude),
+  consolidated for career matching. Scores above 7 indicate strong alignment; 4–7 show developing potential.
 </p>
 {% for t in report.traits %}
 <div class="trait-row">

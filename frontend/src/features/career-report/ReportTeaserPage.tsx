@@ -31,15 +31,18 @@ import type { PaymentProductType } from './api';
 
 declare global {
   interface Window {
-    Razorpay: any;
+    Razorpay?: new (options: Record<string, unknown>) => {
+      open: () => void;
+      on: (event: string, handler: (payload: unknown) => void) => void;
+    };
   }
 }
 
 const COUNSELLING_ANCHOR_LABEL = '₹3,000+';
 
 const REPORT_BULLETS = [
-  'Unlock the full report from this session — no extra questions',
-  'Trait scores, stream read, top careers & a Class 10→college roadmap',
+  'Unlock the full report for this completed session — no need to retake the questionnaire',
+  '15 profile dimensions, 8 career-matching trait scores, stream read, top careers & Class 10→college roadmap',
   'Share-ready for parents, teachers, or counselling conversations',
 ];
 
@@ -57,7 +60,7 @@ const STREAM_COLORS: Record<string, { bg: string; text: string; border: string }
 };
 
 const UNLOCK_FEATURES = [
-  { icon: '📊', text: 'Detailed trait analysis across 8 dimensions with exact scores' },
+  { icon: '📊', text: '15-dimension profile plus 8 career-matching trait scores with exact numbers' },
   { icon: '🎯', text: 'Top 5 career matches with confidence scores & education paths' },
   { icon: '🗺️', text: 'Personalized development roadmap (Class 10 → 12th → College)' },
   { icon: '📈', text: 'Career comparison chart — see why #1 beats #2' },
@@ -271,7 +274,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
       const desc =
         productType === 'premium_bundle'
           ? 'Premium assessment + full career report'
-          : 'Full career report (30-question run)';
+          : 'Full career report (Phase 1 questionnaire)';
 
       const options = {
         key: orderData.key_id,
@@ -285,7 +288,11 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
           name: orderData.user_name,
         },
         theme: { color: '#16a34a' },
-        handler: async (response: any) => {
+        handler: async (response: {
+          razorpay_order_id: string;
+          razorpay_payment_id: string;
+          razorpay_signature: string;
+        }) => {
           try {
             await verifyPayment({
               razorpay_order_id: response.razorpay_order_id,
@@ -305,6 +312,10 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
         modal: { ondismiss: () => setPaying(false) },
       };
 
+      if (!window.Razorpay) {
+        showError('Payment form is still loading. Wait a moment and try again.');
+        return;
+      }
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch {
@@ -389,24 +400,18 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
           sx={{ pt: { xs: 2, sm: 2.5 }, pb: { xs: 1.25, sm: 1.75, md: 2 }, px: { xs: 1.5, sm: 2.5 } }}
         >
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
-            <Box
-              sx={{
-                minHeight: { xs: 'auto', md: 'min(920px, calc(100dvh - 32px))' },
-                display: { md: 'flex' },
-                flexDirection: { md: 'column' },
-                justifyContent: { md: 'center' },
-                mb: { xs: 2, md: 2.5 },
-              }}
-            >
+            <Box sx={{ mb: { xs: 2, sm: 2.5 } }}>
               <Box
                 sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) minmax(0, 1.05fr)' },
-                  gap: { xs: 1.75, md: 2.5 },
-                  alignItems: 'start',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: { xs: 1.75, sm: 2, md: 2.5 },
+                  alignItems: 'stretch',
+                  maxWidth: 720,
+                  mx: 'auto',
                 }}
               >
-                <Box sx={{ textAlign: { xs: 'center', md: 'left' }, minWidth: 0 }}>
+                <Box sx={{ textAlign: 'center', minWidth: 0, width: '100%' }}>
                   {firstNameToken ? (
                     <Typography
                       sx={{
@@ -439,11 +444,11 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                     sx={{
                       color: '#64748b',
                       fontSize: { xs: '0.8rem', sm: '0.85rem' },
-                      maxWidth: { xs: 400, md: 'none' },
-                      mx: { xs: 'auto', md: 0 },
+                      maxWidth: 480,
+                      mx: 'auto',
                       lineHeight: 1.45,
                       fontWeight: 500,
-                      mb: { xs: 1.25, md: 1.5 },
+                      mb: { xs: 1.25, sm: 1.5 },
                     }}
                   >
                     Unlock the full breakdown, top matches, and PDF from {PRODUCT_NAME}. One payment — instant access.
@@ -677,7 +682,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                   </motion.div>
                 </Box>
 
-                <Box sx={{ minWidth: 0 }}>
+                <Box sx={{ minWidth: 0, width: '100%' }}>
                   {teaser.premium_unlocked && !teaser.premium_extension_complete && (
                     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                       <Box
@@ -728,20 +733,20 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                         mb: 0.35,
                         fontSize: { xs: '1.05rem', sm: '1.2rem' },
                         letterSpacing: '-0.02em',
-                        textAlign: { xs: 'center', md: 'left' },
+                        textAlign: 'center',
                       }}
                     >
                       Choose an option
                     </Typography>
                     <Typography
                       sx={{
-                        textAlign: { xs: 'center', md: 'left' },
+                        textAlign: 'center',
                         color: '#64748b',
                         fontSize: { xs: '0.78rem', sm: '0.84rem' },
-                        mb: { xs: 1.15, md: 1.25 },
-                        maxWidth: { md: 440 },
+                        mb: { xs: 1.15, sm: 1.25 },
+                        maxWidth: 480,
                         lineHeight: 1.45,
-                        mx: { xs: 'auto', md: 0 },
+                        mx: 'auto',
                       }}
                     >
                       Same full report either way — unlock now, or add a short assessment first for our strongest match read.
@@ -750,10 +755,9 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                     <Box
                       sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: '1fr 1fr', md: '1fr' },
-                        gap: { xs: 1, md: 2 },
-                        maxWidth: { md: 720 },
-                        mx: { md: 0 },
+                        gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr' },
+                        gap: { xs: 1, sm: 1.5, md: 2 },
+                        width: '100%',
                       }}
                     >
                       <Box
@@ -933,6 +937,71 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
               </Box>
             </Box>
 
+            <Box
+              sx={{
+                py: 2,
+                px: 2.5,
+                mb: 2,
+                borderRadius: 4,
+                bgcolor: '#fff',
+                border: '1px solid',
+                borderColor: alpha('#0f172a', 0.08),
+                boxShadow: '0 4px 20px -12px rgba(15,23,42,0.12)',
+              }}
+            >
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f172a', mb: 0.5, textAlign: 'center', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                Your top 3 career matches
+              </Typography>
+              <Typography sx={{ fontSize: '0.8rem', color: '#64748b', textAlign: 'center', mb: 2 }}>
+                #1 is unlocked above — see #2 and #3 in the full report
+              </Typography>
+              <Stack spacing={1}>
+                {teaser.career_preview.map((c) => {
+                  const isRevealed = 'career_name' in c && c.career_name;
+                  return (
+                    <Box
+                      key={c.rank}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.5,
+                        py: 1,
+                        px: 1.5,
+                        borderRadius: 2,
+                        bgcolor: isRevealed ? alpha('#22c55e', 0.08) : alpha('#f1f5f9', 0.9),
+                        border: '1px solid',
+                        borderColor: isRevealed ? alpha('#22c55e', 0.2) : alpha('#cbd5e1', 0.6),
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, color: isRevealed ? '#15803d' : '#94a3b8', minWidth: 28 }}>
+                        #{c.rank}
+                      </Typography>
+                      {isRevealed ? (
+                        <Box sx={{ flex: 1 }}>
+                          {c.career_category ? (
+                            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>{c.career_category}</Typography>
+                          ) : null}
+                          <Typography sx={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a' }}>{c.career_name}</Typography>
+                        </Box>
+                      ) : (
+                        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flex: 1, color: '#94a3b8' }}>
+                          <Typography sx={{ fontSize: 16 }} aria-hidden>
+                            🔒
+                          </Typography>
+                          <Typography sx={{ fontSize: '0.84rem', fontWeight: 600 }}>Unlock in full report</Typography>
+                        </Stack>
+                      )}
+                    </Box>
+                  );
+                })}
+              </Stack>
+              {teaser.top_two_gap != null && (
+                <Typography sx={{ fontSize: '0.75rem', color: '#4f46e5', fontWeight: 700, textAlign: 'center', mt: 2, lineHeight: 1.5 }}>
+                  #1 and #2 are only {teaser.top_two_gap}% apart — the breakdown in the report matters.
+                </Typography>
+              )}
+            </Box>
+
             {teaser.profile_depth_detail && (
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
                 <Box
@@ -1024,71 +1093,6 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
               <Typography sx={{ fontSize: '0.9rem', color: '#475569', fontWeight: 600, lineHeight: 1.55 }}>
                 {LANDING_STUDENTS_STAT_VALUE} {LANDING_STUDENTS_STAT_LABEL.toLowerCase()} with {PRODUCT_NAME} — structured guidance, not guesswork.
               </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                py: 2,
-                px: 2.5,
-                mb: 2,
-                borderRadius: 4,
-                bgcolor: '#fff',
-                border: '1px solid',
-                borderColor: alpha('#0f172a', 0.08),
-                boxShadow: '0 4px 20px -12px rgba(15,23,42,0.12)',
-              }}
-            >
-              <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f172a', mb: 0.5, textAlign: 'center', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Your top 3 career matches
-              </Typography>
-              <Typography sx={{ fontSize: '0.8rem', color: '#64748b', textAlign: 'center', mb: 2 }}>
-                #1 is unlocked above — see #2 and #3 in the full report
-              </Typography>
-              <Stack spacing={1}>
-                {teaser.career_preview.map((c) => {
-                  const isRevealed = 'career_name' in c && c.career_name;
-                  return (
-                    <Box
-                      key={c.rank}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1.5,
-                        py: 1,
-                        px: 1.5,
-                        borderRadius: 2,
-                        bgcolor: isRevealed ? alpha('#22c55e', 0.08) : alpha('#f1f5f9', 0.9),
-                        border: '1px solid',
-                        borderColor: isRevealed ? alpha('#22c55e', 0.2) : alpha('#cbd5e1', 0.6),
-                      }}
-                    >
-                      <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, color: isRevealed ? '#15803d' : '#94a3b8', minWidth: 28 }}>
-                        #{c.rank}
-                      </Typography>
-                      {isRevealed ? (
-                        <Box sx={{ flex: 1 }}>
-                          {c.career_category ? (
-                            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>{c.career_category}</Typography>
-                          ) : null}
-                          <Typography sx={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a' }}>{c.career_name}</Typography>
-                        </Box>
-                      ) : (
-                        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flex: 1, color: '#94a3b8' }}>
-                          <Typography sx={{ fontSize: 16 }} aria-hidden>
-                            🔒
-                          </Typography>
-                          <Typography sx={{ fontSize: '0.84rem', fontWeight: 600 }}>Unlock in full report</Typography>
-                        </Stack>
-                      )}
-                    </Box>
-                  );
-                })}
-              </Stack>
-              {teaser.top_two_gap != null && (
-                <Typography sx={{ fontSize: '0.75rem', color: '#4f46e5', fontWeight: 700, textAlign: 'center', mt: 2, lineHeight: 1.5 }}>
-                  #1 and #2 are only {teaser.top_two_gap}% apart — the breakdown in the report matters.
-                </Typography>
-              )}
             </Box>
 
             <Box sx={{ textAlign: 'center', mt: 1 }}>

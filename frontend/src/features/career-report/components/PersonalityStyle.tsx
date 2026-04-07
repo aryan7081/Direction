@@ -131,7 +131,7 @@ export function PersonalityStyle({ dimensions }: { dimensions: PersonalityDimens
             There are no right or wrong answers — each end of the spectrum has its own strengths.
           </Typography>
           <Typography variant="body2" sx={{ color: '#9ca3af', fontSize: '0.75rem', mb: 3 }}>
-            The dot shows where you fall on each spectrum based on 8 personality questions.
+            The dot shows where you fall on each spectrum based on your Big Five–style questionnaire responses.
           </Typography>
 
           {dimensions.map((dim, i) => (

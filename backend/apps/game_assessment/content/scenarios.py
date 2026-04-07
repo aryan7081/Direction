@@ -1,69 +1,36 @@
 """
-Scenario section: RIASEC + core traits + personality (same items as quiz).
+Scenario section: full psychometric item bank (Phase 1 + Phase 2).
 
-Bridge: 15 quiz dimensions → 8 game traits.
-
-Free tier: core items only. Premium: core + premium_only items.
+API returns prompts without raw scoring weights; the server rebuilds weights
+via psychometric_scoring.build_option_profile_map().
 """
 
 from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from apps.assessments.content.mcq_items import ALL_MCQ_ITEMS
+from apps.assessments.game_catalog import get_mcq_catalog
 
 _LETTERS = ("a", "b", "c", "d")
 
-# ── Mapping table: quiz dimension slug → game trait contributions ──
-_DIM_TO_TRAITS: Dict[str, List[tuple]] = {
-    "riasec_realistic":       [("quantitative_comfort", 0.70), ("structure_discipline", 0.45)],
-    "riasec_investigative":   [("analytical_reasoning", 0.95), ("quantitative_comfort", 0.55)],
-    "riasec_artistic":        [("creativity_innovation", 0.95), ("risk_appetite", 0.35)],
-    "riasec_social":          [("social_orientation", 0.95), ("verbal_communication", 0.45)],
-    "riasec_enterprising":    [("leadership_drive", 0.85), ("verbal_communication", 0.60)],
-    "riasec_conventional":    [("structure_discipline", 0.85), ("analytical_reasoning", 0.35)],
-    "trait_curiosity":        [("analytical_reasoning", 0.55), ("creativity_innovation", 0.45)],
-    "trait_persistence":      [("structure_discipline", 0.60)],
-    "trait_initiative":       [("leadership_drive", 0.60), ("risk_appetite", 0.45)],
-    "trait_empathy_teamwork": [("social_orientation", 0.70), ("verbal_communication", 0.35)],
-    "trait_planning":         [("structure_discipline", 0.70)],
-    "personality_extroversion":   [("social_orientation", 0.55), ("verbal_communication", 0.45)],
-    "personality_risk_taking":    [("risk_appetite", 0.80)],
-    "personality_structure":      [("structure_discipline", 0.60)],
-    "personality_self_direction": [("leadership_drive", 0.45), ("analytical_reasoning", 0.30)],
-}
-
-_SIGNAL_THRESHOLD = 0.20
-
 
 def _interest_weights_to_traits(category_weights: Dict[str, int]) -> Dict[str, float]:
-    traits: Dict[str, float] = {}
-
-    def bump(trait: str, cap: float, intensity: float) -> None:
-        v = min(1.0, cap * intensity)
-        if v < _SIGNAL_THRESHOLD:
-            return
-        traits[trait] = max(traits.get(trait, 0.0), v)
-
+    """
+    Legacy hook: map arbitrary dimension keys to a single analytical signal so
+    old parsers never break. Primary scoring uses psychometric_scoring instead.
+    """
     if not category_weights:
         return {"analytical_reasoning": 0.5}
-
-    for slug, raw in category_weights.items():
-        intensity = float(raw) / 5.0
-        mappings = _DIM_TO_TRAITS.get(slug)
-        if not mappings:
-            continue
-        for game_trait, cap in mappings:
-            bump(game_trait, cap, intensity)
-
-    return traits
+    # Any RIASEC / personality signal bumps analytical slightly (placeholder bridge)
+    return {"analytical_reasoning": min(1.0, 0.35 + 0.05 * len(category_weights))}
 
 
 def _items_for_tier(tier: str) -> List[Dict[str, Any]]:
     t = (tier or "free").lower()
+    all_items = get_mcq_catalog()
     if t == "premium":
-        return list(ALL_MCQ_ITEMS)
-    return [it for it in ALL_MCQ_ITEMS if not it.get("premium_only")]
+        return list(all_items)
+    return [it for it in all_items if not it.get("premium_only")]
 
 
 def expected_scenario_question_count(tier: str) -> int:
@@ -74,44 +41,56 @@ def _build_from_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for item in items:
         qid = item["code"].lower()
+        api_ids = item.get("option_api_ids") or []
         opts = []
         for i, (text, cw) in enumerate(item["options"]):
-            letter = _LETTERS[i]
+            if i < len(api_ids):
+                opt_id = api_ids[i]
+            else:
+                opt_id = f"{qid}_{_LETTERS[i]}"
             opts.append(
                 {
-                    "id": f"{qid}_{letter}",
+                    "id": opt_id,
                     "text": text,
                     "weights": _interest_weights_to_traits(cw),
                 }
             )
-        out.append(
-            {
-                "id": qid,
-                "prompt": item["text"],
-                "options": opts,
-                "premium_only": bool(item.get("premium_only")),
-            }
-        )
+        meta = item.get("metadata") or {}
+        row: Dict[str, Any] = {
+            "id": qid,
+            "prompt": item["text"],
+            "options": opts,
+            "premium_only": bool(item.get("premium_only")),
+        }
+        if meta.get("show_scenario_intro_before"):
+            row["show_scenario_intro_before"] = True
+        if meta.get("scenario_behavioral"):
+            row["scenario_behavioral"] = True
+        out.append(row)
     return out
 
 
-SCENARIO_QUESTIONS_FULL = _build_from_items(ALL_MCQ_ITEMS)
+def _scenario_questions_full() -> List[Dict[str, Any]]:
+    return _build_from_items(get_mcq_catalog())
 
 
 def get_premium_extension_questions() -> List[Dict[str, Any]]:
-    """Premium-only items (answered after initial 30Q + ₹99 bundle payment)."""
-    ids = {item["code"].lower() for item in ALL_MCQ_ITEMS if item.get("premium_only")}
+    """Premium-only items (answered after Phase 1 questionnaire + premium bundle payment)."""
+    ids = {item["code"].lower() for item in get_mcq_catalog() if item.get("premium_only")}
     safe: List[Dict[str, Any]] = []
-    for q in SCENARIO_QUESTIONS_FULL:
+    for q in _scenario_questions_full():
         if q["id"] not in ids:
             continue
-        safe.append(
-            {
-                "id": q["id"],
-                "prompt": q["prompt"],
-                "options": [{"id": o["id"], "text": o["text"]} for o in q["options"]],
-            }
-        )
+        row: Dict[str, Any] = {
+            "id": q["id"],
+            "prompt": q["prompt"],
+            "options": [{"id": o["id"], "text": o["text"]} for o in q["options"]],
+        }
+        if q.get("show_scenario_intro_before"):
+            row["show_scenario_intro_before"] = True
+        if q.get("scenario_behavioral"):
+            row["scenario_behavioral"] = True
+        safe.append(row)
     return safe
 
 
@@ -119,22 +98,25 @@ def get_scenario_questions(tier: str = "free") -> List[Dict[str, Any]]:
     items = _items_for_tier(tier)
     wanted = {item["code"].lower() for item in items}
     safe = []
-    for q in SCENARIO_QUESTIONS_FULL:
+    for q in _scenario_questions_full():
         if q["id"] not in wanted:
             continue
-        safe.append(
-            {
-                "id": q["id"],
-                "prompt": q["prompt"],
-                "options": [{"id": o["id"], "text": o["text"]} for o in q["options"]],
-            }
-        )
+        row: Dict[str, Any] = {
+            "id": q["id"],
+            "prompt": q["prompt"],
+            "options": [{"id": o["id"], "text": o["text"]} for o in q["options"]],
+        }
+        if q.get("show_scenario_intro_before"):
+            row["show_scenario_intro_before"] = True
+        if q.get("scenario_behavioral"):
+            row["scenario_behavioral"] = True
+        safe.append(row)
     return safe
 
 
 def get_scenario_option_weights() -> Dict[str, Dict[str, float]]:
-    mapping: Dict[str, Dict[str, float]] = {}
-    for q in SCENARIO_QUESTIONS_FULL:
-        for o in q["options"]:
-            mapping[o["id"]] = o["weights"]
-    return mapping
+    from apps.game_assessment.services.psychometric_scoring import (
+        get_option_profile_weight_dict,
+    )
+
+    return get_option_profile_weight_dict()

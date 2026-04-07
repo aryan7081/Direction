@@ -112,7 +112,13 @@ function TraitTile({ trait, index }: { trait: ReportTrait; index: number }) {
   );
 }
 
-export function TraitRadarChart({ traits }: { traits: ReportTrait[] }) {
+export function TraitRadarChart({
+  traits,
+  answeredCount,
+}: {
+  traits: ReportTrait[];
+  answeredCount?: number;
+}) {
   const sorted = [...traits].sort((a, b) => b.score - a.score);
   const strongest = sorted.slice(0, 3);
   const developing = sorted.filter((t) => t.score < 6);
@@ -126,10 +132,14 @@ export function TraitRadarChart({ traits }: { traits: ReportTrait[] }) {
       <Card variant="outlined" sx={{ borderRadius: 3, mb: 4, overflow: 'visible' }}>
         <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
           <Typography variant="h6" fontWeight={700} gutterBottom>
-            Your Trait Profile
+            Career-matching profile (8 traits)
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            Your 30 responses were analyzed across 15 dimensions (interests, work traits, and personality) and consolidated into these 8 core career traits. Each is scored 0–10.
+            These eight scores summarize your questionnaire for career matching (each 0–10). The sections above
+            show your 15 student-facing profile dimensions (RIASEC, work-style summary, and personality sliders).
+            {answeredCount != null && answeredCount > 0
+              ? ` Based on ${answeredCount} logged responses in this session.`
+              : ''}
           </Typography>
 
           {/* Quick summary line */}
