@@ -2,9 +2,11 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Box, Button, Typography, Chip } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useGameStore } from '../store';
 import type { ScenarioQuestion } from '../types';
+import { resolveOptionHelper, resolveQuestionVisual } from '../questionVisualConfig';
+import { QuestionPromptArt } from './QuestionPromptArt';
 
 const DEFAULT_AUTH_GATE_AFTER = 10;
 
@@ -39,6 +41,7 @@ export function ScenarioSection({
   onAuthGate?: (resumeAtIndex: number, completedCount: number) => void | Promise<void>;
 }) {
   const pushEvent = useGameStore((s) => s.pushEvent);
+  const reduceMotion = useReducedMotion();
   const firstScenarioIntroIndex = useMemo(
     () => questions.findIndex((q) => q.show_scenario_intro_before),
     [questions]
@@ -54,6 +57,31 @@ export function ScenarioSection({
   const scenarioIntroShownRef = useRef(openIntroInitially);
 
   const question = questions[current];
+
+  const questionVisual = useMemo(() => resolveQuestionVisual(question), [question]);
+  const optionHelper = useMemo(() => resolveOptionHelper(question), [question]);
+
+  const optionContainerVariants = useMemo(
+    () => ({
+      hidden: { opacity: 0 },
+      show: {
+        opacity: 1,
+        transition: {
+          staggerChildren: reduceMotion ? 0 : 0.04,
+          delayChildren: reduceMotion ? 0 : 0.03,
+        },
+      },
+    }),
+    [reduceMotion]
+  );
+
+  const optionItemVariants = useMemo(
+    () => ({
+      hidden: { opacity: 0, y: reduceMotion ? 0 : 5 },
+      show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' as const } },
+    }),
+    [reduceMotion]
+  );
 
   useEffect(() => {
     setCurrent(startIndex);
@@ -213,10 +241,10 @@ export function ScenarioSection({
       ) : (
         <motion.div
           key={question.id}
-          initial={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.25 }}
+          exit={{ opacity: 0, y: reduceMotion ? 0 : -12 }}
+          transition={{ duration: reduceMotion ? 0.15 : 0.22, ease: 'easeOut' }}
         >
           <Box sx={{ bgcolor: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(16px)', borderRadius: 3, border: '1px solid rgba(0,0,0,0.08)', p: { xs: 2.5, sm: 3.5 }, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -225,18 +253,38 @@ export function ScenarioSection({
                 size="small"
                 sx={{ fontWeight: 600, bgcolor: 'rgba(59,130,246,0.08)', color: '#2563eb', border: '1px solid rgba(59,130,246,0.2)' }}
               />
-              <Typography sx={{ fontSize: '0.78rem', color: '#9ca3af' }}>
-                Pick what feels most natural
+              <Typography
+                sx={{
+                  fontSize: '0.78rem',
+                  color: '#64748b',
+                  fontWeight: 600,
+                  textAlign: 'right',
+                  maxWidth: '58%',
+                  lineHeight: 1.35,
+                }}
+              >
+                {optionHelper}
               </Typography>
             </Box>
 
-            <Typography sx={{ fontWeight: 700, fontSize: { xs: '1.15rem', sm: '1.2rem' }, color: '#111827', mb: 3, lineHeight: 1.7 }}>
+            <QuestionPromptArt visual={questionVisual} questionId={question.id} />
+
+            <Typography
+              component="h2"
+              sx={{ fontWeight: 700, fontSize: { xs: '1.15rem', sm: '1.2rem' }, color: '#111827', mb: 3, lineHeight: 1.7 }}
+            >
               {question.prompt}
             </Typography>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <motion.div
+              key={`options-${question.id}`}
+              variants={optionContainerVariants}
+              initial="hidden"
+              animate="show"
+              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+            >
               {question.options.map((opt) => (
-                <motion.div key={opt.id} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                <motion.div key={opt.id} variants={optionItemVariants} whileHover={reduceMotion ? undefined : { scale: 1.008 }} whileTap={reduceMotion ? undefined : { scale: 0.995 }}>
                   <Button
                     variant={selected === opt.id ? 'contained' : 'outlined'}
                     fullWidth
@@ -261,7 +309,7 @@ export function ScenarioSection({
                   </Button>
                 </motion.div>
               ))}
-            </Box>
+            </motion.div>
           </Box>
         </motion.div>
       )}

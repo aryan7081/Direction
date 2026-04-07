@@ -61,7 +61,16 @@ def _build_from_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             "prompt": item["text"],
             "options": opts,
             "premium_only": bool(item.get("premium_only")),
+            "section_category_slug": item.get("section_category_slug") or "",
         }
+        if meta.get("context"):
+            row["question_context"] = meta["context"]
+        if meta.get("primary_focus"):
+            row["primary_focus"] = meta["primary_focus"]
+        if meta.get("format"):
+            row["question_format"] = meta["format"]
+        if meta.get("aptitude_subtest"):
+            row["aptitude_subtest"] = meta["aptitude_subtest"]
         if meta.get("show_scenario_intro_before"):
             row["show_scenario_intro_before"] = True
         if meta.get("scenario_behavioral"):
@@ -86,10 +95,17 @@ def get_premium_extension_questions() -> List[Dict[str, Any]]:
             "prompt": q["prompt"],
             "options": [{"id": o["id"], "text": o["text"]} for o in q["options"]],
         }
-        if q.get("show_scenario_intro_before"):
-            row["show_scenario_intro_before"] = True
-        if q.get("scenario_behavioral"):
-            row["scenario_behavioral"] = True
+        for key in (
+            "show_scenario_intro_before",
+            "scenario_behavioral",
+            "section_category_slug",
+            "question_context",
+            "primary_focus",
+            "question_format",
+            "aptitude_subtest",
+        ):
+            if key in q:
+                row[key] = q[key]
         safe.append(row)
     return safe
 
@@ -106,10 +122,17 @@ def get_scenario_questions(tier: str = "free") -> List[Dict[str, Any]]:
             "prompt": q["prompt"],
             "options": [{"id": o["id"], "text": o["text"]} for o in q["options"]],
         }
-        if q.get("show_scenario_intro_before"):
-            row["show_scenario_intro_before"] = True
-        if q.get("scenario_behavioral"):
-            row["scenario_behavioral"] = True
+        for key in (
+            "show_scenario_intro_before",
+            "scenario_behavioral",
+            "section_category_slug",
+            "question_context",
+            "primary_focus",
+            "question_format",
+            "aptitude_subtest",
+        ):
+            if key in q:
+                row[key] = q[key]
         safe.append(row)
     return safe
 
