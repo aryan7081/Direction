@@ -5,7 +5,7 @@ AI-powered career discovery for Class 9–10 students. Clean architecture, Djang
 ## Structure
 
 ```
-notByChance/
+Direction/   # (Outcave)
 ├── backend/          # Django + DRF
 │   ├── apps/
 │   │   ├── users/       # Auth, profiles

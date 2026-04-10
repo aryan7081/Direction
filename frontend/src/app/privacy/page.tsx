@@ -24,7 +24,12 @@ export default function PrivacyPolicy() {
             <Ul>
               <li>Your name and email address (via Google Sign-In)</li>
               <li>Your assessment responses (Phase 1 questionnaire; optional premium add-on if you purchase it)</li>
-              <li>Basic device information (browser type, screen size) for improving the experience</li>
+              <li>Basic device information (for example browser type) for improving the experience</li>
+              <li>
+                <strong>Technical access logs:</strong> when you use our website or API, our servers may record your
+                IP address, the path requested, and a short browser identifier (user agent). We use this for security,
+                abuse prevention, and understanding how the service is used. These logs are not used for advertising.
+              </li>
             </Ul>
             <P>We do NOT collect sensitive personal data such as Aadhaar numbers, financial details, or biometric data.</P>
           </Section>
@@ -35,6 +40,7 @@ export default function PrivacyPolicy() {
               <li>To create and deliver your assessment report</li>
               <li>To improve our assessment accuracy and user experience</li>
               <li>To communicate important updates about your account</li>
+              <li>To protect the service, investigate issues, and comply with legal obligations where applicable</li>
             </Ul>
           </Section>
 
