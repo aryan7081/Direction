@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { QuestionVisual } from '../questionVisualConfig';
 
@@ -10,11 +10,81 @@ type QuestionPromptArtProps = {
 };
 
 /**
- * Compact, question-specific header: soft motion + one-line coaching copy.
- * Respects prefers-reduced-motion (static decor only).
+ * On small screens: one tight row (icon + title + hint), no moving blobs — saves vertical space for answers.
+ * Desktop: larger card; respects prefers-reduced-motion for static decor.
  */
 export function QuestionPromptArt({ visual, questionId }: QuestionPromptArtProps) {
   const reduceMotion = useReducedMotion();
+  const theme = useTheme();
+  const isSmDown = useMediaQuery(theme.breakpoints.down('sm'));
+  const staticDecor = reduceMotion || isSmDown;
+
+  if (isSmDown) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 1.25,
+          mb: { xs: 1.25, sm: 2 },
+          py: { xs: 1, sm: 1.25 },
+          px: { xs: 1.25, sm: 1.5 },
+          borderRadius: 2,
+          background: visual.gradient,
+          border: '1px solid rgba(15,23,42,0.06)',
+          boxShadow: 'none',
+        }}
+      >
+        <Box
+          aria-hidden
+          sx={{
+            width: { xs: 36, sm: 40 },
+            height: { xs: 36, sm: 40 },
+            flexShrink: 0,
+            borderRadius: 1.5,
+            bgcolor: 'rgba(255,255,255,0.9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: { xs: '1.1rem', sm: '1.2rem' },
+            lineHeight: 1,
+            border: '1px solid rgba(255,255,255,0.95)',
+          }}
+        >
+          {visual.icon}
+        </Box>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography
+            sx={{
+              fontSize: '0.62rem',
+              fontWeight: 800,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: visual.accentColor,
+              lineHeight: 1.2,
+              mb: 0.25,
+            }}
+          >
+            {visual.title}
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: { xs: '0.72rem', sm: '0.78rem' },
+              color: '#4b5563',
+              lineHeight: 1.4,
+              fontWeight: 500,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {visual.microHint}
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -29,7 +99,7 @@ export function QuestionPromptArt({ visual, questionId }: QuestionPromptArtProps
         boxShadow: '0 1px 0 rgba(255,255,255,0.6) inset',
       }}
     >
-      {!reduceMotion && (
+      {!staticDecor && (
         <>
           <motion.div
             key={`${questionId}-a`}
@@ -85,7 +155,7 @@ export function QuestionPromptArt({ visual, questionId }: QuestionPromptArtProps
           />
         </>
       )}
-      {reduceMotion && (
+      {staticDecor && (
         <Box
           sx={{
             position: 'absolute',
@@ -125,7 +195,7 @@ export function QuestionPromptArt({ visual, questionId }: QuestionPromptArtProps
             border: '1px solid rgba(255,255,255,0.9)',
           }}
         >
-          {!reduceMotion ? (
+          {!staticDecor ? (
             <motion.span
               key={questionId}
               initial={{ scale: 0.85, opacity: 0 }}

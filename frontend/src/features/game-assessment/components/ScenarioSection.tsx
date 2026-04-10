@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { Box, Button, Typography, Chip } from '@mui/material';
+import { Box, Button, Typography, Chip, useMediaQuery, useTheme } from '@mui/material';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useGameStore } from '../store';
 import type { ScenarioQuestion } from '../types';
@@ -45,6 +45,10 @@ export function ScenarioSection({
 }) {
   const pushEvent = useGameStore((s) => s.pushEvent);
   const reduceMotion = useReducedMotion();
+  const theme = useTheme();
+  const isSmDown = useMediaQuery(theme.breakpoints.down('sm'));
+  /** Fewer / no motion distractions on phones (matches compact QuestionPromptArt). */
+  const calmUi = Boolean(reduceMotion || isSmDown);
   const firstScenarioIntroIndex = useMemo(
     () => questions.findIndex((q) => q.show_scenario_intro_before),
     [questions]
@@ -67,24 +71,24 @@ export function ScenarioSection({
 
   const optionContainerVariants = useMemo(
     () => ({
-      hidden: { opacity: 0 },
+      hidden: { opacity: calmUi ? 1 : 0 },
       show: {
         opacity: 1,
         transition: {
-          staggerChildren: reduceMotion ? 0 : 0.04,
-          delayChildren: reduceMotion ? 0 : 0.03,
+          staggerChildren: calmUi ? 0 : 0.04,
+          delayChildren: calmUi ? 0 : 0.03,
         },
       },
     }),
-    [reduceMotion]
+    [calmUi]
   );
 
   const optionItemVariants = useMemo(
     () => ({
-      hidden: { opacity: 0, y: reduceMotion ? 0 : 5 },
-      show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' as const } },
+      hidden: { opacity: calmUi ? 1 : 0, y: calmUi ? 0 : 5 },
+      show: { opacity: 1, y: 0, transition: { duration: calmUi ? 0 : 0.2, ease: 'easeOut' as const } },
     }),
-    [reduceMotion]
+    [calmUi]
   );
 
   useEffect(() => {
@@ -209,49 +213,85 @@ export function ScenarioSection({
       {milestone ? (
         <motion.div
           key="milestone"
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: calmUi ? 1 : 0, scale: calmUi ? 1 : 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.35 }}
+          exit={{ opacity: 0, scale: calmUi ? 1 : 0.95 }}
+          transition={{ duration: calmUi ? 0.12 : 0.35 }}
         >
-          <Box
-            sx={{
-              textAlign: 'center',
-              py: { xs: 6, sm: 8 },
-              px: 3,
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-            >
-              <Typography sx={{ fontSize: 56, mb: 2 }}>{milestone.emoji}</Typography>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.4rem', sm: '1.6rem' }, color: '#111827', mb: 0.5 }}>
-                {milestone.title}
-              </Typography>
-              <Typography sx={{ color: '#6366f1', fontWeight: 600, fontSize: '0.95rem' }}>
-                {milestone.subtitle}
-              </Typography>
-            </motion.div>
+          <Box sx={{ textAlign: 'center', py: { xs: 4, sm: 8 }, px: 2 }}>
+            {calmUi ? (
+              <>
+                <Typography sx={{ fontSize: { xs: 44, sm: 56 }, mb: 2 }} aria-hidden>
+                  {milestone.emoji}
+                </Typography>
+                <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.35rem', sm: '1.6rem' }, color: '#111827', mb: 0.5 }}>
+                  {milestone.title}
+                </Typography>
+                <Typography sx={{ color: '#6366f1', fontWeight: 600, fontSize: '0.9rem' }}>
+                  {milestone.subtitle}
+                </Typography>
+              </>
+            ) : (
+              <>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                >
+                  <Typography sx={{ fontSize: 56, mb: 2 }} aria-hidden>
+                    {milestone.emoji}
+                  </Typography>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.4rem', sm: '1.6rem' }, color: '#111827', mb: 0.5 }}>
+                    {milestone.title}
+                  </Typography>
+                  <Typography sx={{ color: '#6366f1', fontWeight: 600, fontSize: '0.95rem' }}>
+                    {milestone.subtitle}
+                  </Typography>
+                </motion.div>
+              </>
+            )}
           </Box>
         </motion.div>
       ) : (
         <motion.div
           key={question.id}
-          initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }}
+          initial={{ opacity: 0, y: calmUi ? 0 : 10 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: reduceMotion ? 0 : -12 }}
-          transition={{ duration: reduceMotion ? 0.15 : 0.22, ease: 'easeOut' }}
+          exit={{ opacity: 0, y: calmUi ? 0 : -12 }}
+          transition={{ duration: calmUi ? 0.12 : 0.22, ease: 'easeOut' }}
         >
-          <Box sx={{ bgcolor: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(16px)', borderRadius: 3, border: '1px solid rgba(0,0,0,0.08)', p: { xs: 2.5, sm: 3.5 }, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box
+            sx={{
+              bgcolor: 'rgba(255,255,255,0.98)',
+              backdropFilter: 'blur(16px)',
+              borderRadius: 3,
+              border: '1px solid rgba(0,0,0,0.08)',
+              p: { xs: 2, sm: 3.5 },
+              boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: { xs: 'min(100dvh - 132px, 900px)', sm: 'auto' },
+              maxHeight: { xs: 'calc(100dvh - 120px)', sm: 'none' },
+              overflow: { xs: 'hidden', sm: 'visible' },
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                justifyContent: 'space-between',
+                gap: { xs: 0.5, sm: 0 },
+                mb: { xs: 1, sm: 2 },
+                flexShrink: 0,
+              }}
+            >
               <Chip
                 label={`${current + 1} / ${questions.length}`}
                 size="small"
@@ -259,11 +299,11 @@ export function ScenarioSection({
               />
               <Typography
                 sx={{
-                  fontSize: '0.78rem',
+                  fontSize: { xs: '0.7rem', sm: '0.78rem' },
                   color: '#64748b',
                   fontWeight: 600,
-                  textAlign: 'right',
-                  maxWidth: '58%',
+                  textAlign: { xs: 'left', sm: 'right' },
+                  maxWidth: { xs: '100%', sm: '58%' },
                   lineHeight: 1.35,
                 }}
               >
@@ -275,67 +315,96 @@ export function ScenarioSection({
 
             <Typography
               component="h2"
-              sx={{ fontWeight: 700, fontSize: { xs: '1.15rem', sm: '1.2rem' }, color: '#111827', mb: 3, lineHeight: 1.7 }}
+              sx={{
+                fontWeight: 700,
+                fontSize: { xs: '1.05rem', sm: '1.2rem' },
+                color: '#111827',
+                mb: { xs: 1.25, sm: 3 },
+                lineHeight: 1.55,
+                flexShrink: 0,
+              }}
             >
               {question.prompt}
             </Typography>
 
-            <motion.div
-              key={`options-${question.id}`}
-              variants={optionContainerVariants}
-              initial="hidden"
-              animate="show"
-              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+            <Box
+              sx={{
+                flex: { xs: 1, sm: 'none' },
+                minHeight: 0,
+                overflowY: { xs: 'auto', sm: 'visible' },
+                WebkitOverflowScrolling: 'touch',
+                pb: { xs: 0.5, sm: 0 },
+              }}
             >
-              {question.options.map((opt) => {
-                const likertStep = showLikertIcons ? getLikertStepForOptionText(opt.text) : null;
-                const label = optionLabelForDisplay(opt.text);
-                return (
-                  <motion.div key={opt.id} variants={optionItemVariants} whileHover={reduceMotion ? undefined : { scale: 1.008 }} whileTap={reduceMotion ? undefined : { scale: 0.995 }}>
-                    <Button
-                      variant={selected === opt.id ? 'contained' : 'outlined'}
-                      fullWidth
-                      sx={{
-                        justifyContent: 'flex-start',
-                        textTransform: 'none',
-                        py: { xs: 1.75, sm: 1.5 },
-                        px: 2,
-                        fontSize: { xs: '0.9rem', sm: '0.95rem' },
-                        minHeight: 48,
-                        textAlign: 'left',
-                        borderRadius: 2,
-                        gap: 1.25,
-                        borderColor: selected === opt.id ? undefined : 'rgba(0,0,0,0.1)',
-                        color: selected === opt.id ? '#fff' : '#374151',
-                        ...(selected === opt.id && { background: 'linear-gradient(135deg, #3b82f6, #2563eb)', '&:hover': { background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' } }),
-                        ...(!selected && { '&:hover': { borderColor: '#3b82f6', color: '#2563eb', bgcolor: 'rgba(59,130,246,0.04)' } }),
-                      }}
-                      onClick={() => handleSelect(opt.id)}
-                      disabled={answered}
+              <motion.div
+                key={`options-${question.id}`}
+                variants={optionContainerVariants}
+                initial="hidden"
+                animate="show"
+                style={{ display: 'flex', flexDirection: 'column', gap: isSmDown ? 8 : 12 }}
+              >
+                {question.options.map((opt) => {
+                  const likertStep = showLikertIcons ? getLikertStepForOptionText(opt.text) : null;
+                  const label = optionLabelForDisplay(opt.text);
+                  return (
+                    <motion.div
+                      key={opt.id}
+                      variants={optionItemVariants}
+                      whileHover={calmUi ? undefined : { scale: 1.008 }}
+                      whileTap={calmUi ? undefined : { scale: 0.995 }}
                     >
-                      {likertStep !== null && (
-                        <Box
-                          sx={{
-                            flexShrink: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: 1.25,
-                            bgcolor: selected === opt.id ? 'rgba(255,255,255,0.2)' : '#f5f3ff',
-                            p: 0.25,
-                            lineHeight: 0,
-                          }}
-                          aria-hidden
-                        >
-                          <LikertFaceIcon step={likertStep} maskBaseId={`${question.id}-${opt.id}`} size={28} />
-                        </Box>
-                      )}
-                      {label}
-                    </Button>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
+                      <Button
+                        variant={selected === opt.id ? 'contained' : 'outlined'}
+                        fullWidth
+                        sx={{
+                          justifyContent: 'flex-start',
+                          textTransform: 'none',
+                          py: { xs: 1.25, sm: 1.5 },
+                          px: { xs: 1.5, sm: 2 },
+                          fontSize: { xs: '0.875rem', sm: '0.95rem' },
+                          minHeight: { xs: 46, sm: 48 },
+                          textAlign: 'left',
+                          borderRadius: 2,
+                          gap: { xs: 1, sm: 1.25 },
+                          touchAction: 'manipulation',
+                          WebkitTapHighlightColor: 'transparent',
+                          borderColor: selected === opt.id ? undefined : 'rgba(0,0,0,0.1)',
+                          color: selected === opt.id ? '#fff' : '#374151',
+                          ...(selected === opt.id && {
+                            background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                            '&:hover': { background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' },
+                          }),
+                          ...(!selected && {
+                            '&:hover': { borderColor: '#3b82f6', color: '#2563eb', bgcolor: 'rgba(59,130,246,0.04)' },
+                          }),
+                        }}
+                        onClick={() => handleSelect(opt.id)}
+                        disabled={answered}
+                      >
+                        {likertStep !== null && (
+                          <Box
+                            sx={{
+                              flexShrink: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: 1.25,
+                              bgcolor: selected === opt.id ? 'rgba(255,255,255,0.2)' : '#f5f3ff',
+                              p: 0.25,
+                              lineHeight: 0,
+                            }}
+                            aria-hidden
+                          >
+                            <LikertFaceIcon step={likertStep} maskBaseId={`${question.id}-${opt.id}`} size={isSmDown ? 24 : 28} />
+                          </Box>
+                        )}
+                        {label}
+                      </Button>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            </Box>
           </Box>
         </motion.div>
       )}
