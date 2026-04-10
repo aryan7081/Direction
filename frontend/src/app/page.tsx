@@ -10,6 +10,7 @@ import {
   Typography,
   Container,
   Chip,
+  IconButton,
   Menu,
   MenuItem,
   useMediaQuery,
@@ -306,30 +307,40 @@ export default function LandingPage() {
             {user ? (
               isSmDown ? (
                 <>
-                  <Button
+                  <IconButton
                     id="landing-account-menu-button"
                     onClick={(e) => setAccountMenuEl(e.currentTarget)}
                     aria-label="Open account menu"
                     aria-expanded={accountMenuOpen ? 'true' : undefined}
                     aria-haspopup="true"
                     aria-controls={accountMenuOpen ? 'landing-account-menu' : undefined}
-                    variant="outlined"
-                    size="small"
+                    edge="end"
                     sx={{
                       color: '#374151',
-                      fontWeight: 600,
-                      textTransform: 'none',
-                      fontSize: '0.8rem',
-                      py: 0.75,
-                      px: 1.25,
-                      minHeight: 40,
-                      borderColor: 'rgba(0,0,0,0.15)',
+                      border: '1px solid rgba(0,0,0,0.15)',
                       borderRadius: 2,
+                      width: 40,
+                      height: 40,
                       '&:hover': { borderColor: 'rgba(0,0,0,0.25)', bgcolor: 'rgba(0,0,0,0.03)' },
                     }}
                   >
-                    Menu
-                  </Button>
+                    <Box
+                      component="span"
+                      aria-hidden
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        gap: '5px',
+                        width: 20,
+                        height: 16,
+                      }}
+                    >
+                      <Box sx={{ height: 2, borderRadius: 0.5, bgcolor: 'currentColor', width: '100%' }} />
+                      <Box sx={{ height: 2, borderRadius: 0.5, bgcolor: 'currentColor', width: '100%' }} />
+                      <Box sx={{ height: 2, borderRadius: 0.5, bgcolor: 'currentColor', width: '100%' }} />
+                    </Box>
+                  </IconButton>
                   <Menu
                     id="landing-account-menu"
                     anchorEl={accountMenuEl}
