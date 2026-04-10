@@ -17,6 +17,8 @@ class Career(TimeStampedModel):
 
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
+    # Broad domain (e.g. "Tech & Engineering") — shown before the specific role in reports.
+    category = models.CharField(max_length=120, blank=True)
     description = models.TextField()
     stream = models.CharField(max_length=50)  # Science, Commerce, Arts
     min_education = models.CharField(max_length=100, blank=True)
@@ -29,6 +31,9 @@ class Career(TimeStampedModel):
         default=EducationCostTier.MEDIUM,
     )
     is_active = models.BooleanField(default=True)
+    # If True, seed_data may deactivate this row when its slug is removed from the catalogue.
+    # Admin-created careers should keep this False so they are not auto-retired.
+    managed_by_seed = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
 
     class Meta:

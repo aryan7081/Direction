@@ -21,7 +21,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class AnswerOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnswerOption
-        fields = ("id", "text", "score", "order")
+        fields = ("id", "api_id", "text", "order", "category_weights", "score")
 
 
 class QuestionSerializer(serializers.ModelSerializer):
@@ -30,7 +30,16 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ("id", "text", "category", "order", "answer_options")
+        fields = (
+            "id",
+            "code",
+            "premium_only",
+            "text",
+            "category",
+            "order",
+            "answer_options",
+            "metadata",
+        )
 
 
 class UserResponseInputSerializer(serializers.Serializer):

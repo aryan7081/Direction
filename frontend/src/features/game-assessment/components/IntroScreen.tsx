@@ -7,28 +7,22 @@ import { ButtonSpinner } from '@/components/ui/Loaders';
 
 const GAMES = [
   {
-    icon: '🧩',
-    title: 'Logic Challenge',
-    desc: 'Test your analytical reasoning',
-    tag: '5 puzzles',
-  },
-  {
     icon: '🎯',
-    title: 'Decision Maker',
-    desc: 'Reveal your risk & leadership style',
-    tag: '5 scenarios',
+    title: 'RIASEC interests',
+    desc: 'Scenario-style items map how you like to work — realistic, investigative, artistic, social, enterprising, conventional',
+    tag: '~18 items',
   },
   {
-    icon: '📅',
-    title: 'Weekly Planner',
-    desc: 'Design your ideal week',
-    tag: 'Drag & drop activity',
+    icon: '🧠',
+    title: 'Personality & values',
+    desc: 'Big Five–style traits plus what you care about in study and work (e.g. stability, impact, mastery)',
+    tag: '~9 items',
   },
   {
-    icon: '💬',
-    title: 'Situations',
-    desc: 'Real-life personality scenarios',
-    tag: '10 quick choices',
+    icon: '✨',
+    title: 'Readiness & aptitude',
+    desc: 'How clear you feel about next steps, plus short verbal/numeric/logic taps — not a school exam',
+    tag: '~3 items',
   },
 ];
 
@@ -47,10 +41,18 @@ const CTA_BUTTON_SX = {
   },
 };
 
-export function IntroScreen({ onStart }: { onStart: () => void }) {
+export function IntroScreen({
+  onStart,
+  questionCounts,
+}: {
+  onStart: () => void;
+  questionCounts?: { free: number; premium: number };
+}) {
   const [starting, setStarting] = useState(false);
   const [showStickyCta, setShowStickyCta] = useState(false);
   const inlineCtaRef = useRef<HTMLDivElement>(null);
+
+  const nFree = questionCounts?.free ?? 30;
 
   useEffect(() => {
     const el = inlineCtaRef.current;
@@ -121,7 +123,7 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
                 mb: { xs: 0, sm: 0.75 },
               }}
             >
-              Play 4 quick activities. No exams, no stress — just be yourself.
+              {nFree} questions on interests, work habits, and style — no trick answers.
             </Typography>
             <Typography
               sx={{
@@ -131,7 +133,20 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
                 display: { xs: 'none', sm: 'block' },
               }}
             >
-              We analyze your strengths across 8 career traits.
+              We combine RIASEC interests, Big Five–style personality, career values, readiness, and aptitude
+              into your stream and career matches. Optional premium adds more items later if you want finer detail.
+            </Typography>
+            <Typography
+              sx={{
+                color: '#9ca3af',
+                fontSize: { xs: '0.82rem', sm: '0.85rem' },
+                lineHeight: 1.55,
+                mt: 1,
+                px: { xs: 1, sm: 0 },
+              }}
+            >
+              After you finish, you&apos;ll see your direction. If you want maximum accuracy before big
+              decisions, you can add our premium assessment later — we&apos;ll explain on your results page.
             </Typography>
           </Box>
 
@@ -261,7 +276,7 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
               order: { xs: 5, sm: 4 },
             }}
           >
-            Takes about 10 minutes • Your answers stay private
+            Phase 1 usually takes about 8–15 minutes • Your answers stay private
           </Typography>
 
           {/* 6. TRUST MICROCOPY - order 6 on desktop */}

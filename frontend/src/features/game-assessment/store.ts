@@ -9,6 +9,10 @@ interface GameAssessmentState {
   result: SessionResult | null;
   loading: boolean;
   error: string | null;
+  /** Next scenario question index (0-based); used after save-progress gate or server resume. */
+  scenarioStartIndex: number;
+  /** Answers completed when we showed save progress (for copy + progress bar). */
+  scenarioGateCompletedCount: number;
 
   setSessionId: (id: string) => void;
   setPhase: (phase: GamePhase) => void;
@@ -18,6 +22,8 @@ interface GameAssessmentState {
   setResult: (result: SessionResult) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setScenarioStartIndex: (index: number) => void;
+  setScenarioGateCompletedCount: (n: number) => void;
   reset: () => void;
 }
 
@@ -29,6 +35,8 @@ const initial = {
   result: null,
   loading: false,
   error: null,
+  scenarioStartIndex: 0,
+  scenarioGateCompletedCount: 0,
 };
 
 export const useGameStore = create<GameAssessmentState>((set, get) => ({
@@ -50,5 +58,8 @@ export const useGameStore = create<GameAssessmentState>((set, get) => ({
   setResult: (result) => set({ result }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
+  setScenarioStartIndex: (scenarioStartIndex) => set({ scenarioStartIndex }),
+  setScenarioGateCompletedCount: (scenarioGateCompletedCount) =>
+    set({ scenarioGateCompletedCount }),
   reset: () => set(initial),
 }));

@@ -5,17 +5,31 @@ export interface ReportTeaser {
   session_id: string;
   student_name: string;
   hero_career: string;
+  hero_career_category?: string;
   hero_confidence: string;
   dominant_pattern: string;
+  dominant_pattern_description: string;
+  stream_recommendation: string;
   trait_preview: { label: string; icon: string }[];
-  career_preview: { rank: number; career_name?: string; stream?: string }[];
+  career_preview: { rank: number; career_category?: string; career_name?: string; stream?: string }[];
   top_two_gap?: number;
   total_traits: number;
   total_sections: number;
   is_paid: boolean;
+  /** True when user can open the full report (₹49 report, or ₹99 bundle after extra questions). */
+  report_accessible?: boolean;
+  premium_unlocked?: boolean;
+  premium_extension_complete?: boolean;
+  report_price_inr?: number;
+  premium_bundle_price_inr?: number;
   price?: number;
-  /** Present when session was anonymous; use for password step before payment */
   pending_email?: string;
+  assessment_tier?: 'free' | 'premium';
+  scenario_questions_answered?: number;
+  scenario_questions_expected?: number;
+  profile_depth?: 'overview' | 'full';
+  profile_depth_title?: string;
+  profile_depth_detail?: string;
 }
 
 export interface PaymentOrder {
@@ -37,8 +51,23 @@ export async function fetchCareerReport(sessionId: string): Promise<CareerReport
   return data;
 }
 
-export async function createPaymentOrder(sessionId: string): Promise<PaymentOrder & { is_paid?: boolean }> {
-  const { data } = await api.post('/game/payment/create-order/', { session_id: sessionId });
+export type PaymentProductType = 'report' | 'premium_bundle';
+
+export async function createPaymentOrder(
+  sessionId: string,
+  opts?: { product_type?: PaymentProductType }
+): Promise<
+  PaymentOrder & {
+    is_paid?: boolean;
+    product_type?: PaymentProductType;
+    premium_pending_extension?: boolean;
+    detail?: string;
+  }
+> {
+  const { data } = await api.post('/game/payment/create-order/', {
+    session_id: sessionId,
+    product_type: opts?.product_type ?? 'report',
+  });
   return data;
 }
 

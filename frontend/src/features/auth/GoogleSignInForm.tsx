@@ -8,7 +8,7 @@ import { googleAuth } from './api';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { ButtonSpinner } from '@/components/ui/Loaders';
 
-export function GoogleSignInForm() {
+export function GoogleSignInForm({ buttonWidth = 280 }: { buttonWidth?: number }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/dashboard';
@@ -37,7 +37,7 @@ export function GoogleSignInForm() {
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-      <GoogleSignInButton onSuccess={handleSuccess} text="signin_with" width={280} disabled={loading} />
+      <GoogleSignInButton onSuccess={handleSuccess} text="signin_with" width={buttonWidth} disabled={loading} />
     </Box>
   );
 }

@@ -1,402 +1,538 @@
-# How Career Recommendations Work — Complete Guide
+# Quiz Recommendation Flow
 
-**A beginner-friendly explanation of how our platform recommends careers to users after they complete an assessment.**
+This document explains the **current quiz recommendation flow in code**: what happens when a user starts the quiz, submits answers, how rows are stored, how scores are computed, and how the final career recommendations are ranked.
 
-This document explains everything from the basics to the technical details. No prior knowledge required.
-
----
-
-## Table of Contents
-
-1. [The Big Picture](#1-the-big-picture)
-2. [Two Ways to Get Recommendations](#2-two-ways-to-get-recommendations)
-3. [Path A: Quiz Assessment (MCQ)](#3-path-a-quiz-assessment-mcq)
-4. [Path B: Game Assessment](#4-path-b-game-assessment)
-5. [How We Match Users to Careers](#5-how-we-match-users-to-careers)
-6. [The Data We Use](#6-the-data-we-use)
-7. [Worked Examples](#7-worked-examples)
-8. [Glossary](#8-glossary)
-9. [Technical Reference](#9-technical-reference)
+This file is intentionally focused on the **quiz / MCQ path**. For the game assessment path, see [SCORING_SYSTEM.md](./SCORING_SYSTEM.md).
 
 ---
 
-## 1. The Big Picture
+## 1. Scope
 
-### What happens in simple terms?
+This document describes the logic behind:
 
-1. **User takes an assessment** — Either a quiz (multiple-choice questions) or interactive games
-2. **We collect their responses** — What they chose, how they performed, how long they took
-3. **We compute a "profile"** — A set of scores that describes their interests, strengths, and context
-4. **We compare this profile to 127 careers** — Each career has an "ideal profile"
-5. **We rank careers by fit** — The better the match, the higher the career ranks
-6. **We show the top 5 (quiz) or top 3 (game) careers** — Plus a stream recommendation (Science/Commerce/Arts)
+- `POST /api/assessment/start/`
+- `GET /api/questions/`
+- `POST /api/assessment/<attempt_id>/submit/`
+- `GET /api/assessment/<attempt_id>/result/`
+- `GET /api/recommendations/<attempt_id>/`
 
-### The core idea
+Relevant backend files:
 
-> **Recommendation = How well does the user's profile match each career's ideal profile?**
-
-We don't guess. We use math to measure similarity between:
-- **User profile**: Scores from their assessment
-- **Career profile**: Pre-defined weights for what that career values
-
----
-
-## 2. Two Ways to Get Recommendations
-
-Our platform has **two different assessments**. Each uses different logic:
-
-| Aspect | Quiz Assessment | Game Assessment |
-|--------|-----------------|-----------------|
-| **Format** | Multiple-choice questions (Strongly disagree → Strongly agree) | 4 interactive games |
-| **What we measure** | 7 interest categories (Analytical, Creative, Social, etc.) | 8 traits (Analytical Reasoning, Creativity, Leadership, etc.) |
-| **Profile data used** | Subject marks, financial situation | None (games only) |
-| **Matching method** | Weighted sum (Interest 60% + Academic 25% + Financial 15%) | Cosine similarity (shape of profile) |
-| **Careers returned** | Top 5 | Top 3 |
-| **Stream recommendation** | From top careers or category scores | From top career |
+- `backend/apps/assessments/models.py`
+- `backend/apps/assessments/views.py`
+- `backend/apps/assessments/services.py`
+- `backend/apps/assessments/serializers.py`
+- `backend/apps/recommendations/services.py`
+- `backend/apps/recommendations/views.py`
+- `backend/apps/careers/models.py`
+- `backend/apps/assessments/content/mcq_items.py`
 
 ---
 
-## 3. Path A: Quiz Assessment (MCQ)
+## 2. End-to-End Flow
 
-### 3.1 The Flow (Step by Step)
+The quiz recommendation path is:
 
-```
-User answers ~40 questions
-        ↓
-Each question belongs to a CATEGORY (e.g., Analytical, Creative, Social)
-Each answer has a SCORE (1 = Strongly disagree, 5 = Strongly agree)
-        ↓
-We average scores per category → CATEGORY SCORES (0 to 1)
-        ↓
-We load user's PROFILE (subject marks, financial tier) if they filled it
-        ↓
-For each of 127 careers:
-  - Interest fit: How well do category scores match career's category weights?
-  - Academic fit: How well do subject marks match career's subject importance?
-  - Financial fit: Can user afford this career's education cost?
-        ↓
-Total = Interest×60% + Academic×25% + Financial×15%
-        ↓
-Sort careers by total score, take top 5
-        ↓
-Stream = Primary stream of top career (Science/Commerce/Arts)
+```text
+User opens quiz
+    -> GET /api/questions/
+    -> frontend renders DB-backed questions + answer options
+
+User starts quiz
+    -> POST /api/assessment/start/
+    -> AssessmentAttempt row is created
+
+User submits answers
+    -> POST /api/assessment/<attempt_id>/submit/
+    -> existing UserResponse rows for that attempt are deleted
+    -> new UserResponse rows are inserted
+    -> complete_assessment_flow(attempt) runs
+
+complete_assessment_flow(attempt)
+    -> AssessmentScoringService.save_result()
+    -> WeightedSimilarityEngine.get_recommendations()
+    -> StreamRecommendation.objects.update_or_create(...)
+    -> attempt.is_complete = True
+
+Frontend receives
+    -> category_scores
+    -> stream_recommendation
+    -> top 5 career_recommendations
 ```
 
-### 3.2 Categories (What the Quiz Measures)
+---
 
-Each question is tagged with one of 7 categories:
+## 3. What Gets Stored
 
-| Category | Slug | What it captures |
-|----------|------|------------------|
-| Analytical | analytical | Logical reasoning, problem-solving, puzzles |
-| Creative | creative | Art, design, new ideas, storytelling |
-| Social | social | Helping others, teamwork, empathy |
-| Organizational | organizational | Planning, time management, structure |
-| Technical | technical | Computers, coding, fixing things |
-| Verbal | verbal | Reading, writing, debating |
-| Scientific | scientific | Biology, medicine, health sciences |
+### 3.1 Questions and options
 
-**Example**: "I enjoy solving puzzles and brain teasers" → **Analytical** category
+Quiz content ultimately lives in the database as:
 
-### 3.3 How Category Scores Are Computed
+- `Category`
+- `Question`
+- `AnswerOption`
 
-1. For each question, the user picks an option: 1 (Strongly disagree) to 5 (Strongly agree)
-2. We group responses by category
-3. For each category: **average of all scores in that category ÷ 5** = score from 0 to 1
+The source of truth for the current quiz bank is `backend/apps/assessments/content/mcq_items.py`, which is used by the seed command to populate `Question` and `AnswerOption`.
 
-**Example**:
-- User answers 5 Analytical questions with scores: 5, 4, 5, 3, 4
-- Average = 4.2
-- Normalized = 4.2 / 5 = **0.84** (84% interest in Analytical)
+Important detail: an `AnswerOption` has both:
 
-### 3.4 The Three Factors in Career Matching
+- `score` - legacy numeric score
+- `category_weights` - JSON mapping of category slug to weight
 
-#### Factor 1: Interest (60% weight)
+The current scoring service prefers `category_weights` when present.
 
-**Question**: How well do the user's interests align with what this career values?
+### 3.2 Attempt lifecycle tables
 
-Each career has **category weights**. For example:
-- **Software Engineer**: analytical 0.9, technical 0.9, organizational 0.5
-- **Doctor**: analytical 0.7, social 0.9, scientific 0.95
+When the user starts and completes a quiz, these records are involved:
 
-We use a formula that:
-- Rewards **high user score + high career weight** (e.g., user loves analytical, career needs analytical)
-- Penalizes **low user score + high career weight** (e.g., user dislikes analytical, but career needs it)
-- Treats **neutral (0.5)** as "no strong opinion"
+| Model | What it stores |
+|------|-----------------|
+| `AssessmentAttempt` | One quiz run for one user |
+| `UserResponse` | One selected option per question for that attempt |
+| `AssessmentResult` | Computed category scores, raw score breakdown, question count |
+| `StreamRecommendation` | Primary / secondary / tertiary stream for the attempt |
 
-The result is a number from 0 to 1. Higher = better interest fit.
+### 3.3 Recommendations are mostly computed, not persisted
 
-#### Factor 2: Academic (25% weight)
+There is a `CareerRecommendation` model in `backend/apps/recommendations/models.py`, but the current quiz flow does **not** write to it.
 
-**Question**: Does the user have the right subject strengths for this career?
+Current behavior:
 
-Each career has **subject weights**. For example:
-- **Doctor**: science 0.95, math 0.6, english 0.5
-- **Writer**: english 0.95, creative 0.8
+- `AssessmentResult` is persisted
+- `StreamRecommendation` is persisted
+- career recommendations are **computed on demand** by `WeightedSimilarityEngine`
 
-If the user filled their **subject marks** (math, science, english, social_science) in their profile:
-- We take: (mark/100) × weight for each subject
-- Weighted average = academic fit (0 to 1)
+That means:
 
-If the user **didn't fill marks**: we assume **1.0** (no penalty). We don't punish users for not sharing.
-
-#### Factor 3: Financial (15% weight)
-
-**Question**: Can the user afford the education required for this career?
-
-- **User financial tier**: low / medium / high (from profile)
-- **Career education cost tier**: low / medium / high
-
-We use a lookup table:
-
-| User | Career Cost | Score |
-|------|-------------|-------|
-| Low | Low | 1.0 ✓ |
-| Low | Medium | 0.5 |
-| Low | High | 0.2 ✗ |
-| Medium | Any | 1.0 ✓ |
-| High | Any | 1.0 ✓ |
-
-If the user **didn't share** or chose "Prefer not to say": we assume **1.0** (no penalty).
-
-### 3.5 Final Score per Career
-
-```
-Total = (Interest × 0.60) + (Academic × 0.25) + (Financial × 0.15)
-```
-
-Example: Interest 0.8, Academic 1.0, Financial 1.0  
-→ Total = 0.48 + 0.25 + 0.15 = **0.88** (88% compatibility)
-
-We sort all 127 careers by this total and return the **top 5**.
-
-### 3.6 Stream Recommendation (Quiz Path)
-
-- **Primary stream** = Stream of the #1 recommended career
-- **Secondary** = Stream of #2 career (if different)
-- **Tertiary** = Stream of #3 career (if different)
-
-If no careers matched (edge case), we use category scores to infer stream (e.g., high scientific → Science).
+- `POST /api/assessment/<attempt_id>/submit/` computes recommendations and returns them
+- `GET /api/assessment/<attempt_id>/result/` computes recommendations again from stored result data
+- `GET /api/recommendations/<attempt_id>/` also computes them on the fly
 
 ---
 
-## 4. Path B: Game Assessment
+## 4. API Flow In Detail
 
-### 4.1 The Flow (Step by Step)
+### 4.1 `GET /api/questions/`
 
-```
-User plays 4 games: Logic, Risk, Planner, Scenario
-        ↓
-Each game produces SIGNALS (e.g., accuracy, speed, choices)
-        ↓
-Signals are merged into 8 TRAIT SCORES (0 to 1 raw)
-        ↓
-Raw scores × 10 = NORMALIZED scores (0 to 10 scale)
-        ↓
-For each career: COSINE SIMILARITY between user traits and career trait weights
-        ↓
-Sort careers by similarity, take top 3
-        ↓
-Stream = Stream of #1 career
+`QuestionListView` returns active questions from the DB:
+
+- ordered by `Question.order`
+- includes `category`
+- includes `answer_options`
+- includes `metadata`
+
+The serializer exposed to the frontend returns each answer option with:
+
+- `id`
+- `text`
+- `order`
+
+The frontend submits back only the chosen `answer_option_id`; it does not compute recommendation math itself.
+
+### 4.2 `POST /api/assessment/start/`
+
+`StartAssessmentView` creates:
+
+- one `AssessmentAttempt(user=request.user)`
+
+and returns:
+
+```json
+{
+  "attempt_id": 123,
+  "message": "Assessment started"
+}
 ```
 
-### 4.2 The 8 Traits
+### 4.3 `POST /api/assessment/<attempt_id>/submit/`
 
-| # | Trait | What it measures |
-|---|-------|------------------|
-| 1 | Analytical Reasoning | Logic, pattern recognition |
-| 2 | Quantitative Comfort | Comfort with numbers, math |
-| 3 | Creativity & Innovation | Original thinking, artistic expression |
-| 4 | Verbal & Communication | Language, expression |
-| 5 | Social Orientation | People focus, collaboration |
-| 6 | Leadership Drive | Taking charge, influence |
-| 7 | Risk Appetite | Comfort with uncertainty |
-| 8 | Structure & Discipline | Organization, planning |
+Expected payload:
 
-### 4.3 How Trait Scores Are Computed
-
-**Formula**: `Trait = (Game Signal × 0.6) + (Scenario Signal × 0.4)`
-
-- **Games (60%)**: Logic game → Analytical, Quantitative; Risk game → Risk, Leadership; Planner → Structure, Social
-- **Scenarios (40%)**: 10 situational questions, each option has trait weights
-
-If a trait has only game OR only scenario data, we use whichever exists. If neither, score = 0.
-
-### 4.4 Cosine Similarity (The Matching Method)
-
-**Simple explanation**: We compare the *shape* of two profiles, not the size.
-
-Imagine two arrows in space:
-- **User arrow**: [7, 8, 3, 5, 2, 4, 6, 7] (8 trait scores)
-- **Career arrow**: [0.9, 0.8, 0.3, 0.5, 0.2, 0.4, 0.6, 0.7] (career's ideal weights)
-
-**Cosine similarity** = How much do these arrows point in the same direction?
-
-- Same direction (user strong where career needs strong) → **High score (up to 1.0)**
-- Opposite direction (user weak where career needs strong) → **Low score (near 0)**
-
-**Formula**:
+```json
+{
+  "responses": [
+    { "question_id": 1, "answer_option_id": 4 },
+    { "question_id": 2, "answer_option_id": 10 }
+  ]
+}
 ```
-similarity = (user·career) / (|user| × |career|)
+
+`SubmitAssessmentView` does the following:
+
+1. Verifies the attempt belongs to the authenticated user and is not already complete.
+2. Validates the request with `SubmitAssessmentSerializer`.
+3. Deletes all prior `UserResponse` rows for that attempt.
+4. Re-inserts one `UserResponse` row per submitted answer.
+5. Calls `complete_assessment_flow(attempt)`.
+6. Returns the scored result payload.
+
+Because the view deletes and recreates responses, submission behaves like "replace the full answer set for this attempt".
+
+---
+
+## 5. How Quiz Scores Are Computed
+
+The scoring entrypoint is `AssessmentScoringService.save_result()`.
+
+It performs two related computations:
+
+- `compute_scores()` -> normalized category scores
+- `get_raw_scores()` -> raw per-category sums / counts / averages
+
+### 5.1 Response loading
+
+The service loads all `UserResponse` rows for the attempt and joins:
+
+- `question`
+- `answer_option`
+- `question__category`
+
+### 5.2 Category scoring logic
+
+For each response:
+
+1. Read `answer_option.category_weights`.
+2. If `category_weights` exists, use that mapping.
+3. If not, fall back to:
+   - `question.category_id`
+   - `answer_option.score`
+
+So the current quiz is not just "question belongs to one category and option has one score". It supports multi-category contribution per selected option.
+
+### 5.3 Exact normalization rule
+
+For each category:
+
+1. Sum all contributed values for that category
+2. Count how many contributions were added
+3. Compute average = `total / count`
+4. Normalize to 0-1 with:
+
+```text
+normalized = min(1.0, average / 5.0)
 ```
-Where · is dot product and | | is vector length.
 
-**Why this method?** It focuses on *proportional fit*. A user who is [high analytical, low social] matches a career that values [high analytical, low social] — even if the user's raw numbers are different from another user.
+The result is stored in `AssessmentResult.category_scores` as JSON using **stringified category IDs** as keys.
 
-### 4.5 Stream Recommendation (Game Path)
+Example shape:
 
-Primary stream = Stream of the top-ranked career (e.g., Software Engineer → Science).
+```json
+{
+  "1": 0.84,
+  "2": 0.56,
+  "5": 0.92
+}
+```
 
----
+### 5.4 Raw score storage
 
-## 5. How We Match Users to Careers
+`AssessmentResult.raw_scores` stores debugging-style aggregates per category:
 
-### 5.1 Career Profiles (Pre-defined)
+```json
+{
+  "1": {
+    "sum": 21.0,
+    "count": 5,
+    "avg": 4.2
+  }
+}
+```
 
-Every career in our database has:
+This is useful because the normalized score alone does not tell you how it was built.
 
-| Data | Used in Quiz? | Used in Game? |
-|------|---------------|---------------|
-| **Category weights** (analytical, creative, etc.) | ✓ | ✗ |
-| **Subject weights** (math, science, english, social_science) | ✓ | ✗ |
-| **Education cost tier** (low/medium/high) | ✓ | ✗ |
-| **Trait weights** (8 traits, 0–1 each) | ✗ | ✓ |
-| **Stream** (Science/Commerce/Arts) | ✓ | ✓ |
+### 5.5 Persisted result row
 
-### 5.2 Why Two Different Systems?
+`save_result()` uses `AssessmentResult.objects.update_or_create(...)`, so the result is overwritten if the same attempt is rescored.
 
-- **Quiz** uses categories (broader interest areas) + profile data (marks, finances). Good for students who have academic context.
-- **Game** uses traits (behavioral/aptitude) from gameplay. Good for users who prefer interactive assessment and may not have filled a profile.
+Stored fields:
 
-Both paths recommend from the same **127 careers**. The matching logic differs, but the career pool is shared.
-
----
-
-## 6. The Data We Use
-
-### 6.1 From the Assessment
-
-| Source | Quiz | Game |
-|--------|------|------|
-| Question responses (1–5) | ✓ | ✗ |
-| Game events (answers, time, choices) | ✗ | ✓ |
-
-### 6.2 From the User Profile (Optional)
-
-| Field | Used for |
-|-------|----------|
-| **subject_marks** | Academic fit (e.g., {math: 85, science: 82}) |
-| **financial_tier** | Financial fit (low/medium/high) |
-
-If not provided, we assume best case (no penalty).
-
-### 6.3 From the Database
-
-| Table | Purpose |
-|-------|---------|
-| **Career** | 127 careers with name, stream, cost tier |
-| **CareerCategoryWeight** | Which categories each career values (quiz) |
-| **CareerSubjectWeight** | Which subjects each career needs (quiz) |
-| **GameCareerTraitWeight** | Which traits each career values (game) |
+- `attempt`
+- `category_scores`
+- `raw_scores`
+- `total_questions_answered`
 
 ---
 
-## 7. Worked Examples
+## 6. How Careers Are Ranked
 
-### Example 1: Quiz — High Analytical, Low Social User
+Career ranking is done by `WeightedSimilarityEngine.get_recommendations(attempt, top_n=5)`.
 
-**User's category scores**: Analytical 0.9, Creative 0.4, Social 0.3, Technical 0.85, ...
+The engine reads:
 
-**Software Engineer** (weights: analytical 0.9, technical 0.9):
-- User strong in analytical ✓, strong in technical ✓ → High interest score
+- `AssessmentResult.category_scores`
+- `attempt.user.profile.subject_marks` if available
+- `attempt.user.profile.financial_tier` if available
+- all active `Career` rows
+- related `CareerCategoryWeight`
+- related `CareerSubjectWeight`
 
-**Psychologist** (weights: social 0.95, verbal 0.7):
-- User weak in social ✗ → Low interest score
+For every active career, it computes:
 
-**Result**: Software Engineer ranks much higher than Psychologist.
+```text
+total = interest * 0.60 + academic * 0.25 + financial * 0.15
+```
 
-### Example 2: Quiz — Low Financial Tier User
+Then it sorts descending and returns the top 5.
 
-**User**: financial_tier = "low"
+### 6.1 Interest compatibility (60%)
 
-**Doctor** (education_cost_tier = "high"): Financial score = 0.2 (poor fit)
+This is the most important factor.
 
-**Accountant** (education_cost_tier = "low"): Financial score = 1.0 (good fit)
+The engine compares the user's category scores against the career's `CareerCategoryWeight` rows.
 
-Even if interest in Doctor is high, the financial factor pulls the total down. Accountant may rank higher.
+Important implementation details:
 
-### Example 3: Game — Cosine Similarity
+- category score keys are looked up by **category ID as string**
+- if the user has no score for a category, the engine uses `0.5` as neutral
+- careers with no category weights are skipped
 
-**User traits** (0–10): [8, 7, 2, 4, 3, 5, 6, 7]  
-(High analytical, quantitative; low creativity, social)
+The current method is **not plain cosine similarity**. It uses a custom weighted formula designed to:
 
-**Data Scientist** weights: [0.9, 0.9, 0.5, 0.4, 0.2, 0.3, 0.4, 0.7]  
-→ Vectors point in similar direction → High cosine similarity
+- reward high user interest where the career has high weight
+- penalize low user interest where the career has high weight
+- treat `0.5` as neutral
+- break ties among very flat response patterns
 
-**Fashion Designer** weights: [0.3, 0.2, 0.95, 0.5, 0.5, 0.5, 0.5, 0.4]  
-→ User weak in creativity, career needs high creativity → Low cosine similarity
+Core idea:
 
-**Result**: Data Scientist ranks higher.
+```text
+weighted_sum += career_weight * (user_score - 0.5)
+```
+
+That weighted sum is then normalized into 0-1 using:
+
+```text
+raw_min = -0.3 * weight_sum
+raw_max = 0.5 * weight_sum
+base = (weighted_sum - raw_min) / (raw_max - raw_min)
+```
+
+Then a small 1% tie-breaker is blended in:
+
+- if the base score is very low, lighter careers are favored
+- if the base score is very high, heavier careers are favored
+- otherwise a dot-product-style signal is used
+
+Final interest score:
+
+```text
+interest = clamp(base * 0.99 + tie_break * 0.01, 0, 1)
+```
+
+This custom logic exists because a simpler similarity metric did not distinguish well enough between "all disagree" and "all agree" response patterns.
+
+### 6.2 Academic compatibility (25%)
+
+This uses:
+
+- `Profile.subject_marks`
+- `CareerSubjectWeight`
+
+Supported subject keys are whatever careers use in `subject_slug`, currently intended for values like:
+
+- `math`
+- `science`
+- `english`
+- `social_science`
+
+Rules:
+
+- if the user has **no subject marks at all**, academic score = `1.0`
+- if the career has **no subject weights**, academic score = `1.0`
+- if some subjects are missing from the user's marks, that missing subject defaults to `50`
+
+Formula:
+
+```text
+academic = sum((mark / 100) * weight) / sum(weight)
+```
+
+So academic fit is a weighted average of normalized marks.
+
+### 6.3 Financial compatibility (15%)
+
+This uses:
+
+- `Profile.financial_tier`
+- `Career.education_cost_tier`
+
+If the user has no financial tier, the score is `1.0`.
+
+If the user selected `prefer_not`, the code converts that to empty and also treats it as `1.0`.
+
+Current matrix:
+
+| User tier | Career cost | Score |
+|-----------|-------------|-------|
+| low | low | 1.0 |
+| low | medium | 0.5 |
+| low | high | 0.2 |
+| medium | low | 1.0 |
+| medium | medium | 1.0 |
+| medium | high | 0.6 |
+| high | low | 1.0 |
+| high | medium | 1.0 |
+| high | high | 1.0 |
+
+### 6.4 Final returned recommendation shape
+
+Each returned item looks like:
+
+```json
+{
+  "career_id": 17,
+  "career_name": "Software Engineer",
+  "career_slug": "software-engineer",
+  "stream": "Science",
+  "compatibility_score": 0.88,
+  "compatibility_percent": 88.0
+}
+```
+
+Notes:
+
+- `compatibility_score` is rounded to 2 decimals
+- `compatibility_percent` is `score * 100`, capped at `100`
 
 ---
 
-## 8. Glossary
+## 7. Stream Recommendation
 
-| Term | Meaning |
-|------|---------|
-| **Category** | An interest area in the quiz (Analytical, Creative, Social, etc.) |
-| **Category score** | User's average interest in a category (0–1) |
-| **Career weight** | How important a category/subject/trait is for a career (0–1) |
-| **Cosine similarity** | A measure of how similar two vectors are in direction (0–1) |
-| **Education cost tier** | low / medium / high — how expensive is the education for this career? |
-| **Financial tier** | User's self-reported affordability (low / medium / high) |
-| **Stream** | Academic stream: Science, Commerce, or Arts |
-| **Subject marks** | User's grades in math, science, english, social_science (0–100) |
-| **Trait** | A behavioral/aptitude dimension in the game (e.g., Analytical Reasoning) |
-| **Trait score** | User's score on a trait (0–10 in game path) |
+After career recommendations are computed, `complete_assessment_flow()` derives streams from the ranked careers.
 
----
+Current behavior:
 
-## 9. Technical Reference
+1. Walk the top career recommendations in rank order
+2. Collect unique stream names
+3. Use the first three unique streams as:
+   - `primary`
+   - `secondary`
+   - `tertiary`
 
-### 9.1 Key Files
+If no career recommendations are returned, the code falls back to `StreamRecommendationService`, which maps category slugs into broad stream buckets:
 
-| File | Purpose |
-|------|---------|
-| `backend/apps/assessments/services.py` | Quiz scoring, `complete_assessment_flow()` |
-| `backend/apps/recommendations/services.py` | `WeightedSimilarityEngine` (quiz career matching) |
-| `backend/apps/game_assessment/services/__init__.py` | `run_scoring_pipeline()` (game flow) |
-| `backend/apps/game_assessment/services/career_matcher.py` | Cosine similarity (game career matching) |
-| `backend/apps/game_assessment/services/trait_calculator.py` | Trait score calculation from game signals |
+- `Science`
+- `Commerce`
+- `Arts`
 
-### 9.2 API Endpoints
+That fallback is based on keyword matching in category slugs.
 
-| Endpoint | When | Returns |
-|----------|------|---------|
-| `POST /api/assessments/{id}/complete/` | User finishes quiz | Career recs + stream |
-| `GET /api/recommendations/{attempt_id}/` | Fetch recs for completed quiz | Top 5 careers |
-| `POST /api/game/submit/` | User finishes games | Trait scores + top 3 careers |
-
-### 9.3 Database Models
-
-| Model | Stores |
-|-------|--------|
-| `AssessmentAttempt` | Quiz attempt (user, completion status) |
-| `AssessmentResult` | Category scores from quiz |
-| `UserResponse` | Each question → answer mapping |
-| `StreamRecommendation` | Primary/secondary/tertiary stream |
-| `GameSession` | Game assessment session |
-| `TraitScore` | 8 trait scores per game session |
-| `CareerMatchScore` | Career + score + rank per game session |
+The final stream recommendation is persisted in `StreamRecommendation`.
 
 ---
 
-## Summary
+## 8. What `complete_assessment_flow()` Actually Does
 
-1. **Quiz path**: Category scores + profile (marks, finances) → Weighted sum (60% interest, 25% academic, 15% financial) → Top 5 careers
-2. **Game path**: 8 trait scores from games → Cosine similarity vs career trait weights → Top 3 careers
-3. **Stream**: Derived from top career(s) in both paths
-4. **No guessing**: All recommendations are computed from user data and pre-defined career profiles
-5. **Graceful fallbacks**: Missing profile data = no penalty (assume best case)
+`complete_assessment_flow(attempt)` orchestrates the full quiz completion sequence:
 
-For more detail on the game assessment (events, parsers, trait calculation), see [SCORING_SYSTEM.md](./SCORING_SYSTEM.md).
+1. Score the attempt with `AssessmentScoringService`
+2. Persist / update `AssessmentResult`
+3. Compute top 5 careers with `WeightedSimilarityEngine`
+4. Derive stream recommendation from those careers
+5. Persist / update `StreamRecommendation`
+6. Mark the attempt complete:
+   - `attempt.is_complete = True`
+   - `attempt.completed_at = timezone.now()`
+7. Return the response payload
+
+Returned shape:
+
+```json
+{
+  "result_id": 55,
+  "category_scores": { "1": 0.84, "2": 0.56 },
+  "stream_recommendation": {
+    "primary": "Science",
+    "secondary": "Commerce",
+    "tertiary": "Arts",
+    "scores": {
+      "Science": 1.0,
+      "Commerce": 0.5,
+      "Arts": 0.25
+    }
+  },
+  "career_recommendations": [
+    {
+      "career_id": 17,
+      "career_name": "Software Engineer",
+      "career_slug": "software-engineer",
+      "stream": "Science",
+      "compatibility_score": 0.88,
+      "compatibility_percent": 88.0
+    }
+  ]
+}
+```
+
+---
+
+## 9. Important Behaviors And Edge Cases
+
+### 9.1 Re-submitting an incomplete attempt overwrites responses
+
+Because `SubmitAssessmentView` deletes old `UserResponse` rows before inserting new ones, the stored answer set for an incomplete attempt is replaced on each submit.
+
+### 9.2 Missing profile data does not penalize the student
+
+The current engine is intentionally forgiving:
+
+- no subject marks -> academic = `1.0`
+- no financial tier -> financial = `1.0`
+- `financial_tier = prefer_not` -> financial = `1.0`
+
+### 9.3 Missing category scores default to neutral
+
+If a career expects a category the user has no stored score for, the engine uses `0.5`, not `0`.
+
+### 9.4 Recommendation rows are not cached per attempt
+
+The `CareerRecommendation` model exists, but the current request flow does not persist top-5 quiz recommendations there.
+
+### 9.5 Category score keys are IDs, not slugs
+
+`AssessmentResult.category_scores` stores category IDs as string keys. The recommendation engine therefore matches careers by `category_id`, not by category slug.
+
+---
+
+## 10. Practical Trace For One Quiz Submission
+
+If you want to trace a real request in code, follow this order:
+
+1. `backend/apps/assessments/views.py`
+   `SubmitAssessmentView.post()`
+2. `backend/apps/assessments/services.py`
+   `complete_assessment_flow()`
+3. `backend/apps/assessments/services.py`
+   `AssessmentScoringService.compute_scores()`
+4. `backend/apps/recommendations/services.py`
+   `WeightedSimilarityEngine.get_recommendations()`
+5. `backend/apps/recommendations/services.py`
+   `_interest_compatibility()`
+6. `backend/apps/recommendations/services.py`
+   `_academic_compatibility()`
+7. `backend/apps/recommendations/services.py`
+   `_financial_compatibility()`
+
+---
+
+## 11. Short Summary
+
+When a user submits the quiz:
+
+1. their selected options are stored in `UserResponse`
+2. those responses are converted into normalized category scores in `AssessmentResult`
+3. the system loads every active career and scores it across:
+   - interest fit
+   - academic fit
+   - financial fit
+4. the final score is:
+
+```text
+0.60 * interest + 0.25 * academic + 0.15 * financial
+```
+
+5. the top 5 careers are returned
+6. stream recommendation is derived from those top careers
+7. the attempt is marked complete
+
+For the interactive game recommendation path, see [SCORING_SYSTEM.md](./SCORING_SYSTEM.md).

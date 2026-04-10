@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   getQuestions,
   startAssessment,
@@ -17,10 +17,19 @@ import {
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageLoader, ButtonSpinner } from '@/components/ui/Loaders';
+import { optionLabelForDisplay } from '@/lib/optionLabelDisplay';
 import type { Question } from '@/types';
+
+function humanizeUnderscore(s: string) {
+  return s
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
 
 export function AssessmentPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [attemptId, setAttemptId] = useState<number | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -31,6 +40,13 @@ export function AssessmentPage() {
     queryKey: ['questions'],
     queryFn: getQuestions,
   });
+
+  useEffect(() => {
+    const raw = searchParams.get('attempt');
+    if (!raw) return;
+    const id = parseInt(raw, 10);
+    if (!Number.isNaN(id) && id > 0) setAttemptId(id);
+  }, [searchParams]);
 
   const startMutation = useMutation({
     mutationFn: startAssessment,
@@ -53,8 +69,11 @@ export function AssessmentPage() {
   });
 
   const handleStart = () => {
-    if (!attemptId) startMutation.mutate();
-    else setStarted(true);
+    if (attemptId) {
+      setStarted(true);
+      return;
+    }
+    startMutation.mutate();
   };
 
   const handleSelect = (qId: number, optId: number) => {
@@ -253,20 +272,44 @@ export function AssessmentPage() {
                 boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
               }}
             >
-              {currentQ.category?.name && (
-                <Typography
-                  sx={{
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    color: '#16a34a',
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.5,
-                    mb: 1,
-                  }}
-                >
-                  {currentQ.category.name}
-                </Typography>
-              )}
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5, alignItems: 'center' }}>
+                {currentQ.category?.name && (
+                  <Chip
+                    label={currentQ.category.name}
+                    size="small"
+                    sx={{
+                      fontWeight: 700,
+                      bgcolor: 'rgba(22,163,74,0.12)',
+                      color: '#15803d',
+                      border: '1px solid rgba(22,163,74,0.25)',
+                    }}
+                  />
+                )}
+                {currentQ.metadata?.code && (
+                  <Chip
+                    label={currentQ.metadata.code}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontWeight: 600, color: '#6b7280', borderColor: 'rgba(0,0,0,0.15)' }}
+                  />
+                )}
+                {currentQ.metadata?.format && (
+                  <Chip
+                    label={humanizeUnderscore(currentQ.metadata.format)}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontWeight: 500, color: '#6b7280', borderColor: 'rgba(0,0,0,0.12)' }}
+                  />
+                )}
+                {currentQ.metadata?.context && (
+                  <Chip
+                    label={humanizeUnderscore(currentQ.metadata.context)}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontWeight: 500, color: '#6b7280', borderColor: 'rgba(0,0,0,0.12)' }}
+                  />
+                )}
+              </Box>
               <Typography
                 sx={{
                   fontWeight: 700,
@@ -281,7 +324,7 @@ export function AssessmentPage() {
 
               {/* Answer options */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                {options.map((opt, idx) => {
+                {options.map((opt) => {
                   const isSelected = responses[currentQ.id] === opt.id;
                   return (
                     <Box
@@ -309,35 +352,16 @@ export function AssessmentPage() {
                         },
                       }}
                     >
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-                        <Box
-                          sx={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: '50%',
-                            flexShrink: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 700,
-                            fontSize: '0.85rem',
-                            bgcolor: isSelected ? '#16a34a' : 'rgba(0,0,0,0.06)',
-                            color: isSelected ? '#fff' : '#6b7280',
-                          }}
-                        >
-                          {String.fromCharCode(65 + idx)}
-                        </Box>
-                        <Typography
-                          sx={{
-                            fontWeight: isSelected ? 600 : 500,
-                            fontSize: '1rem',
-                            color: isSelected ? '#111827' : '#374151',
-                            lineHeight: 1.5,
-                          }}
-                        >
-                          {opt.text}
-                        </Typography>
-                      </Box>
+                      <Typography
+                        sx={{
+                          fontWeight: isSelected ? 600 : 500,
+                          fontSize: '1rem',
+                          color: isSelected ? '#111827' : '#374151',
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {optionLabelForDisplay(opt.text)}
+                      </Typography>
                     </Box>
                   );
                 })}

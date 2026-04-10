@@ -4,31 +4,30 @@ import { Box, LinearProgress, Typography, Chip } from '@mui/material';
 import { motion } from 'framer-motion';
 import type { GamePhase } from '../types';
 
-const ACTIVE_PHASES: GamePhase[] = ['logic', 'risk', 'planner', 'scenario'];
+const ACTIVE_PHASES: GamePhase[] = ['scenario'];
 
 const GAME_LABELS: Record<string, string> = {
-  logic: 'Logic Challenge',
-  save_progress: 'Save Progress',
-  risk: 'Decision Maker',
-  planner: 'Weekly Planner',
-  scenario: 'Situations',
+  logic: 'Assessment',
+  save_progress: 'Assessment',
+  risk: 'Assessment',
+  planner: 'Assessment',
+  scenario: 'Career assessment',
   processing: 'Analyzing...',
 };
-
-const STEP_LABELS: { phase: GamePhase; label: string }[] = [
-  { phase: 'logic', label: 'Logic' },
-  { phase: 'risk', label: 'Risk' },
-  { phase: 'planner', label: 'Planner' },
-  { phase: 'scenario', label: 'Scenarios' },
-];
 
 export function GameProgressBar({
   phase,
   subProgress,
+  scenarioQuestionTotal = 30,
 }: {
   phase: GamePhase;
   subProgress: number;
+  /** Total scenario questions for this assessment tier (shown in the step chip). */
+  scenarioQuestionTotal?: number;
 }) {
+  const stepLabels: { phase: GamePhase; label: string }[] = [
+    { phase: 'scenario', label: `${scenarioQuestionTotal} questions` },
+  ];
   const phaseIdx = ACTIVE_PHASES.indexOf(phase as GamePhase);
   const totalPhases = ACTIVE_PHASES.length;
 
@@ -36,7 +35,7 @@ export function GameProgressBar({
   if (phase === 'processing') {
     overall = 100;
   } else if (phase === 'save_progress') {
-    overall = (1 / totalPhases) * 100;
+    overall = subProgress * 100;
   } else if (phaseIdx >= 0) {
     overall = ((phaseIdx + subProgress) / totalPhases) * 100;
   } else {
@@ -74,7 +73,7 @@ export function GameProgressBar({
       </motion.div>
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1.5 }}>
-        {STEP_LABELS.map((step, i) => {
+        {stepLabels.map((step, i) => {
           const stepIdx = ACTIVE_PHASES.indexOf(step.phase);
           const isDone = phaseIdx > stepIdx || phase === 'processing';
           const isCurrent = phaseIdx === stepIdx && phase !== 'processing';

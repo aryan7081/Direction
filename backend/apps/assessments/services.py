@@ -28,24 +28,32 @@ class AssessmentScoringService:
             "question", "answer_option", "question__category"
         )
 
-        category_raw: Dict[int, List[int]] = {}
+        slug_to_id = dict(Category.objects.values_list("slug", "id"))
+        totals: Dict[int, float] = {}
+        counts: Dict[int, int] = {}
+
         for r in responses:
+            opt = r.answer_option
+            weights = opt.category_weights or {}
+            if weights:
+                for slug, val in weights.items():
+                    cid = slug_to_id.get(slug)
+                    if cid is None:
+                        continue
+                    totals[cid] = totals.get(cid, 0.0) + float(val)
+                    counts[cid] = counts.get(cid, 0) + 1
+                continue
             cid = r.question.category_id
-            if cid not in category_raw:
-                category_raw[cid] = []
-            category_raw[cid].append(r.answer_option.score)
+            totals[cid] = totals.get(cid, 0.0) + float(opt.score)
+            counts[cid] = counts.get(cid, 0) + 1
 
         category_scores: Dict[int, float] = {}
-        categories = Category.objects.filter(id__in=category_raw.keys())
-
-        for cat in categories:
-            raw = category_raw.get(cat.id, [])
-            if not raw:
-                continue
-            avg = sum(raw) / len(raw)
-            max_possible = 5
+        max_possible = 5.0
+        for cid, total in totals.items():
+            n = counts.get(cid, 1)
+            avg = total / n
             normalized = min(1.0, avg / max_possible)
-            category_scores[cat.id] = round(normalized, 4)
+            category_scores[cid] = round(normalized, 4)
 
         return category_scores
 
@@ -55,19 +63,32 @@ class AssessmentScoringService:
             "question", "answer_option", "question__category"
         )
 
+        slug_to_id = dict(Category.objects.values_list("slug", "id"))
         category_data: Dict[int, Dict] = {}
         for r in responses:
+            opt = r.answer_option
+            weights = opt.category_weights or {}
+            if weights:
+                for slug, val in weights.items():
+                    cid = slug_to_id.get(slug)
+                    if cid is None:
+                        continue
+                    if cid not in category_data:
+                        category_data[cid] = {"scores": [], "count": 0}
+                    category_data[cid]["scores"].append(float(val))
+                    category_data[cid]["count"] += 1
+                continue
             cid = r.question.category_id
             if cid not in category_data:
                 category_data[cid] = {"scores": [], "count": 0}
-            category_data[cid]["scores"].append(r.answer_option.score)
+            category_data[cid]["scores"].append(float(opt.score))
             category_data[cid]["count"] += 1
 
         result = {}
         for cid, data in category_data.items():
             scores = data["scores"]
             result[cid] = {
-                "sum": sum(scores),
+                "sum": round(sum(scores), 2),
                 "count": len(scores),
                 "avg": round(sum(scores) / len(scores), 2) if scores else 0,
             }
@@ -95,9 +116,10 @@ class StreamRecommendationService:
     """Service for computing stream recommendation from category scores."""
 
     STREAM_CATEGORY_MAP = {
-        "Science": ["analytical", "logical", "mathematical", "scientific"],
-        "Commerce": ["organizational", "numerical", "business", "administrative"],
-        "Arts": ["creative", "verbal", "artistic", "social"],
+        "Science": ["riasec_investigative", "riasec_realistic", "trait_curiosity"],
+        "Commerce": ["riasec_enterprising", "riasec_conventional", "trait_planning"],
+        "Arts": ["riasec_artistic", "riasec_social", "trait_empathy_teamwork",
+                 "personality_extroversion"],
     }
 
     def __init__(self, category_scores: Dict[int, float], category_slugs: Dict[int, str]):

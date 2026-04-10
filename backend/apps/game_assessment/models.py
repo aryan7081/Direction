@@ -28,6 +28,10 @@ GAME_CHOICES = [
 
 
 class GameSession(TimeStampedModel):
+    class AssessmentTier(models.TextChoices):
+        FREE = "free", "Free overview"
+        PREMIUM = "premium", "Full profile"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -40,6 +44,20 @@ class GameSession(TimeStampedModel):
     completed_at = models.DateTimeField(null=True, blank=True)
     is_complete = models.BooleanField(default=False)
     pending_email = models.EmailField(blank=True)
+    assessment_tier = models.CharField(
+        max_length=20,
+        choices=AssessmentTier.choices,
+        default=AssessmentTier.FREE,
+        db_index=True,
+    )
+    premium_unlocked = models.BooleanField(
+        default=False,
+        help_text="True after ₹99 premium bundle payment (before extra questions).",
+    )
+    premium_extension_complete = models.BooleanField(
+        default=False,
+        help_text="True after user completes premium-only questions and rescoring.",
+    )
 
     class Meta:
         ordering = ["-started_at"]
@@ -130,7 +148,11 @@ PAYMENT_STATUS_CHOICES = [
 
 
 class ReportOrder(TimeStampedModel):
-    """Tracks payment for a career report."""
+    """Tracks payment for a career report or premium bundle."""
+
+    class ProductType(models.TextChoices):
+        REPORT = "report", "Career report (Phase 1)"
+        PREMIUM_BUNDLE = "premium_bundle", "Premium extension + report"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
@@ -143,7 +165,13 @@ class ReportOrder(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name="report_orders",
     )
-    amount = models.PositiveIntegerField(default=299, help_text="Amount in INR")
+    amount = models.PositiveIntegerField(default=49, help_text="Amount in INR")
+    product_type = models.CharField(
+        max_length=20,
+        choices=ProductType.choices,
+        default=ProductType.REPORT,
+        db_index=True,
+    )
     status = models.CharField(
         max_length=10, choices=PAYMENT_STATUS_CHOICES, default="pending"
     )

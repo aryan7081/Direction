@@ -15,17 +15,17 @@ import { Box, Button, Chip, Container, LinearProgress, Typography } from '@mui/m
 import { motion } from 'framer-motion';
 
 const PHASE_LABELS: Record<string, string> = {
-  logic: 'Logic Challenge',
-  risk: 'Decision Maker',
-  planner: 'Weekly Planner',
-  scenario: 'Situations',
-  processing: 'Ready to Submit',
+  logic: 'Assessment',
+  risk: 'Assessment',
+  planner: 'Assessment',
+  scenario: 'Career questionnaire',
+  processing: 'Analyzing',
 };
 
 const PHASE_PROGRESS: Record<string, number> = {
-  logic: 25,
-  risk: 50,
-  planner: 75,
+  logic: 100,
+  risk: 100,
+  planner: 100,
   scenario: 100,
 };
 
@@ -55,7 +55,10 @@ export function DashboardPage() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    queryClient.prefetchQuery({ queryKey: ['game-content'], queryFn: fetchGameContent });
+    queryClient.prefetchQuery({
+      queryKey: ['game-content', 'free'],
+      queryFn: () => fetchGameContent(),
+    });
     router.prefetch('/game-assessment');
   }, [queryClient, router]);
 
@@ -334,7 +337,13 @@ export function DashboardPage() {
               <Typography sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#111827', mb: 0.5 }}>
                 Your Career Match
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <Box sx={{ mb: 2 }}>
+                {teaser.hero_career_category ? (
+                  <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#15803d', mb: 0.5 }}>
+                    {teaser.hero_career_category}
+                  </Typography>
+                ) : null}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Typography sx={{ fontSize: '1.25rem', fontWeight: 800, color: '#16a34a' }}>
                   {teaser.hero_career}
                 </Typography>
@@ -350,6 +359,7 @@ export function DashboardPage() {
                     border: '1px solid #bbf7d0',
                   }}
                 />
+              </Box>
               </Box>
               <Button
                 variant="contained"

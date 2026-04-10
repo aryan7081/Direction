@@ -1,3 +1,5 @@
+export type AssessmentTier = 'free' | 'premium';
+
 // ─── Game Content ───
 
 export interface LogicTask {
@@ -42,6 +44,19 @@ export interface ScenarioQuestion {
   id: string;
   prompt: string;
   options: ScenarioOption[];
+  /** Premium Phase 2: show transition copy before this question (first behavioral scenario). */
+  show_scenario_intro_before?: boolean;
+  scenario_behavioral?: boolean;
+  /** API: category slug (e.g. riasec-interests, work-personality) — drives prompt visuals. */
+  section_category_slug?: string;
+  /** API: metadata.context — career, self, values, school, future, etc. */
+  question_context?: string;
+  /** API: metadata.primary_focus — riasec slug, trait key, or aptitude type. */
+  primary_focus?: string;
+  /** API: metadata.format — quick_pick, puzzle, scenario. */
+  question_format?: string;
+  /** API: aptitude subtest key when section is aptitude. */
+  aptitude_subtest?: string;
 }
 
 export interface GameContent {
@@ -49,6 +64,8 @@ export interface GameContent {
   risk_scenarios: RiskScenario[];
   planner_config: PlannerConfig;
   scenario_questions: ScenarioQuestion[];
+  assessment_tier?: AssessmentTier;
+  question_counts?: { free: number; premium: number };
 }
 
 // ─── Events ───
@@ -72,6 +89,7 @@ export interface CareerMatch {
   career_id: number;
   career_name: string;
   career_slug: string;
+  career_category?: string;
   stream: string;
   description: string;
   score: number;

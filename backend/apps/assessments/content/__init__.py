@@ -1,0 +1,1 @@
+"""Assessment content (MCQ bank)."""

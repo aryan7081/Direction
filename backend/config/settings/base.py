@@ -14,6 +14,9 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-key-change-in-pro
 DEBUG = False
 ALLOWED_HOSTS = []
 
+# When True and the Question table is empty, load items from psychometric_items.py (dev/tests only).
+MCQ_CATALOG_ALLOW_STATIC_FALLBACK = False
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -30,7 +33,7 @@ INSTALLED_APPS = [
     # Local apps
     "apps.common",
     "apps.users",
-    "apps.assessments",
+    "apps.assessments.apps.AssessmentsConfig",
     "apps.careers",
     "apps.recommendations",
     "apps.reports",
@@ -106,6 +109,7 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ),
     "DEFAULT_THROTTLE_RATES": {"anon": "100/hour", "user": "1000/hour"},
+    "EXCEPTION_HANDLER": "apps.common.exception_handler.custom_exception_handler",
 }
 
 from datetime import timedelta
@@ -128,7 +132,7 @@ CORS_ALLOW_CREDENTIALS = True
 # Razorpay
 RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
-REPORT_PRICE_INR = int(os.environ.get("REPORT_PRICE_INR", "299"))
+from ..pricing import PREMIUM_BUNDLE_PRICE_INR, REPORT_PRICE_INR
 
 # Google OAuth (for Sign in with Google)
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")

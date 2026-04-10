@@ -1,13 +1,40 @@
 import { api } from '@/lib/api';
-import type { GameContent, GameEvent, GamePhase, SessionResult } from './types';
+import type {
+  AssessmentTier,
+  GameContent,
+  GameEvent,
+  GamePhase,
+  SessionResult,
+} from './types';
 
 export async function fetchGameContent(): Promise<GameContent> {
   const { data } = await api.get('/game/content/');
   return data;
 }
 
-export async function startGameSession(): Promise<{ session_id: string; started_at: string }> {
+export async function startGameSession(): Promise<{
+  session_id: string;
+  started_at: string;
+  assessment_tier: string;
+}> {
   const { data } = await api.post('/game/start/');
+  return data;
+}
+
+export async function fetchPremiumExtensionContent(sessionId: string): Promise<{
+  session_id: string;
+  scenario_questions: GameContent['scenario_questions'];
+}> {
+  const { data } = await api.get('/game/premium-extension/content/', {
+    params: { session_id: sessionId },
+  });
+  return data;
+}
+
+export async function submitPremiumExtension(sessionId: string): Promise<{ session_id: string }> {
+  const { data } = await api.post('/game/premium-extension/submit/', {
+    session_id: sessionId,
+  });
   return data;
 }
 
@@ -83,6 +110,9 @@ export interface GameDashboardData {
     created_at: string;
     resume_phase?: GamePhase;
     is_report_paid?: boolean;
+    assessment_tier?: AssessmentTier;
+    premium_unlocked?: boolean;
+    premium_extension_complete?: boolean;
   }[];
   latest_result_session_id: string | null;
   latest_report_paid?: boolean;
@@ -98,6 +128,9 @@ export interface ResumeInfo {
     session_id: string;
     started_at: string;
     resume_phase: GamePhase;
+    /** Count of scenario answers logged; next question index (capped server-side if needed). */
+    scenario_answer_index?: number;
+    assessment_tier?: AssessmentTier;
   } | null;
 }
 

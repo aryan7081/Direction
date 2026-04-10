@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import hmac
+import logging
 
 from django.conf import settings
 from django.http import HttpResponse
@@ -28,23 +29,50 @@ from .serializers import (
 )
 from .services import run_scoring_pipeline
 from .services.report_builder import build_report
+from apps.careers.career_categories import category_label_for_slug
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .content.logic_game import get_logic_tasks
 from .content.risk_game import get_risk_scenarios
 from .content.planner_game import get_planner_config
-from .content.scenarios import get_scenario_questions
+from .content.scenarios import (
+    expected_scenario_question_count,
+    get_premium_extension_questions,
+    get_scenario_questions,
+)
 from apps.users.models import Profile
 from apps.users.serializers import UserSerializer
+
+logger = logging.getLogger(__name__)
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
 
-def _has_paid(user, session) -> bool:
-    return ReportOrder.objects.filter(
-        user=user, session=session, status="paid"
-    ).exists()
+def _paid_order(user, session):
+    if not user or not getattr(user, "is_authenticated", False):
+        return None
+    return (
+        ReportOrder.objects.filter(user=user, session=session, status="paid")
+        .order_by("-paid_at", "-created_at")
+        .first()
+    )
+
+
+def _has_paid_order(user, session) -> bool:
+    return _paid_order(user, session) is not None
+
+
+def _has_report_access(user, session) -> bool:
+    """User may open PDF / full JSON report."""
+    o = _paid_order(user, session)
+    if not o:
+        return False
+    if o.product_type == ReportOrder.ProductType.REPORT:
+        return True
+    if o.product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
+        return session.premium_extension_complete
+    return False
 
 
 def _build_teaser(session) -> dict:
@@ -54,8 +82,9 @@ def _build_teaser(session) -> dict:
     report = build_report(session)
 
     top_career = report["hero"]["career_name"]
+    top_category = report["hero"].get("career_category", "")
     confidence = report["hero"]["confidence"]
-    pattern = report.get("dominant_pattern", {})
+    pattern = report.get("dominant_pattern") or {}
 
     trait_preview = [
         {"label": t["label"], "icon": t["icon"]}
@@ -69,6 +98,7 @@ def _build_teaser(session) -> dict:
         if i == 0 and careers:
             career_preview.append({
                 "rank": 1,
+                "career_category": careers[0].get("career_category", ""),
                 "career_name": careers[0].get("career_name", ""),
                 "stream": careers[0].get("stream", ""),
             })
@@ -81,18 +111,53 @@ def _build_teaser(session) -> dict:
         p2 = careers[1].get("score_percent") or 0
         top_two_gap = round(abs(float(p1) - float(p2)), 1)
 
+    stream_rec = report.get("stream_recommendation", {})
+
+    tier = getattr(session, "assessment_tier", "free") or "free"
+    n_answered = GameEventLog.objects.filter(
+        session=session, game_name="scenario", event_type="answer"
+    ).count()
+    need = expected_scenario_question_count(tier)
+    if tier == "premium" or getattr(session, "premium_extension_complete", False):
+        profile_depth = "full"
+        profile_depth_title = "Full profile"
+        profile_depth_detail = (
+            "This result uses your extended assessment — more items across the same science-backed "
+            "dimensions, so stream and career signals are steadier for big decisions."
+        )
+    else:
+        profile_depth = "overview"
+        profile_depth_title = "Directional snapshot"
+        profile_depth_detail = (
+            "This preview is from your first assessment only. It is useful for discussion and early "
+            "exploration, but it is not the most stable read for final decisions. For maximum accuracy, "
+            f"choose the premium bundle (₹{settings.PREMIUM_BUNDLE_PRICE_INR}): you complete extra questions, "
+            "then unlock the full career report based on your refined profile. You can also unlock the report "
+            f"from this run alone for ₹{settings.REPORT_PRICE_INR} if you prefer."
+        )
+
     result = {
         "session_id": report["session_id"],
         "student_name": report["student"].get("name", "Student"),
         "hero_career": top_career,
+        "hero_career_category": top_category,
         "hero_confidence": confidence,
         "dominant_pattern": pattern.get("name", ""),
+        "dominant_pattern_description": pattern.get("description", ""),
+        "stream_recommendation": stream_rec.get("stream", ""),
         "trait_preview": trait_preview,
         "career_preview": career_preview,
         "top_two_gap": top_two_gap,
         "total_traits": len(report["traits"]),
-        "total_sections": 8,
+        "total_sections": 15,
         "is_paid": False,
+        "assessment_tier": tier,
+        "scenario_questions_answered": n_answered,
+        "scenario_questions_expected": need,
+        "profile_depth": profile_depth,
+        "profile_depth_title": profile_depth_title,
+        "profile_depth_detail": profile_depth_detail,
+        "readiness": report.get("readiness", {}),
     }
     if hasattr(session, "pending_email") and session.pending_email:
         result["pending_email"] = session.pending_email
@@ -105,12 +170,16 @@ class GameContentView(GenericAPIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        n_free = expected_scenario_question_count("free")
+        n_premium = expected_scenario_question_count("premium")
         return Response(
             {
                 "logic_tasks": get_logic_tasks(),
                 "risk_scenarios": get_risk_scenarios(),
                 "planner_config": get_planner_config(),
-                "scenario_questions": get_scenario_questions(),
+                "scenario_questions": get_scenario_questions("free"),
+                "assessment_tier": "free",
+                "question_counts": {"free": n_free, "premium": n_premium},
             }
         )
 
@@ -121,9 +190,14 @@ class StartSessionView(GenericAPIView):
     def post(self, request):
         session = GameSession.objects.create(
             user=request.user if request.user.is_authenticated else None,
+            assessment_tier=GameSession.AssessmentTier.FREE,
         )
         return Response(
-            {"session_id": str(session.id), "started_at": session.started_at},
+            {
+                "session_id": str(session.id),
+                "started_at": session.started_at,
+                "assessment_tier": session.assessment_tier,
+            },
             status=status.HTTP_201_CREATED,
         )
 
@@ -139,12 +213,9 @@ class SaveProgressView(GenericAPIView):
         ser.is_valid(raise_exception=True)
         d = ser.validated_data
 
-        try:
-            session = GameSession.objects.get(id=d["session_id"])
-        except GameSession.DoesNotExist:
-            return Response(
-                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+        session, err = _get_session_for_request(request, d["session_id"])
+        if err:
+            return Response({"detail": err}, status=status.HTTP_404_NOT_FOUND)
 
         if session.is_complete:
             return Response(
@@ -171,12 +242,9 @@ class CreateAccountFromSessionView(GenericAPIView):
 
         User = get_user_model()
 
-        try:
-            session = GameSession.objects.get(id=d["session_id"])
-        except GameSession.DoesNotExist:
-            return Response(
-                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+        session, err = _get_session_for_request(request, d["session_id"])
+        if err:
+            return Response({"detail": err}, status=status.HTTP_404_NOT_FOUND)
 
         if not session.pending_email or session.pending_email.lower() != d["email"].lower():
             return Response(
@@ -243,7 +311,12 @@ class LogEventView(GenericAPIView):
         if err:
             return Response({"detail": err}, status=status.HTTP_404_NOT_FOUND)
 
-        if session.is_complete:
+        can_extend = (
+            session.is_complete
+            and session.premium_unlocked
+            and not session.premium_extension_complete
+        )
+        if session.is_complete and not can_extend:
             return Response(
                 {"detail": "Session already completed."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -295,7 +368,36 @@ class SubmitSessionView(GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        result = run_scoring_pipeline(session)
+        scenario_answers = GameEventLog.objects.filter(
+            session=session, game_name="scenario", event_type="answer"
+        ).count()
+        need = expected_scenario_question_count(session.assessment_tier)
+        if scenario_answers < need:
+            return Response(
+                {
+                    "detail": (
+                        f"This assessment needs {need} answered questions; "
+                        f"{scenario_answers} found. Please complete all questions."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            result = run_scoring_pipeline(session)
+        except Exception:
+            logger.exception(
+                "run_scoring_pipeline failed for session %s", session.id
+            )
+            return Response(
+                {
+                    "detail": (
+                        "We couldn't process your results right now. "
+                        "Please try again in a moment or contact support if this continues."
+                    )
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         trait_list = [
             {
@@ -314,6 +416,108 @@ class SubmitSessionView(GenericAPIView):
                 "career_matches": result["career_matches"],
             }
         )
+
+
+class PremiumExtensionContentView(GenericAPIView):
+    """GET — premium-only questions after ₹99 bundle (authenticated)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        session_id = request.query_params.get("session_id")
+        if not session_id:
+            return Response(
+                {"detail": "session_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            session = GameSession.objects.get(id=session_id, user=request.user)
+        except GameSession.DoesNotExist:
+            return Response(
+                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        if not session.is_complete:
+            return Response(
+                {"detail": "Complete the main assessment first."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not session.premium_unlocked:
+            return Response(
+                {"detail": "Premium bundle not unlocked."},
+                status=status.HTTP_402_PAYMENT_REQUIRED,
+            )
+        if session.premium_extension_complete:
+            return Response(
+                {"detail": "Premium extension already completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            {
+                "session_id": str(session.id),
+                "scenario_questions": get_premium_extension_questions(),
+            }
+        )
+
+
+class SubmitPremiumExtensionView(GenericAPIView):
+    """POST — rescore after user logs all premium-only answers."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        session_id = request.data.get("session_id")
+        if not session_id:
+            return Response(
+                {"detail": "session_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            session = GameSession.objects.get(id=session_id, user=request.user)
+        except GameSession.DoesNotExist:
+            return Response(
+                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        if not session.is_complete:
+            return Response(
+                {"detail": "Invalid session state."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not session.premium_unlocked:
+            return Response(
+                {"detail": "Premium bundle not unlocked."},
+                status=status.HTTP_402_PAYMENT_REQUIRED,
+            )
+        if session.premium_extension_complete:
+            return Response(
+                {"detail": "Already completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        n = GameEventLog.objects.filter(
+            session=session, game_name="scenario", event_type="answer"
+        ).count()
+        need = expected_scenario_question_count("premium")
+        if n < need:
+            return Response(
+                {
+                    "detail": (
+                        f"This step needs {need} scenario answers in total; "
+                        f"{n} found. Finish all premium questions."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            run_scoring_pipeline(session)
+        except Exception:
+            logger.exception("premium extension scoring failed for session %s", session_id)
+            return Response(
+                {"detail": "We couldn't update your results. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        session.premium_extension_complete = True
+        session.assessment_tier = GameSession.AssessmentTier.PREMIUM
+        session.save(update_fields=["premium_extension_complete", "assessment_tier"])
+        return Response({"session_id": str(session.id), "detail": "ok"})
 
 
 class SessionResultView(GenericAPIView):
@@ -344,12 +548,12 @@ class SessionResultView(GenericAPIView):
                 "career_id": m.career.id,
                 "career_name": m.career.name,
                 "career_slug": m.career.slug,
+                "career_category": (m.career.category or "").strip()
+                or category_label_for_slug(m.career.slug),
                 "stream": m.career.stream,
                 "description": (m.career.description[:200] if m.career.description else ""),
                 "score": m.score,
-                "score_percent": round(m.score / max(m.score, 1) * 100, 1)
-                if m.score
-                else 0,
+                "score_percent": round(m.score * 100, 1) if m.score <= 1 else round(m.score, 1),
                 "rank": m.rank,
             }
             for m in matches
@@ -365,18 +569,17 @@ class SessionResultView(GenericAPIView):
         )
 
 
-GAME_PHASE_ORDER = ["logic", "risk", "planner", "scenario"]
+GAME_PHASE_ORDER = ["scenario"]
 
 
 def _detect_resume_phase(session):
-    logged_games = set(
-        GameEventLog.objects.filter(session=session)
-        .values_list("game_name", flat=True)
-        .distinct()
-    )
-    for phase in GAME_PHASE_ORDER:
-        if phase not in logged_games:
-            return phase
+    """Single-phase assessment: resume in scenario until all MCQ answers are logged."""
+    n = GameEventLog.objects.filter(
+        session=session, game_name="scenario", event_type="answer"
+    ).count()
+    need = expected_scenario_question_count(session.assessment_tier)
+    if n < need:
+        return "scenario"
     return "processing"
 
 
@@ -389,11 +592,6 @@ class GameDashboardView(GenericAPIView):
             .order_by("-started_at")[:10]
         )
 
-        paid_session_ids = set(
-            ReportOrder.objects.filter(user=request.user, status="paid")
-            .values_list("session_id", flat=True)
-        )
-
         attempts = []
         for s in sessions:
             entry = {
@@ -402,7 +600,10 @@ class GameDashboardView(GenericAPIView):
                 "started_at": s.started_at,
                 "completed_at": s.completed_at,
                 "created_at": s.started_at,
-                "is_report_paid": s.id in paid_session_ids,
+                "is_report_paid": _has_report_access(request.user, s),
+                "assessment_tier": s.assessment_tier,
+                "premium_unlocked": s.premium_unlocked,
+                "premium_extension_complete": s.premium_extension_complete,
             }
             if not s.is_complete:
                 entry["resume_phase"] = _detect_resume_phase(s)
@@ -421,7 +622,9 @@ class GameDashboardView(GenericAPIView):
                     str(latest_complete.id) if latest_complete else None
                 ),
                 "latest_report_paid": (
-                    latest_complete.id in paid_session_ids if latest_complete else False
+                    _has_report_access(request.user, latest_complete)
+                    if latest_complete
+                    else False
                 ),
             }
         )
@@ -440,6 +643,9 @@ class ResumeSessionView(GenericAPIView):
             return Response({"session": None})
 
         resume_phase = _detect_resume_phase(session)
+        scenario_answer_index = GameEventLog.objects.filter(
+            session=session, game_name="scenario", event_type="answer"
+        ).count()
 
         return Response(
             {
@@ -447,6 +653,8 @@ class ResumeSessionView(GenericAPIView):
                     "session_id": str(session.id),
                     "started_at": session.started_at,
                     "resume_phase": resume_phase,
+                    "scenario_answer_index": scenario_answer_index,
+                    "assessment_tier": session.assessment_tier,
                 }
             }
         )
@@ -473,14 +681,20 @@ class ReportTeaserView(GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        paid = _has_paid(session.user, session) if session.user else False
-        if paid:
-            teaser = _build_teaser(session)
-            teaser["is_paid"] = True
-            return Response(teaser)
-
+        report_accessible = (
+            _has_report_access(session.user, session) if session.user else False
+        )
         teaser = _build_teaser(session)
+        teaser["report_price_inr"] = settings.REPORT_PRICE_INR
+        teaser["premium_bundle_price_inr"] = settings.PREMIUM_BUNDLE_PRICE_INR
+        teaser["report_accessible"] = report_accessible
+        teaser["premium_unlocked"] = session.premium_unlocked
+        teaser["premium_extension_complete"] = session.premium_extension_complete
         teaser["price"] = settings.REPORT_PRICE_INR
+        if report_accessible:
+            teaser["is_paid"] = True
+        else:
+            teaser["is_paid"] = False
         return Response(teaser)
 
 
@@ -505,7 +719,18 @@ class CareerReportView(GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not _has_paid(request.user, session):
+        if not _has_report_access(request.user, session):
+            if session.premium_unlocked and not session.premium_extension_complete:
+                return Response(
+                    {
+                        "detail": (
+                            "Complete your premium assessment to unlock the full report "
+                            "included in your bundle."
+                        ),
+                        "code": "PREMIUM_EXTENSION_REQUIRED",
+                    },
+                    status=status.HTTP_402_PAYMENT_REQUIRED,
+                )
             return Response(
                 {"detail": "Payment required to access full report.", "code": "PAYMENT_REQUIRED"},
                 status=status.HTTP_402_PAYMENT_REQUIRED,
@@ -534,7 +759,18 @@ class CareerReportPDFView(GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not _has_paid(request.user, session):
+        if not _has_report_access(request.user, session):
+            if session.premium_unlocked and not session.premium_extension_complete:
+                return Response(
+                    {
+                        "detail": (
+                            "Complete your premium assessment to download the report "
+                            "included in your bundle."
+                        ),
+                        "code": "PREMIUM_EXTENSION_REQUIRED",
+                    },
+                    status=status.HTTP_402_PAYMENT_REQUIRED,
+                )
             return Response(
                 {"detail": "Payment required to download report.", "code": "PAYMENT_REQUIRED"},
                 status=status.HTTP_402_PAYMENT_REQUIRED,
@@ -567,7 +803,7 @@ class CareerReportPDFView(GenericAPIView):
 # ── Payment endpoints ──────────────────────────────────────────────
 
 class CreatePaymentOrderView(GenericAPIView):
-    """POST — creates a Razorpay order for a report."""
+    """POST — creates a Razorpay order for report (₹49) or premium bundle (₹99)."""
 
     permission_classes = [IsAuthenticated]
 
@@ -578,6 +814,14 @@ class CreatePaymentOrderView(GenericAPIView):
                 {"detail": "session_id is required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        raw_pt = request.data.get("product_type", ReportOrder.ProductType.REPORT)
+        if raw_pt == ReportOrder.ProductType.PREMIUM_BUNDLE:
+            product_type = ReportOrder.ProductType.PREMIUM_BUNDLE
+            amount_inr = settings.PREMIUM_BUNDLE_PRICE_INR
+        else:
+            product_type = ReportOrder.ProductType.REPORT
+            amount_inr = settings.REPORT_PRICE_INR
 
         try:
             session = GameSession.objects.get(id=session_id, user=request.user)
@@ -592,36 +836,63 @@ class CreatePaymentOrderView(GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if _has_paid(request.user, session):
+        if _has_paid_order(request.user, session):
+            if _has_report_access(request.user, session):
+                return Response(
+                    {"detail": "Already purchased.", "is_paid": True},
+                    status=status.HTTP_200_OK,
+                )
             return Response(
-                {"detail": "Report already purchased.", "is_paid": True},
+                {
+                    "detail": "Complete your premium assessment to unlock the report.",
+                    "premium_pending_extension": True,
+                    "session_id": str(session.id),
+                },
                 status=status.HTTP_200_OK,
             )
 
-        amount_inr = settings.REPORT_PRICE_INR
-
-        order, created = ReportOrder.objects.get_or_create(
+        order, _created = ReportOrder.objects.get_or_create(
             user=request.user,
             session=session,
-            defaults={"amount": amount_inr},
+            defaults={
+                "amount": amount_inr,
+                "product_type": product_type,
+            },
         )
 
         if order.status == "paid":
             return Response({"detail": "Already paid.", "is_paid": True})
 
+        order.product_type = product_type
+        order.amount = amount_inr
+        order.save(update_fields=["product_type", "amount"])
+
         if not settings.RAZORPAY_KEY_ID:
             order.status = "paid"
             order.paid_at = timezone.now()
             order.save()
-            return Response({
-                "is_paid": True,
-                "detail": "Payment gateway not configured — report unlocked for free (dev mode).",
-            })
+            if product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
+                session.premium_unlocked = True
+                session.save(update_fields=["premium_unlocked"])
+            return Response(
+                {
+                    "is_paid": product_type == ReportOrder.ProductType.REPORT
+                    or session.premium_extension_complete,
+                    "detail": "Payment gateway not configured — unlocked for dev.",
+                    "product_type": product_type,
+                }
+            )
 
         import razorpay
 
         client = razorpay.Client(
             auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
+        )
+
+        from apps.common.razorpay_text import (
+            razorpay_safe_customer_name,
+            razorpay_safe_email,
+            razorpay_safe_note_value,
         )
 
         rz_order = client.order.create(
@@ -630,14 +901,22 @@ class CreatePaymentOrderView(GenericAPIView):
                 "currency": "INR",
                 "receipt": str(order.id),
                 "notes": {
-                    "session_id": str(session.id),
-                    "user_email": request.user.email,
+                    "session_id": razorpay_safe_note_value(str(session.id), max_length=80),
+                    "user_email": razorpay_safe_note_value(
+                        request.user.email or "", max_length=254
+                    ),
+                    "product_type": product_type,
                 },
             }
         )
 
         order.razorpay_order_id = rz_order["id"]
-        order.save()
+        order.save(update_fields=["razorpay_order_id"])
+
+        safe_name = razorpay_safe_customer_name(
+            request.user.get_full_name() or request.user.email or ""
+        )
+        safe_email = razorpay_safe_email(request.user.email)
 
         return Response(
             {
@@ -645,8 +924,9 @@ class CreatePaymentOrderView(GenericAPIView):
                 "amount": amount_inr,
                 "currency": "INR",
                 "key_id": settings.RAZORPAY_KEY_ID,
-                "user_email": request.user.email,
-                "user_name": request.user.get_full_name() or request.user.email,
+                "user_email": safe_email,
+                "user_name": safe_name,
+                "product_type": product_type,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -700,4 +980,15 @@ class VerifyPaymentView(GenericAPIView):
         order.paid_at = timezone.now()
         order.save()
 
-        return Response({"verified": True, "session_id": str(order.session_id)})
+        sess = order.session
+        if order.product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
+            sess.premium_unlocked = True
+            sess.save(update_fields=["premium_unlocked"])
+
+        return Response(
+            {
+                "verified": True,
+                "session_id": str(order.session_id),
+                "product_type": order.product_type,
+            }
+        )
