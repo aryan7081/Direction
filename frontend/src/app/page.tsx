@@ -398,7 +398,7 @@ export default function LandingPage() {
               <Typography sx={{ fontSize: { xs: '1rem', sm: '1.2rem' }, color: '#6b7280', maxWidth: 560, mx: 'auto', mb: 4, lineHeight: 1.7 }}>
                 {user
                   ? 'Access your dashboard to view your career report, retake the assessment, or explore career paths.'
-                  : 'Get clarity in under 15 minutes. Our free assessment maps RIASEC interests, personality (Big Five–style), values, readiness, and aptitude to recommend Science, Commerce, or Arts — and careers that fit.'}
+                  : 'Built using scientifically proven methods used by top career counsellors worldwide. Get clarity in under 15 minutes.'}
               </Typography>
             </motion.div>
 

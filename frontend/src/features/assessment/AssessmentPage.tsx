@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageLoader, ButtonSpinner } from '@/components/ui/Loaders';
+import { optionLabelForDisplay } from '@/lib/optionLabelDisplay';
 import type { Question } from '@/types';
 
 function humanizeUnderscore(s: string) {
@@ -323,7 +324,7 @@ export function AssessmentPage() {
 
               {/* Answer options */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                {options.map((opt, idx) => {
+                {options.map((opt) => {
                   const isSelected = responses[currentQ.id] === opt.id;
                   return (
                     <Box
@@ -351,35 +352,16 @@ export function AssessmentPage() {
                         },
                       }}
                     >
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-                        <Box
-                          sx={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: '50%',
-                            flexShrink: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 700,
-                            fontSize: '0.85rem',
-                            bgcolor: isSelected ? '#16a34a' : 'rgba(0,0,0,0.06)',
-                            color: isSelected ? '#fff' : '#6b7280',
-                          }}
-                        >
-                          {String.fromCharCode(65 + idx)}
-                        </Box>
-                        <Typography
-                          sx={{
-                            fontWeight: isSelected ? 600 : 500,
-                            fontSize: '1rem',
-                            color: isSelected ? '#111827' : '#374151',
-                            lineHeight: 1.5,
-                          }}
-                        >
-                          {opt.text}
-                        </Typography>
-                      </Box>
+                      <Typography
+                        sx={{
+                          fontWeight: isSelected ? 600 : 500,
+                          fontSize: '1rem',
+                          color: isSelected ? '#111827' : '#374151',
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {optionLabelForDisplay(opt.text)}
+                      </Typography>
                     </Box>
                   );
                 })}

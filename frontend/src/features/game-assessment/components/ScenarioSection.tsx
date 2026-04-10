@@ -6,7 +6,10 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useGameStore } from '../store';
 import type { ScenarioQuestion } from '../types';
 import { resolveOptionHelper, resolveQuestionVisual } from '../questionVisualConfig';
+import { getLikertStepForOptionText, isLikertScaleQuestion } from '../likertScaleUi';
+import { LikertFaceIcon } from './LikertFaceIcon';
 import { QuestionPromptArt } from './QuestionPromptArt';
+import { optionLabelForDisplay } from '@/lib/optionLabelDisplay';
 
 const DEFAULT_AUTH_GATE_AFTER = 10;
 
@@ -60,6 +63,7 @@ export function ScenarioSection({
 
   const questionVisual = useMemo(() => resolveQuestionVisual(question), [question]);
   const optionHelper = useMemo(() => resolveOptionHelper(question), [question]);
+  const showLikertIcons = useMemo(() => isLikertScaleQuestion(question), [question]);
 
   const optionContainerVariants = useMemo(
     () => ({
@@ -283,32 +287,54 @@ export function ScenarioSection({
               animate="show"
               style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
             >
-              {question.options.map((opt) => (
-                <motion.div key={opt.id} variants={optionItemVariants} whileHover={reduceMotion ? undefined : { scale: 1.008 }} whileTap={reduceMotion ? undefined : { scale: 0.995 }}>
-                  <Button
-                    variant={selected === opt.id ? 'contained' : 'outlined'}
-                    fullWidth
-                    sx={{
-                      justifyContent: 'flex-start',
-                      textTransform: 'none',
-                      py: { xs: 1.75, sm: 1.5 },
-                      px: 2,
-                      fontSize: { xs: '0.9rem', sm: '0.95rem' },
-                      minHeight: 48,
-                      textAlign: 'left',
-                      borderRadius: 2,
-                      borderColor: selected === opt.id ? undefined : 'rgba(0,0,0,0.1)',
-                      color: selected === opt.id ? '#fff' : '#374151',
-                      ...(selected === opt.id && { background: 'linear-gradient(135deg, #3b82f6, #2563eb)', '&:hover': { background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' } }),
-                      ...(!selected && { '&:hover': { borderColor: '#3b82f6', color: '#2563eb', bgcolor: 'rgba(59,130,246,0.04)' } }),
-                    }}
-                    onClick={() => handleSelect(opt.id)}
-                    disabled={answered}
-                  >
-                    {opt.text}
-                  </Button>
-                </motion.div>
-              ))}
+              {question.options.map((opt) => {
+                const likertStep = showLikertIcons ? getLikertStepForOptionText(opt.text) : null;
+                const label = optionLabelForDisplay(opt.text);
+                return (
+                  <motion.div key={opt.id} variants={optionItemVariants} whileHover={reduceMotion ? undefined : { scale: 1.008 }} whileTap={reduceMotion ? undefined : { scale: 0.995 }}>
+                    <Button
+                      variant={selected === opt.id ? 'contained' : 'outlined'}
+                      fullWidth
+                      sx={{
+                        justifyContent: 'flex-start',
+                        textTransform: 'none',
+                        py: { xs: 1.75, sm: 1.5 },
+                        px: 2,
+                        fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                        minHeight: 48,
+                        textAlign: 'left',
+                        borderRadius: 2,
+                        gap: 1.25,
+                        borderColor: selected === opt.id ? undefined : 'rgba(0,0,0,0.1)',
+                        color: selected === opt.id ? '#fff' : '#374151',
+                        ...(selected === opt.id && { background: 'linear-gradient(135deg, #3b82f6, #2563eb)', '&:hover': { background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' } }),
+                        ...(!selected && { '&:hover': { borderColor: '#3b82f6', color: '#2563eb', bgcolor: 'rgba(59,130,246,0.04)' } }),
+                      }}
+                      onClick={() => handleSelect(opt.id)}
+                      disabled={answered}
+                    >
+                      {likertStep !== null && (
+                        <Box
+                          sx={{
+                            flexShrink: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 1.25,
+                            bgcolor: selected === opt.id ? 'rgba(255,255,255,0.2)' : '#f5f3ff',
+                            p: 0.25,
+                            lineHeight: 0,
+                          }}
+                          aria-hidden
+                        >
+                          <LikertFaceIcon step={likertStep} maskBaseId={`${question.id}-${opt.id}`} size={28} />
+                        </Box>
+                      )}
+                      {label}
+                    </Button>
+                  </motion.div>
+                );
+              })}
             </motion.div>
           </Box>
         </motion.div>
