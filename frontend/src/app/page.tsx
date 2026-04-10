@@ -1,10 +1,20 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { Box, Button, Typography, Container, Chip } from '@mui/material';
+import {
+  Box,
+  Button,
+  Typography,
+  Container,
+  Chip,
+  Menu,
+  MenuItem,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { motion, useInView, useScroll, useTransform } from 'framer-motion';
 import { useAuthStore } from '@/stores/authStore';
 import { fetchGameContent } from '@/features/game-assessment/api';
@@ -246,9 +256,13 @@ function SocialProofStrip() {
 export default function LandingPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const theme = useTheme();
+  const isSmDown = useMediaQuery(theme.breakpoints.down('sm'));
   const heroRef = useRef(null);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const [accountMenuEl, setAccountMenuEl] = useState<null | HTMLElement>(null);
+  const accountMenuOpen = Boolean(accountMenuEl);
 
   useEffect(() => {
     queryClient.prefetchQuery({
@@ -290,32 +304,98 @@ export default function LandingPage() {
           </Box>
           <Box sx={{ display: 'flex', gap: { xs: 1, sm: 1.5 }, alignItems: 'center', flexShrink: 0, ml: 'auto' }}>
             {user ? (
-              <>
-                <Link href="/game-assessment" style={{ textDecoration: 'none' }}>
-                  <Button size="small" sx={{ color: '#374151', fontWeight: 600, textTransform: 'none', fontSize: { xs: '0.8rem', sm: '0.9rem' }, py: { xs: 0.75, sm: 1.25 }, px: { xs: 1, sm: 1.5 }, minHeight: 40, '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' } }}>
-                    Assessment
-                  </Button>
-                </Link>
-                <Link href="/dashboard" style={{ textDecoration: 'none' }}>
+              isSmDown ? (
+                <>
                   <Button
-                    variant="contained" size="small"
+                    id="landing-account-menu-button"
+                    onClick={(e) => setAccountMenuEl(e.currentTarget)}
+                    aria-label="Open account menu"
+                    aria-expanded={accountMenuOpen ? 'true' : undefined}
+                    aria-haspopup="true"
+                    aria-controls={accountMenuOpen ? 'landing-account-menu' : undefined}
+                    variant="outlined"
+                    size="small"
                     sx={{
-                      background: 'linear-gradient(135deg, #16a34a, #15803d)', textTransform: 'none', fontWeight: 600,
-                      borderRadius: 2, px: { xs: 1.5, sm: 3 }, py: { xs: 0.75, sm: 1.25 }, fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                      minHeight: 40, whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(22,163,74,0.3)',
-                      '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)', boxShadow: '0 6px 20px rgba(22,163,74,0.4)' },
+                      color: '#374151',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      fontSize: '0.8rem',
+                      py: 0.75,
+                      px: 1.25,
+                      minHeight: 40,
+                      borderColor: 'rgba(0,0,0,0.15)',
+                      borderRadius: 2,
+                      '&:hover': { borderColor: 'rgba(0,0,0,0.25)', bgcolor: 'rgba(0,0,0,0.03)' },
                     }}
                   >
-                    Dashboard
+                    Menu
                   </Button>
-                </Link>
-                <Button
-                  size="small" onClick={handleLogout}
-                  sx={{ color: '#6b7280', fontWeight: 600, textTransform: 'none', fontSize: { xs: '0.8rem', sm: '0.9rem' }, py: { xs: 0.75, sm: 1.25 }, px: { xs: 1, sm: 1.5 }, minHeight: 40, '&:hover': { bgcolor: 'rgba(0,0,0,0.04)', color: '#374151' } }}
-                >
-                  Log out
-                </Button>
-              </>
+                  <Menu
+                    id="landing-account-menu"
+                    anchorEl={accountMenuEl}
+                    open={accountMenuOpen}
+                    onClose={() => setAccountMenuEl(null)}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    slotProps={{ list: { 'aria-labelledby': 'landing-account-menu-button' }, paper: { sx: { minWidth: 200, borderRadius: 2, mt: 0.5 } } }}
+                  >
+                    <MenuItem
+                      onClick={() => {
+                        setAccountMenuEl(null);
+                        router.push('/game-assessment');
+                      }}
+                      sx={{ fontWeight: 600, py: 1.25 }}
+                    >
+                      Assessment
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        setAccountMenuEl(null);
+                        router.push('/dashboard');
+                      }}
+                      sx={{ fontWeight: 600, py: 1.25 }}
+                    >
+                      Dashboard
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        setAccountMenuEl(null);
+                        handleLogout();
+                      }}
+                      sx={{ color: '#6b7280', fontWeight: 600, py: 1.25 }}
+                    >
+                      Log out
+                    </MenuItem>
+                  </Menu>
+                </>
+              ) : (
+                <>
+                  <Link href="/game-assessment" style={{ textDecoration: 'none' }}>
+                    <Button size="small" sx={{ color: '#374151', fontWeight: 600, textTransform: 'none', fontSize: { xs: '0.8rem', sm: '0.9rem' }, py: { xs: 0.75, sm: 1.25 }, px: { xs: 1, sm: 1.5 }, minHeight: 40, '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' } }}>
+                      Assessment
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard" style={{ textDecoration: 'none' }}>
+                    <Button
+                      variant="contained" size="small"
+                      sx={{
+                        background: 'linear-gradient(135deg, #16a34a, #15803d)', textTransform: 'none', fontWeight: 600,
+                        borderRadius: 2, px: { xs: 1.5, sm: 3 }, py: { xs: 0.75, sm: 1.25 }, fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                        minHeight: 40, whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(22,163,74,0.3)',
+                        '&:hover': { background: 'linear-gradient(135deg, #15803d, #166534)', boxShadow: '0 6px 20px rgba(22,163,74,0.4)' },
+                      }}
+                    >
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <Button
+                    size="small" onClick={handleLogout}
+                    sx={{ color: '#6b7280', fontWeight: 600, textTransform: 'none', fontSize: { xs: '0.8rem', sm: '0.9rem' }, py: { xs: 0.75, sm: 1.25 }, px: { xs: 1, sm: 1.5 }, minHeight: 40, '&:hover': { bgcolor: 'rgba(0,0,0,0.04)', color: '#374151' } }}
+                  >
+                    Log out
+                  </Button>
+                </>
+              )
             ) : (
               <>
                 <Link href="/login" style={{ textDecoration: 'none' }}>
