@@ -1,7 +1,7 @@
 'use client';
 
-import { Box } from '@mui/material';
-import { motion } from 'framer-motion';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
+import { motion, useReducedMotion } from 'framer-motion';
 
 interface FloatingItem {
   emoji: string;
@@ -144,18 +144,51 @@ const THEMES: Record<string, { icons: FloatingItem[]; orbs: Array<{ color: strin
   },
 };
 
+/** Static orbs only — no infinite motion (mobile / reduced-motion friendly). */
+function StaticOrb({ color, size, top, left, right, bottom }: {
+  color: string; size: number; top?: string; left?: string; right?: string; bottom?: string;
+}) {
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
+        top, left, right, bottom,
+        filter: 'blur(40px)',
+        pointerEvents: 'none',
+        opacity: 0.85,
+      }}
+    />
+  );
+}
+
 export function AnimatedBackground({ theme = 'dashboard' }: { theme?: keyof typeof THEMES }) {
+  const muiTheme = useTheme();
+  const isSmDown = useMediaQuery(muiTheme.breakpoints.down('sm'));
+  const isMdDown = useMediaQuery(muiTheme.breakpoints.down('md'));
+  const prefersReduced = useReducedMotion();
+  // Assessment (scenario): disable floating emojis + moving orbs on phones and tablets — less distraction, better focus.
+  const calm =
+    Boolean(prefersReduced) ||
+    (theme === 'scenario' ? isMdDown : isSmDown);
+
   const t = THEMES[theme] ?? THEMES.dashboard;
 
   return (
     <Box sx={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
       <DotGrid />
-      {t.orbs.map((orb, i) => (
-        <GradientOrb key={i} {...orb} />
-      ))}
-      {t.icons.map((icon, i) => (
-        <FloatingIcon key={i} {...icon} />
-      ))}
+      {calm
+        ? t.orbs.map((orb, i) => <StaticOrb key={i} color={orb.color} size={orb.size} top={orb.top} left={orb.left} right={orb.right} bottom={orb.bottom} />)
+        : t.orbs.map((orb, i) => (
+            <GradientOrb key={i} {...orb} />
+          ))}
+      {!calm &&
+        t.icons.map((icon, i) => (
+          <FloatingIcon key={i} {...icon} />
+        ))}
     </Box>
   );
 }

@@ -41,7 +41,7 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-For PostgreSQL, set env vars (or use `.env` from `.env.example`):
+PostgreSQL **14+** must be running locally (or reachable). Copy `backend/.env.example` to `backend/.env` and adjust credentials, or export:
 
 ```bash
 export DB_NAME=career_discovery
@@ -52,7 +52,9 @@ export DB_PORT=5432
 export SECRET_KEY=your-secret-key
 ```
 
-For quick local dev without PostgreSQL, omit `DB_HOST` – SQLite will be used automatically.
+Create the database once if it does not exist: `createdb career_discovery` (or use your GUI client). With Docker: `docker compose -f backend/docker-compose.yml up -d` (starts Postgres on port 5432 with the same defaults as `.env.example`).
+
+If you previously used SQLite, data is **not** migrated automatically — create Postgres, run `migrate` and `seed_data` again.
 
 ```bash
 python manage.py migrate
