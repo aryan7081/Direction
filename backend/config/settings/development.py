@@ -28,22 +28,16 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://[a-z0-9-]+\.trycloudflare\.com$",
 ]
 
-# Use PostgreSQL if DB_HOST is set, else SQLite for quick local dev
-if os.environ.get("DB_HOST") or os.environ.get("DATABASE_URL"):
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("DB_NAME", "career_discovery"),
-            "USER": os.environ.get("DB_USER", "postgres"),
-            "PASSWORD": os.environ.get("DB_PASSWORD", "postgres"),
-            "HOST": os.environ.get("DB_HOST", "localhost"),
-            "PORT": os.environ.get("DB_PORT", "5432"),
-        }
+# PostgreSQL only (aligns with production). Defaults match local Postgres / Docker.
+_db_ssl = os.environ.get("DB_SSL", "").lower() in ("1", "true", "yes")
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DB_NAME", "career_discovery"),
+        "USER": os.environ.get("DB_USER", "postgres"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "postgres"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
+        "OPTIONS": {"sslmode": "require"} if _db_ssl else {},
     }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": str(BASE_DIR / "db.sqlite3"),
-        }
-    }
+}

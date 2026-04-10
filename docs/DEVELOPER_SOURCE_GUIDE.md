@@ -13,7 +13,7 @@ For **recommendation math** (quiz vs game, cosine vs weighted sums), see [RECOMM
 | API | Django 4 + Django REST Framework | `backend/` |
 | Auth | JWT (Simple JWT) + Google OAuth | `backend/apps/users/` |
 | Frontend | Next.js 14 (App Router) + TypeScript + MUI + TanStack Query | `frontend/` |
-| DB | PostgreSQL when `DB_HOST` or `DATABASE_URL` is set; else SQLite in dev | `backend/config/settings/` |
+| DB | PostgreSQL (dev + production) | `backend/config/settings/` |
 
 **Request shape:** Browser → Next.js (may **rewrite** `/api/*` to the Django backend) → DRF views → services / models → JSON.
 
@@ -70,7 +70,7 @@ outcave/   # repository root (your clone folder may differ)
 - **`base.py`** — `INSTALLED_APPS`, middleware, DRF/Spectacular, base `AUTH_USER_MODEL`, etc.
 - **`development.py` / `production.py`** — `DEBUG`, database, `CORS_ALLOWED_ORIGINS` (localhost, private LAN regexes, named deploy/tunnel hosts where configured), security flags.
 
-**Database (development):** PostgreSQL is used if **`DB_HOST`** or **`DATABASE_URL`** is set; otherwise SQLite at `backend/db.sqlite3`. Production expects PostgreSQL via env (see root **README.md**).
+**Database (development):** **PostgreSQL only** — same engine as production; configure `DB_*` in `.env` (defaults target `localhost`). Optional **`DB_SSL=true`** for TLS to the database. See root **README.md**.
 
 `ROOT_URLCONF` is `config.urls`: everything user-facing is under **`/api/`** (except Django admin).
 
@@ -292,7 +292,7 @@ mcq_items.py  ───►  seed_data (Question + AnswerOption in DB)
 
 ## 7. Prerequisites and quality
 
-**Toolchain (align with root README):** Python **3.11+**, Node **18.17+** (Next.js 14 minimum; **20 LTS** recommended), PostgreSQL **14+** optional locally (SQLite OK without `DB_HOST` / `DATABASE_URL`).
+**Toolchain (align with root README):** Python **3.11+**, Node **18.17+** (Next.js 14 minimum; **20 LTS** recommended), PostgreSQL **14+** required locally for the Django app.
 
 - Backend: Django’s **`TestCase`** in each app’s `tests/` (add if missing for your feature).
 - Frontend: **`npm run lint`**, **`npx tsc --noEmit`** before PRs.

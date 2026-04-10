@@ -1,0 +1,23 @@
+# Local PostgreSQL for development (matches backend/.env.example defaults).
+# Usage: docker compose -f docker-compose.yml up -d
+# Then: python manage.py migrate && python manage.py seed_data
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: career_discovery
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - outcave_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d career_discovery"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  outcave_pgdata:
