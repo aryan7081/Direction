@@ -44,3 +44,23 @@ CSRF_COOKIE_SECURE = _use_https
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
+
+# Referrer policy (Django 4+)
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+# HSTS — only when the app is served over HTTPS end-to-end (see USE_HTTPS)
+if _use_https:
+    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "31536000"))  # 1 year default
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get(
+        "SECURE_HSTS_INCLUDE_SUBDOMAINS", "true"
+    ).lower() in ("1", "true", "yes")
+    # Set SECURE_HSTS_PRELOAD=true only after you submit the domain to the HSTS preload list
+    SECURE_HSTS_PRELOAD = os.environ.get("SECURE_HSTS_PRELOAD", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+else:
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
