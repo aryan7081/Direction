@@ -22,6 +22,13 @@ def custom_exception_handler(exc, context):
         return response
 
     logger.exception("Unhandled exception in API view", exc_info=exc)
+
+    request = context.get("request")
+    if request is not None:
+        from apps.common.error_recorder import record_api_error
+
+        record_api_error(request, exc)
+
     return Response(
         {"detail": "An unexpected error occurred. Please try again later."},
         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
