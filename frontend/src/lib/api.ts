@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { useAuthStore } from '@/stores/authStore';
 
 const DEFAULT_API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
@@ -58,8 +59,8 @@ api.interceptors.response.use(
           if (original?.headers) original.headers.Authorization = `Bearer ${data.access}`;
           return api(original);
         } catch {
-          localStorage.removeItem('access');
-          localStorage.removeItem('refresh');
+          // Clear persisted user too — otherwise landing shows "Welcome" with no valid session
+          useAuthStore.getState().logout();
           if (typeof window !== 'undefined') window.location.href = '/login';
         }
       }
