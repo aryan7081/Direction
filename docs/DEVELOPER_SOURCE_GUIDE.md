@@ -231,7 +231,7 @@ When you add or edit questions, update **`mcq_items.py`** and re-run **`seed_dat
 | **`career-report/`** | Game report UI: teaser, full **`CareerReportPage`**, chart/breakdown components, `api.ts` for game report endpoints |
 | **`dashboard/`** | Dashboard cards, resume URLs |
 | **`careers/`** | List + detail pages |
-| **`profile/`** | `ProfileForm` + `api` for **`/api/auth/profile/`** (embedded in dashboard/settings flows; no dedicated `app/profile` route required) |
+| **`profile/`** | (removed) Profile PATCH lived under **`/api/auth/profile/`** for grade/school/DOB only; financial tier and subject marks were removed. |
 | **`reports/`** | Quiz PDF download helper — **`/api/reports/<attempt_id>/pdf/`** (distinct from game report PDF) |
 | **`visitors/`** | `trackVisitor` → **`/api/visitors/track/`** |
 
