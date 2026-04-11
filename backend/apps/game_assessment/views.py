@@ -10,6 +10,7 @@ from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import (
     GameSession,
@@ -990,16 +991,9 @@ class VerifyPaymentView(GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        order.status = "paid"
-        order.razorpay_payment_id = razorpay_payment_id
-        order.razorpay_signature = razorpay_signature
-        order.paid_at = timezone.now()
-        order.save()
+        from .services.payment_finalize import finalize_report_order_payment
 
-        sess = order.session
-        if order.product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
-            sess.premium_unlocked = True
-            sess.save(update_fields=["premium_unlocked"])
+        finalize_report_order_payment(order, razorpay_payment_id, razorpay_signature)
 
         return Response(
             {
@@ -1008,3 +1002,80 @@ class VerifyPaymentView(GenericAPIView):
                 "product_type": order.product_type,
             }
         )
+
+
+class RazorpayWebhookView(APIView):
+    """
+    Razorpay server webhook: finalize payment if the browser never called /payment/verify/.
+    Configure URL in Razorpay Dashboard → Webhooks (e.g. https://api.example.com/api/game/payment/webhook/).
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes = ()
+    throttle_scope = "payment_webhook"
+
+    def post(self, request):
+        from .services.payment_finalize import finalize_report_order_payment
+        from .services.razorpay_webhook import (
+            extract_failed_order_id,
+            extract_payment_from_payload,
+            parse_webhook_body,
+            verify_webhook_signature,
+        )
+
+        secret = getattr(settings, "RAZORPAY_WEBHOOK_SECRET", "") or ""
+        if not secret:
+            logger.warning("razorpay.webhook missing RAZORPAY_WEBHOOK_SECRET")
+            return Response(
+                {"detail": "Webhook signing secret not configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        sig = (request.META.get("HTTP_X_RAZORPAY_SIGNATURE") or "").strip()
+        body = request.body or b""
+        if not verify_webhook_signature(body, sig, secret):
+            logger.warning("razorpay.webhook invalid_signature")
+            return Response(
+                {"detail": "Invalid signature."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        data = parse_webhook_body(body)
+        if not data:
+            return Response(
+                {"detail": "Invalid JSON."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        event = str(data.get("event") or "")
+        payload = data.get("payload") or {}
+
+        if event == "payment.failed":
+            oid = extract_failed_order_id(payload)
+            if oid:
+                updated = ReportOrder.objects.filter(
+                    razorpay_order_id=oid, status="pending"
+                ).update(status="failed")
+                if updated:
+                    logger.info("razorpay.webhook payment_failed order rz=%s", oid)
+            return Response({"ok": True})
+
+        if event != "payment.captured":
+            return Response({"ok": True, "ignored": event})
+
+        extracted = extract_payment_from_payload(payload)
+        if not extracted:
+            return Response({"ok": True, "ignored": "no_payment"})
+
+        rz_order_id, rz_payment_id = extracted
+        try:
+            order = ReportOrder.objects.select_related("session").get(
+                razorpay_order_id=rz_order_id
+            )
+        except ReportOrder.DoesNotExist:
+            logger.warning("razorpay.webhook unknown_rz_order_id=%s", rz_order_id)
+            return Response({"ok": True})
+
+        sig_note = f"webhook:{event}"[:200]
+        finalize_report_order_payment(order, rz_payment_id, sig_note)
+        return Response({"ok": True})
