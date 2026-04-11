@@ -13,6 +13,7 @@ class CareerListView(generics.ListAPIView):
     """Full catalogue for browsing (no pagination — global PAGE_SIZE would truncate)."""
 
     permission_classes = [IsAuthenticated]
+    throttle_scope = "careers_catalog"
     serializer_class = CareerListSerializer
     queryset = Career.objects.filter(is_active=True).order_by("order", "name")
     pagination_class = None
@@ -20,6 +21,7 @@ class CareerListView(generics.ListAPIView):
 
 class CareerDetailView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = "careers_catalog"
     serializer_class = CareerDetailSerializer
     queryset = Career.objects.filter(is_active=True).prefetch_related(
         Prefetch(

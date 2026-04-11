@@ -25,12 +25,22 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
+    """JWT login — strict per-client limit to deter credential stuffing."""
+
     serializer_class = CustomTokenSerializer
+    throttle_scope = "auth_login"
+
+
+class ThrottledTokenRefreshView(TokenRefreshView):
+    """Refresh endpoint is high-volume but should stay bounded per user/IP."""
+
+    throttle_scope = "auth_refresh"
 
 
 class RegisterView(generics.CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = UserRegistrationSerializer
+    throttle_scope = "auth_register"
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -65,7 +75,9 @@ class GoogleAuthView(APIView):
     Verify Google ID token, create or get user, optionally link session.
     Returns { user, access, refresh }.
     """
+
     permission_classes = [AllowAny]
+    throttle_scope = "auth_google"
 
     def post(self, request):
         credential = request.data.get("credential")

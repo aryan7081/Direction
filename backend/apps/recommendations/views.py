@@ -12,6 +12,7 @@ from apps.recommendations.services import get_recommendation_engine
 
 class RecommendationListView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = "recommendations_read"
 
     def get(self, request, attempt_id):
         attempt = AssessmentAttempt.objects.filter(

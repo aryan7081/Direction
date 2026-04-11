@@ -15,6 +15,7 @@ class VisitorTrackView(APIView):
     """
 
     permission_classes = [AllowAny]
+    throttle_scope = "visitor_ping"
 
     def get(self, request):
         return Response({"ok": True}, status=status.HTTP_200_OK)
