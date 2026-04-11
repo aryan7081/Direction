@@ -3,8 +3,14 @@ const nextConfig = {
   reactStrictMode: true,
   skipTrailingSlashRedirect: true,
 
-  // Required for Google Sign-In: allows popup to communicate via postMessage
+  // Google Sign-In: COOP allows the OAuth popup to postMessage back to the opener.
+  // Apply only in production — in dev, this header breaks Next.js internals (e.g.
+  // _devMiddlewareManifest fetches) and can show "Failed to fetch" / odd 404s in
+  // Chrome device toolbar / responsive mode.
   async headers() {
+    if (process.env.NODE_ENV !== "production") {
+      return [];
+    }
     return [
       {
         source: "/(.*)",
