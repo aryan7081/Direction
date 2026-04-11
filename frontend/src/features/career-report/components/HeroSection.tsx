@@ -41,28 +41,45 @@ export function HeroSection({ hero }: { hero: CareerReport['hero'] }) {
           #1 Career Match
         </Typography>
 
-        {hero.career_category ? (
-          <Typography
-            sx={{
-              fontWeight: 700, color: '#15803d', fontSize: { xs: '0.95rem', sm: '1.05rem' },
-              mb: 0.5, lineHeight: 1.3,
-            }}
-          >
-            {hero.career_category}
-          </Typography>
-        ) : null}
-
         <motion.div
           initial={{ scale: 0.9 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
         >
-          <Typography
-            variant="h3"
-            sx={{ fontWeight: 800, color: '#111827', mb: 1, fontSize: { xs: '1.6rem', sm: '2.2rem' } }}
-          >
-            {hero.career_name}
-          </Typography>
+          {hero.career_category ? (
+            <>
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 800,
+                  color: '#15803d',
+                  mb: 0.75,
+                  fontSize: { xs: '1.55rem', sm: '2.05rem' },
+                  lineHeight: 1.2,
+                }}
+              >
+                {hero.career_category}
+              </Typography>
+              <Typography
+                sx={{
+                  fontWeight: 600,
+                  color: '#64748b',
+                  fontSize: { xs: '0.95rem', sm: '1.05rem' },
+                  mb: 1,
+                  lineHeight: 1.35,
+                }}
+              >
+                {hero.career_name}
+              </Typography>
+            </>
+          ) : (
+            <Typography
+              variant="h3"
+              sx={{ fontWeight: 800, color: '#111827', mb: 1, fontSize: { xs: '1.6rem', sm: '2.2rem' } }}
+            >
+              {hero.career_name}
+            </Typography>
+          )}
         </motion.div>
 
         <motion.div

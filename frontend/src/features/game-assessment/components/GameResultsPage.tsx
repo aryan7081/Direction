@@ -145,11 +145,26 @@ export function GameResultsPage({ result }: { result: SessionResult }) {
                     />
                     <Box>
                       {c.career_category ? (
-                        <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d', display: 'block', mb: 0.25 }}>
-                          {c.career_category}
-                        </Typography>
-                      ) : null}
-                      <Typography sx={{ fontWeight: 700, color: '#111827' }}>{c.career_name}</Typography>
+                        <>
+                          <Typography
+                            sx={{
+                              fontSize: '1.05rem',
+                              fontWeight: 800,
+                              color: '#15803d',
+                              display: 'block',
+                              mb: 0.25,
+                              lineHeight: 1.25,
+                            }}
+                          >
+                            {c.career_category}
+                          </Typography>
+                          <Typography sx={{ fontWeight: 600, color: '#64748b', fontSize: '0.875rem', lineHeight: 1.35 }}>
+                            {c.career_name}
+                          </Typography>
+                        </>
+                      ) : (
+                        <Typography sx={{ fontWeight: 700, color: '#111827' }}>{c.career_name}</Typography>
+                      )}
                     </Box>
                   </Box>
                   <Chip
