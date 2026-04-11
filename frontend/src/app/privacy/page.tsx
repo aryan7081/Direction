@@ -67,7 +67,7 @@ export default function PrivacyPolicy() {
               <li>Request deletion of your account and data</li>
               <li>Opt out of non-essential communications</li>
             </Ul>
-            <P>To exercise these rights, contact us at <strong>support@outcave.in</strong>.</P>
+            <P>To exercise these rights, contact us at <strong>haryan458@gmail.com</strong>.</P>
           </Section>
 
           <Section title="6. Children's Privacy">
@@ -87,7 +87,7 @@ export default function PrivacyPolicy() {
           <Section title="8. Contact Us">
             <P>
               For any questions about this Privacy Policy, reach out at{' '}
-              <strong>support@outcave.in</strong>.
+              <strong>haryan458@gmail.com</strong>.
             </P>
           </Section>
         </Box>

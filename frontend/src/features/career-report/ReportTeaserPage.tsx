@@ -306,7 +306,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
               router.push(`/report?session=${sessionId}`);
             }
           } catch {
-            showError('Payment verification failed. Please contact support@outcave.in');
+            showError('Payment verification failed. Please contact haryan458@gmail.com');
           }
         },
         modal: { ondismiss: () => setPaying(false) },
