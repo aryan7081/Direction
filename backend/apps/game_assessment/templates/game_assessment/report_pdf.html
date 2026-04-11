@@ -300,6 +300,85 @@
     margin: 16px 0;
   }
 
+  .riasec-chip {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 600;
+    color: #1e40af;
+    background: #fff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin: 2px 4px 2px 0;
+  }
+  .subject-pill {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 600;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 4px;
+    padding: 3px 8px;
+    margin: 2px 4px 2px 0;
+  }
+  .subject-pill-alt {
+    background: #f3f4f6;
+    color: #374151;
+  }
+  .mini-bar-bg {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100px;
+  }
+  .mini-bar-fill {
+    height: 100%;
+    background: #3b82f6;
+    border-radius: 3px;
+  }
+  .pdf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+    margin: 10px 0 16px 0;
+  }
+  .pdf-table td, .pdf-table th {
+    padding: 8px 6px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: top;
+    text-align: left;
+  }
+  .pdf-table th {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .career-desc {
+    font-size: 10px;
+    color: #6b7280;
+    font-style: italic;
+    line-height: 1.55;
+    margin: 8px 0 10px 0;
+  }
+  .career-meta-grid {
+    font-size: 10px;
+    color: #374151;
+    line-height: 1.55;
+    border-top: 1px solid #f3f4f6;
+    padding-top: 10px;
+    margin-top: 8px;
+  }
+  .career-meta-grid strong {
+    color: #6b7280;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
   /* ── Disclaimer ── */
   .disclaimer {
     margin-top: 20px;
@@ -324,7 +403,10 @@
   <div class="header-top">
     {% if logo_uri %}<img src="{{ logo_uri }}" alt="Outcave" style="width:64px; height:64px; margin-bottom:8px; object-fit:contain; object-position:center;">{% endif %}
     <h1>Career Intelligence Report</h1>
-    <p class="subtitle">RIASEC, personality, values, readiness &amp; aptitude — psychometric profile</p>
+    <p class="subtitle">
+      15 profile dimensions · RIASEC, personality (Big Five–style), values, readiness &amp; aptitude ·
+      career matching on an 8-trait model
+    </p>
   </div>
   <div class="header-body">
     <div class="header-student">
@@ -342,75 +424,202 @@
         Generated: {{ report.generated_at }}
         {% if report.assessment_snapshot %}
         <br><span style="color:#9ca3af;">{{ report.assessment_snapshot.answered_count }} questionnaire responses
-        {% if report.assessment_snapshot.premium_extension_complete %} · includes premium extension{% endif %}</span>
+        · {% if report.assessment_snapshot.premium_extension_complete %}Phase 1 + premium extension{% else %}Phase 1{% endif %}</span>
         {% endif %}
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══ STREAM + HERO (side by side) ═══ -->
+<!-- ═══ TOP CAREER + STREAM (same order as web: hero, then stream) ═══ -->
 <table style="width:100%; border-collapse:separate; border-spacing:12px 0; margin-top:12px; margin-bottom:18px;">
   <tr>
-    <td style="width:50%; vertical-align:top; border:1px solid #bbf7d0; border-radius:10px; padding:18px 16px; background:#f0fdf4;">
-      <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Recommended Stream</div>
-      <div style="font-size:20px; font-weight:700; color:#16a34a; margin-bottom:8px;">{{ report.stream_recommendation.stream }}</div>
-      <div style="font-size:10px; color:#374151; line-height:1.5;">{{ report.stream_recommendation.reasoning }}</div>
-    </td>
     <td style="width:50%; vertical-align:top; border:1px solid #d1fae5; border-radius:10px; padding:18px 16px; background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 60%, #f0f9ff 100%); text-align:center;">
-      <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Top Career Match</div>
+      <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Top career match</div>
       {% if report.hero.career_category %}
       <div style="font-size:11px; font-weight:600; color:#15803d; margin-bottom:6px;">{{ report.hero.career_category }}</div>
       {% endif %}
       <div style="font-size:20px; font-weight:700; color:#111827; margin-bottom:4px;">{{ report.hero.career_name }}</div>
       <div style="font-size:28px; font-weight:700; color:#16a34a; margin:4px 0;">{{ report.hero.score_percent }}%</div>
-      <span style="display:inline-block; background:#fff; border:1px solid #bbf7d0; border-radius:12px; padding:3px 14px; font-size:10px; font-weight:600; color:#16a34a;">{{ report.hero.confidence }} Confidence</span>
+      <span style="display:inline-block; background:#fff; border:1px solid #bbf7d0; border-radius:12px; padding:3px 14px; font-size:10px; font-weight:600; color:#16a34a;">{{ report.hero.confidence }} confidence</span>
+    </td>
+    <td style="width:50%; vertical-align:top; border:1px solid #bbf7d0; border-radius:10px; padding:18px 16px; background:#f0fdf4;">
+      <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Recommended stream</div>
+      <div style="font-size:20px; font-weight:700; color:#16a34a; margin-bottom:8px;">{{ report.stream_recommendation.stream }}</div>
+      <div style="font-size:10px; color:#374151; line-height:1.5;">{{ report.stream_recommendation.reasoning }}</div>
     </td>
   </tr>
 </table>
 
-<!-- ═══ CONFIDENCE EXPLANATION ═══ -->
 {% if report.hero.confidence_explanation %}
 <div class="info-box info-box-green">
-  <div class="box-title" style="color:#15803d;">What "{{ report.hero.confidence }} Confidence" Means</div>
+  <div class="box-title" style="color:#15803d;">What &ldquo;{{ report.hero.confidence }} confidence&rdquo; means</div>
   <div class="box-text">{{ report.hero.confidence_explanation }}</div>
 </div>
 {% endif %}
 
-<!-- ═══ DOMINANT PATTERN ═══ -->
-{% if report.dominant_pattern %}
-<div class="info-box info-box-blue">
-  <div class="box-title" style="color:#1d4ed8;">Your Dominant Pattern</div>
-  <div class="box-heading" style="color:#1e40af;">{{ report.dominant_pattern.name }}</div>
-  <div class="box-text">{{ report.dominant_pattern.description }}</div>
-</div>
-{% endif %}
-
 {% if report.readiness %}
-<div class="info-box info-box-green">
-  <div class="box-title" style="color:#15803d;">Career readiness</div>
-  <div class="box-heading" style="color:#1e40af;">{{ report.readiness.headline }}</div>
+<div class="info-box info-box-gray">
+  <div class="box-title" style="color:#64748b;">Career readiness</div>
+  <div class="box-heading" style="color:#111827;">{{ report.readiness.headline }}</div>
   <div class="box-text">{{ report.readiness.detail }}</div>
 </div>
 {% endif %}
 
-<!-- ═══ RADAR CHART ═══ -->
+{% if report.subject_recommendation.primary %}
+<h2>Subject combinations (Class 11–12)</h2>
+<p class="section-intro">
+  Picked for your profile and <strong>{{ report.stream_recommendation.stream }}</strong> stream — same logic as the live report.
+</p>
+<div class="info-box info-box-green">
+  <div class="box-title" style="color:#15803d;">Recommended</div>
+  <div class="box-heading" style="color:#166534; font-size:15px;">{{ report.subject_recommendation.primary.label }}</div>
+  <div style="margin:8px 0;">
+    {% for subj in report.subject_recommendation.primary.subjects %}
+    <span class="subject-pill">{{ subj }}</span>
+    {% endfor %}
+  </div>
+  <div class="box-text"><strong>Best for:</strong> {{ report.subject_recommendation.primary.best_for }}</div>
+  {% if report.subject_recommendation.primary.why %}
+  <div class="box-text" style="margin-top:8px;">{{ report.subject_recommendation.primary.why }}</div>
+  {% endif %}
+</div>
+{% if report.subject_recommendation.alternatives %}
+<h3>Alternative combinations</h3>
+{% for alt in report.subject_recommendation.alternatives %}
+<div class="info-box info-box-gray" style="margin-bottom:10px;">
+  <div style="font-size:12px; font-weight:700; color:#374151; margin-bottom:6px;">{{ alt.label }}</div>
+  <div style="margin-bottom:6px;">
+    {% for subj in alt.subjects %}
+    <span class="subject-pill subject-pill-alt">{{ subj }}</span>
+    {% endfor %}
+  </div>
+  <div class="box-text"><strong>Best for:</strong> {{ alt.best_for }}</div>
+</div>
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if report.dominant_pattern %}
+<div class="info-box info-box-blue">
+  <div class="box-title" style="color:#1d4ed8;">Your dominant pattern</div>
+  <div class="box-heading" style="color:#1e40af;">{{ report.dominant_pattern.name }}</div>
+  <div class="box-text">{{ report.dominant_pattern.description }}</div>
+  {% if report.dominant_pattern.career_examples %}
+  <div class="box-text" style="margin-top:8px;"><strong>Career examples:</strong> {{ report.dominant_pattern.career_examples }}</div>
+  {% endif %}
+  {% if report.dominant_pattern.top_riasec %}
+  <div style="margin-top:10px;">
+    <div class="box-title" style="color:#1e40af;">Driven by your top interests</div>
+    {% for r in report.dominant_pattern.top_riasec %}
+    <span class="riasec-chip">{{ r.code }} · {{ r.label }} ({{ r.score }})</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if report.dominant_pattern.strongest_trait %}
+  <div class="box-text" style="margin-top:8px;">
+    <strong>Strongest work-style signal:</strong> {{ report.dominant_pattern.strongest_trait.label }} ({{ report.dominant_pattern.strongest_trait.score }}/10)
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if report.interest_profile %}
+<h2>Interest profile (RIASEC)</h2>
+<p class="section-intro">
+  Holland-style code: <strong>{{ report.interest_profile.holland_code }}</strong>. Higher scores show stronger interest in that area (0–10).
+</p>
+<table class="pdf-table">
+  <thead>
+    <tr>
+      <th>Dimension</th>
+      <th style="width:72px;">Score</th>
+      <th style="width:110px;"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for d in report.interest_profile.dimensions %}
+    <tr>
+      <td>
+        <strong>{{ d.emoji }} {{ d.label }}</strong> <span style="color:#9ca3af;">({{ d.code }})</span><br>
+        <span style="color:#6b7280; font-size:9px; line-height:1.4;">{{ d.description }}</span>
+      </td>
+      <td>{{ d.score }} / {{ d.max }}</td>
+      <td><div class="mini-bar-bg"><div class="mini-bar-fill" style="width: {% widthratio d.score d.max 100 %}%;"></div></div></td>
+    </tr>
+    <tr>
+      <td colspan="3" style="font-size:9px; color:#4b5563; padding-top:0; border-bottom:1px solid #e5e7eb;"><em>Careers hint:</em> {{ d.careers_hint }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if report.core_traits %}
+<h2>Work DNA — core traits</h2>
+<p class="section-intro">Five habits and mindsets that shape how you learn and work — with a link to your stream.</p>
+{% for ct in report.core_traits %}
+<div class="trait-row">
+  <div class="trait-header">
+    <span class="trait-label">{{ ct.emoji }} {{ ct.label }}</span>
+    <span class="trait-score">{{ ct.score }} / {{ ct.max }}</span>
+  </div>
+  <div class="trait-bar-bg">
+    <div class="trait-bar-fill" style="width: {% widthratio ct.score ct.max 100 %}%;"></div>
+  </div>
+  <div class="trait-desc">{{ ct.description }}</div>
+  {% if ct.stream_connection %}
+  <div class="trait-desc" style="color:#1d4ed8; margin-top:4px;"><strong>Stream link:</strong> {{ ct.stream_connection }}</div>
+  {% endif %}
+</div>
+{% endfor %}
+{% endif %}
+
+{% if report.personality_style %}
+<div class="page-break"></div>
+<h2>Personality style</h2>
+<p class="section-intro">Four dimensions (roughly Big Five–style), scored 1–5, with what that tends to mean for you.</p>
+{% for p in report.personality_style %}
+<div class="trait-row">
+  <div class="trait-header">
+    <span class="trait-label">{{ p.emoji }} {{ p.label_low }} ↔ {{ p.label_high }}</span>
+    <span class="trait-score">{{ p.score }} / {{ p.max }}</span>
+  </div>
+  <div class="trait-bar-bg">
+    <div class="trait-bar-fill" style="width: {{ p.position }}%;"></div>
+  </div>
+  <div class="trait-desc">{{ p.description }}</div>
+  <div class="trait-desc" style="margin-top:4px;"><strong>Insight:</strong> {{ p.insight }}</div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if report.working_style %}
+<h2>Working style</h2>
+<p class="section-intro">How you may prefer to collaborate, take risks, structure work, and steer your own path.</p>
+{% for w in report.working_style %}
+<div class="improve-item" style="background:#f8fafc; border-color:#e2e8f0;">
+  <div class="improve-label" style="color:#334155;">{{ w.emoji }} {{ w.label_low }} ↔ {{ w.label_high }}</div>
+  <div class="improve-tip" style="color:#475569;">{{ w.insight }}</div>
+  <div style="font-size:9px; color:#94a3b8;">Score {{ w.score }} / {{ w.max }} (position {{ w.position }}%)</div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- ═══ 8-trait model (career matching) + radar ═══ -->
+<div class="page-break"></div>
 <h2>Career-matching profile (8 traits)</h2>
 <p class="section-intro">
-  These eight scores summarize your questionnaire for career matching. The report narrative uses a separate
-  15-dimension student-facing profile (interests, work-style summary, personality sliders).
-  The further a point extends outward on the chart, the stronger that trait.
+  These eight scores are the consolidated model used to rank career matches (alongside the richer questionnaire signals above).
+  The radar chart shows relative strength; the list below adds definitions.
 </p>
 <div class="chart-container">
   {{ radar_svg|safe }}
 </div>
 
-<!-- ═══ TRAIT BREAKDOWN ═══ -->
-<div class="page-break"></div>
-<h2>Trait Breakdown</h2>
+<h2>Trait breakdown (career matching)</h2>
 <p class="section-intro">
-  Each trait is scored 0–10 from your questionnaire responses (RIASEC, personality, values, readiness, aptitude),
-  consolidated for career matching. Scores above 7 indicate strong alignment; 4–7 show developing potential.
+  Each score is 0–10. Above 7 suggests strong alignment for roles that need this; 4–7 is developing; below 4 is a growth area.
 </p>
 {% for t in report.traits %}
 <div class="trait-row">
@@ -425,14 +634,11 @@
 </div>
 {% endfor %}
 
-<p class="disclaimer">{{ report.disclaimer }}</p>
-
 <!-- ═══ CAREER CARDS ═══ -->
 <div class="page-break"></div>
-<h2>Top 3 Career Matches</h2>
+<h2>Your career matches</h2>
 <p class="section-intro">
-  These careers are ranked by how closely your trait profile aligns with the demands of each role.
-  Each explanation is specific to your scores.
+  Ranked by fit with your profile &mdash; same data as the interactive report. &ldquo;Why this match&rdquo; is personalised to your trait scores.
 </p>
 {% for c in report.careers %}
 <div class="career-card">
@@ -445,13 +651,19 @@
   </div>
   <div class="career-meta">
     <strong>Stream:</strong> {{ c.stream }} &nbsp;|&nbsp;
-    <strong>Confidence:</strong> {{ c.confidence }} &nbsp;|&nbsp;
-    <strong>Work Style:</strong> {{ c.work_style }}
+    <strong>Confidence:</strong> {{ c.confidence }}
   </div>
-  <div class="career-meta">
-    <strong>Education Path:</strong> {{ c.education_path }}
-  </div>
+  {% if c.description %}
+  <div class="career-desc">{{ c.description }}</div>
+  {% endif %}
   <div class="career-why">{{ c.why_match }}</div>
+  <div class="career-meta-grid">
+    <div style="margin-bottom:6px;"><strong>Work style</strong><br>{{ c.work_style }}</div>
+    <div style="margin-bottom:6px;"><strong>Education path</strong><br>{{ c.education_path }}</div>
+    {% if c.min_education %}<div style="margin-bottom:6px;"><strong>Minimum education</strong><br>{{ c.min_education }}</div>{% endif %}
+    {% if c.salary_range %}<div style="margin-bottom:6px;"><strong>Salary range</strong><br>{{ c.salary_range }}</div>{% endif %}
+    {% if c.growth_outlook %}<div><strong>Growth outlook</strong><br>{{ c.growth_outlook }}</div>{% endif %}
+  </div>
 </div>
 {% endfor %}
 
@@ -525,6 +737,15 @@
   {% endif %}
 </div>
 {% endfor %}
+
+<h2>Next steps</h2>
+<div class="info-box info-box-amber">
+  <div class="box-text">
+    Share this PDF with a parent or counsellor. Discuss your recommended stream
+    (<strong>{{ report.stream_recommendation.stream }}</strong>) and strongest career direction
+    (<strong>{{ report.hero.career_name }}</strong>), and align Class 11&ndash;12 subject choices with the combinations above.
+  </div>
+</div>
 
 <p class="disclaimer">{{ report.disclaimer }}</p>
 
