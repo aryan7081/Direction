@@ -40,7 +40,9 @@ def match_careers(
         if not weights:
             continue
 
-        career_vec = [weights.get(t, 0) for t in TRAIT_SLUGS]
+        career_vec = [float(weights.get(t, 0) or 0) for t in TRAIT_SLUGS]
+        if sum(career_vec) == 0:
+            continue
         similarity = _cosine_similarity(user_vec, career_vec)
         score_percent = round(similarity * 100, 1)
 
@@ -58,7 +60,7 @@ def match_careers(
             }
         )
 
-    career_scores.sort(key=lambda c: c["score"], reverse=True)
+    career_scores.sort(key=lambda c: (-c["score"], c.get("career_slug") or "", -c.get("career_id", 0)))
 
     for i, cs in enumerate(career_scores[:top_n], 1):
         cs["rank"] = i

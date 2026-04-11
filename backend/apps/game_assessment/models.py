@@ -1,6 +1,8 @@
+import math
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.common.models import TimeStampedModel
@@ -138,6 +140,13 @@ class GameCareerTraitWeight(TimeStampedModel):
 
     def __str__(self):
         return f"{self.career.name} / {self.trait_name}: {self.weight}"
+
+    def clean(self):
+        w = float(self.weight)
+        if math.isnan(w) or math.isinf(w):
+            raise ValidationError({"weight": "Weight must be a finite number."})
+        if w < 0 or w > 1:
+            raise ValidationError({"weight": "Weight must be between 0.0 and 1.0."})
 
 
 PAYMENT_STATUS_CHOICES = [

@@ -10,9 +10,12 @@ from apps.careers.serializers import CareerDetailSerializer, CareerListSerialize
 
 
 class CareerListView(generics.ListAPIView):
+    """Full catalogue for browsing (no pagination — global PAGE_SIZE would truncate)."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = CareerListSerializer
     queryset = Career.objects.filter(is_active=True).order_by("order", "name")
+    pagination_class = None
 
 
 class CareerDetailView(generics.RetrieveAPIView):

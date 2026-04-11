@@ -57,20 +57,4 @@ class ProfileSerializer(serializers.ModelSerializer):
             "school",
             "date_of_birth",
             "parent_email",
-            "financial_tier",
-            "subject_marks",
         )
-
-    def validate_subject_marks(self, value):
-        """Ensure subject keys are valid and values are 0-100."""
-        valid_subjects = {"math", "science", "english", "social_science"}
-        if not isinstance(value, dict):
-            raise serializers.ValidationError("Must be an object")
-        for k, v in value.items():
-            if k not in valid_subjects:
-                raise serializers.ValidationError(
-                    f"Invalid subject '{k}'. Allowed: {', '.join(sorted(valid_subjects))}"
-                )
-            if not isinstance(v, (int, float)) or v < 0 or v > 100:
-                raise serializers.ValidationError(f"Mark for {k} must be 0–100")
-        return value

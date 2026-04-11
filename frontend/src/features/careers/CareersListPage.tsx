@@ -17,7 +17,7 @@ export function CareersListPage() {
 
   if (isLoading) {
     return (
-      <Container maxWidth="sm" sx={{ py: 2 }}>
+      <Container maxWidth="md" sx={{ py: 2 }}>
         <Skeleton variant="text" width={200} height={40} sx={{ mb: 2 }} />
         <ListSkeleton count={6} />
       </Container>
@@ -26,7 +26,7 @@ export function CareersListPage() {
 
   if (error) {
     return (
-      <Container maxWidth="sm" sx={{ py: 2 }}>
+      <Container maxWidth="md" sx={{ py: 2 }}>
         <Alert severity="error" sx={{ borderRadius: 2 }}>
           Failed to load careers. Please ensure you&apos;re logged in and try again.
         </Alert>
@@ -35,10 +35,13 @@ export function CareersListPage() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 1, sm: 2 }, px: { xs: 2, sm: 3 } }}>
+    <Container maxWidth="md" sx={{ py: { xs: 1, sm: 2 }, px: { xs: 2, sm: 3 } }}>
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800, color: '#111827', letterSpacing: -0.5, mb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: 800, color: '#111827', letterSpacing: -0.5, mb: 0.5 }}>
           Career Database
+        </Typography>
+        <Typography sx={{ color: '#6b7280', fontSize: '0.9rem', mb: 3 }}>
+          {careers.length} active careers — tap a row for details.
         </Typography>
       </motion.div>
 

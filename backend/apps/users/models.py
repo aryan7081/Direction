@@ -30,32 +30,13 @@ class User(AbstractUser):
 
 
 class Profile(TimeStampedModel):
-    """Extended user profile for career assessment context."""
-
-    class FinancialTier(models.TextChoices):
-        LOW = "low", "Limited (need scholarships/vocational options)"
-        MEDIUM = "medium", "Moderate (can afford degree courses)"
-        HIGH = "high", "Comfortable (can afford premium education)"
-        PREFER_NOT = "prefer_not", "Prefer not to say"
+    """Extended user profile (grade, school, DOB) for reports and context."""
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     grade = models.CharField(max_length=10, blank=True)
     school = models.CharField(max_length=255, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
     parent_email = models.EmailField(blank=True)
-    # Financial context - affects career affordability
-    financial_tier = models.CharField(
-        max_length=20,
-        choices=FinancialTier.choices,
-        blank=True,
-        default="",
-    )
-    # Latest subject marks (percentages 0–100). Keys: math, science, english, social_science
-    subject_marks = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="e.g. {'math': 85, 'science': 82, 'english': 78, 'social_science': 75}",
-    )
 
     class Meta:
         db_table = "profiles"

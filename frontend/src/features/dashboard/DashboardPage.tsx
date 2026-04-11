@@ -8,8 +8,6 @@ import { useAuthStore } from '@/stores/authStore';
 import { fetchGameDashboard, fetchGameContent } from '@/features/game-assessment/api';
 import { fetchReportTeaser } from '@/features/career-report/api';
 import { getCareers } from '@/features/careers/api';
-import { getProfile } from '@/features/profile/api';
-import { ProfileForm } from '@/features/profile/ProfileForm';
 import { DashboardSkeleton } from '@/components/ui/Loaders';
 import { Box, Button, Chip, Container, LinearProgress, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
@@ -67,11 +65,6 @@ export function DashboardPage() {
     queryFn: fetchGameDashboard,
   });
 
-  const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ['profile'],
-    queryFn: getProfile,
-  });
-
   const latestSessionId = data?.latest_result_session_id;
   const { data: teaser } = useQuery({
     queryKey: ['report-teaser', latestSessionId],
@@ -101,7 +94,7 @@ export function DashboardPage() {
           ? 'completed_paid'
           : 'completed_unpaid';
 
-  if (dashLoading && profileLoading) return <DashboardSkeleton />;
+  if (dashLoading) return <DashboardSkeleton />;
 
   return (
     <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
@@ -137,11 +130,6 @@ export function DashboardPage() {
       </motion.div>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {/* Profile */}
-        <motion.div {...fadeUp(0.05)}>
-          <ProfileForm profile={profile ?? null} />
-        </motion.div>
-
         {/* 1️⃣ Assessment Status Card */}
         <motion.div {...fadeUp(0.1)}>
           <Box sx={{ ...cardBase }}>

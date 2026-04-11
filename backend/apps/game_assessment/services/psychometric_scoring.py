@@ -7,6 +7,7 @@ Readiness is computed but excluded from career_fit_score per product spec.
 
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from typing import Any, Dict, List, Tuple
 
@@ -112,16 +113,28 @@ def build_student_psych_profile(session: GameSession) -> Dict[str, Any]:
     apt_hits = defaultdict(int)
     apt_correct = defaultdict(int)
 
-    events = GameEventLog.objects.filter(
-        session=session, game_name="scenario", event_type="answer"
-    ).order_by("timestamp")
+    events = list(
+        GameEventLog.objects.filter(
+            session=session, game_name="scenario", event_type="answer"
+        ).order_by("timestamp")
+    )
 
     option_weights, option_is_scenario = get_option_profile_maps()
     items_by_code = _item_by_code()
+    # Last answer per question wins (dedupe double-submits / retries)
+    latest_by_question: Dict[str, GameEventLog] = {}
     for ev in events:
         oid = (ev.payload or {}).get("selected_option_id") or ""
         if not oid or oid not in option_weights:
             continue
+        qcode = _option_code_from_id(oid)
+        if not qcode:
+            continue
+        latest_by_question[qcode] = ev
+    deduped_events = sorted(latest_by_question.values(), key=lambda e: e.timestamp)
+
+    for ev in deduped_events:
+        oid = (ev.payload or {}).get("selected_option_id") or ""
         w = option_weights[oid]
         is_scen = option_is_scenario.get(oid, False)
         code = _option_code_from_id(oid)
@@ -141,7 +154,8 @@ def build_student_psych_profile(session: GameSession) -> Dict[str, Any]:
         if apt_sub and apt_sub in ("verbal", "numerical", "abstract", "spatial"):
             key = f"aptitude_{apt_sub}"
             apt_hits[key] += 1
-            if w.get(key, 0) >= 1:
+            # Decoded aptitude options are 0.0 or 1.0; tolerate float noise
+            if float(w.get(key, 0) or 0) >= 1.0 - 1e-9:
                 apt_correct[key] += 1
 
     def norm_dim(keys: List[str]) -> Dict[str, float]:
@@ -176,30 +190,40 @@ def build_student_psych_profile(session: GameSession) -> Dict[str, Any]:
 
 def profile_to_eight_trait_scores(profile: Dict[str, Any]) -> Dict[str, float]:
     """Map psychometric profile to legacy 8-trait raw 0–1 (for TraitScore + reports)."""
-    r = profile["riasec"]
-    p = profile["personality"]
-    v = profile["values"]
-    a = profile["aptitude"]
+    r = profile.get("riasec") or {}
+    p = profile.get("personality") or {}
+    v = profile.get("values") or {}
+    a = profile.get("aptitude") or {}
 
     return {
-        "analytical_reasoning": 0.55 * r["riasec_investigative"] + 0.25 * a.get("abstract", 0.5) + 0.2 * a.get("verbal", 0.5),
-        "quantitative_comfort": 0.5 * r["riasec_conventional"] + 0.35 * a.get("numerical", 0.5) + 0.15 * r["riasec_realistic"],
-        "creativity_innovation": 0.5 * r["riasec_artistic"] + 0.35 * p["personality_O"] + 0.15 * v.get("values_creativity", 0.5),
-        "verbal_communication": 0.4 * p["personality_E"] + 0.35 * a.get("verbal", 0.5) + 0.25 * r["riasec_social"],
-        "social_orientation": 0.65 * r["riasec_social"] + 0.35 * p["personality_A"],
-        "leadership_drive": 0.7 * r["riasec_enterprising"] + 0.3 * p["personality_E"],
-        "risk_appetite": 0.45 * p["personality_O"] + 0.35 * r["riasec_enterprising"] + 0.2 * (1.0 - v.get("values_security", 0.5)),
-        "structure_discipline": 0.55 * r["riasec_conventional"] + 0.45 * p["personality_C"],
+        "analytical_reasoning": 0.55 * r.get("riasec_investigative", 0.5) + 0.25 * a.get("abstract", 0.5) + 0.2 * a.get("verbal", 0.5),
+        "quantitative_comfort": 0.5 * r.get("riasec_conventional", 0.5) + 0.35 * a.get("numerical", 0.5) + 0.15 * r.get("riasec_realistic", 0.5),
+        "creativity_innovation": 0.5 * r.get("riasec_artistic", 0.5) + 0.35 * p.get("personality_O", 0.5) + 0.15 * v.get("values_creativity", 0.5),
+        "verbal_communication": 0.4 * p.get("personality_E", 0.5) + 0.35 * a.get("verbal", 0.5) + 0.25 * r.get("riasec_social", 0.5),
+        "social_orientation": 0.65 * r.get("riasec_social", 0.5) + 0.35 * p.get("personality_A", 0.5),
+        "leadership_drive": 0.7 * r.get("riasec_enterprising", 0.5) + 0.3 * p.get("personality_E", 0.5),
+        "risk_appetite": 0.45 * p.get("personality_O", 0.5) + 0.35 * r.get("riasec_enterprising", 0.5) + 0.2 * (1.0 - v.get("values_security", 0.5)),
+        "structure_discipline": 0.55 * r.get("riasec_conventional", 0.5) + 0.45 * p.get("personality_C", 0.5),
     }
+
+
+def _sanitize_weight(v: float) -> float:
+    x = float(v)
+    if math.isnan(x) or math.isinf(x):
+        return 0.0
+    return max(0.0, min(1.0, x))
 
 
 def _legacy_weights_for_career(career: Career) -> Dict[str, float]:
-    w = {
-        wt.trait_name: float(wt.weight)
-        for wt in GameCareerTraitWeight.objects.filter(career=career)
-    }
+    w = {}
+    for wt in GameCareerTraitWeight.objects.filter(career=career):
+        w[wt.trait_name] = _sanitize_weight(wt.weight)
     for t in TRAIT_SLUGS:
         w.setdefault(t, 0.0)
+    # No DB rows (or all sanitized to zero): uniform weights so matching still runs
+    if all(v == 0 for v in w.values()):
+        u = 1.0 / len(TRAIT_SLUGS)
+        return {t: u for t in TRAIT_SLUGS}
     return w
 
 
@@ -272,8 +296,12 @@ def _values_weights_default() -> Dict[str, float]:
 
 
 def interest_fit(student: Dict[str, float], target_15: Dict[str, float]) -> float:
-    s = [student[k] for k in RIASEC_KEYS]
-    t = [(target_15[k] - 1.0) / 4.0 for k in RIASEC_KEYS]
+    s = [max(0.0, min(1.0, float(student.get(k, 0.5) or 0.5))) for k in RIASEC_KEYS]
+    t = []
+    for k in RIASEC_KEYS:
+        tv = float(target_15.get(k, 3.0) or 3.0)
+        tv = max(1.0, min(5.0, tv))
+        t.append((tv - 1.0) / 4.0)
     return max(0.0, 1.0 - sum(abs(s[i] - t[i]) for i in range(6)) / 6.0)
 
 
@@ -299,9 +327,13 @@ def weighted_abs_fit(student: Dict[str, float], target: Dict[str, float], weight
     num = 0.0
     den = 0.0
     for k in student:
+        if k not in target:
+            continue
         tw = weights.get(k, 0.2)
-        sv = student[k]
-        tv = (target[k] - 1.0) / 4.0
+        sv = float(student.get(k, 0.5) or 0.5)
+        tv_raw = float(target.get(k, 3.0) or 3.0)
+        tv_raw = max(1.0, min(5.0, tv_raw))
+        tv = (tv_raw - 1.0) / 4.0
         num += tw * abs(sv - tv)
         den += tw
     if den <= 0:
@@ -327,11 +359,22 @@ def fit_label(score: float) -> str:
 
 
 def _brief_explanation(top: List[Tuple[str, float]], profile: Dict[str, Any], components: Dict[str, float]) -> str:
-    r = profile["riasec"]
-    top_letters = sorted(r.items(), key=lambda x: -x[1])[:2]
+    r = profile.get("riasec") or {k: 0.5 for k in RIASEC_KEYS}
+    top_letters = sorted(r.items(), key=lambda x: (-x[1], x[0]))[:2]
+    if len(top_letters) >= 2:
+        interest_line = (
+            f"Strongest interest signals: {top_letters[0][0].replace('riasec_', '').title()} "
+            f"and {top_letters[1][0].replace('riasec_', '').title()}."
+        )
+    elif len(top_letters) == 1:
+        interest_line = (
+            f"Strongest interest signal: {top_letters[0][0].replace('riasec_', '').title()}."
+        )
+    else:
+        interest_line = "Interest profile is balanced across dimensions."
     parts = [
         f"{fit_label(career_fit_score(components))} fit based on your profile.",
-        f"Strongest interest signals: {top_letters[0][0].replace('riasec_', '').title()} and {top_letters[1][0].replace('riasec_', '').title()}.",
+        interest_line,
         f"Aptitude match {int(components['aptitude'] * 100)}%, personality alignment {int(components['personality'] * 100)}%, values alignment {int(components['values'] * 100)}%.",
     ]
     return " ".join(parts)
@@ -348,7 +391,7 @@ def match_careers_psychometric(profile: Dict[str, Any], top_n: int = 12) -> List
     career_scores: List[dict] = []
     for career in Career.objects.filter(is_active=True):
         lw = _legacy_weights_for_career(career)
-        if not lw or all(v == 0 for v in lw.values()):
+        if not lw:
             continue
         it = _interest_target_from_legacy(lw)
         pt = _personality_target_from_legacy(lw)
@@ -377,7 +420,7 @@ def match_careers_psychometric(profile: Dict[str, Any], top_n: int = 12) -> List
             }
         )
 
-    career_scores.sort(key=lambda c: c["score"], reverse=True)
+    career_scores.sort(key=lambda c: (-c["score"], c.get("career_slug") or "", -c.get("career_id", 0)))
     for i, row in enumerate(career_scores[:top_n], 1):
         row["rank"] = i
     return career_scores[:top_n]

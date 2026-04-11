@@ -32,6 +32,27 @@ PERSONALITY_SLUGS = [
 
 ALL_15D_SLUGS = RIASEC_SLUGS + CORE_TRAIT_SLUGS + PERSONALITY_SLUGS
 
+
+def riasec_sorted_slugs(riasec_scores: dict) -> List[str]:
+    """Deterministic RIASEC ordering: score descending, then slug ascending for ties."""
+    return sorted(RIASEC_SLUGS, key=lambda s: (-float(riasec_scores.get(s, 0) or 0), s))
+
+
+def normalize_stream_for_subjects(recommended_stream: str) -> str:
+    """
+    Map free-text stream labels to subject-recommendation buckets.
+    Unknown / General / typos default to arts (same as previous else-branch behaviour, but explicit).
+    """
+    s = (recommended_stream or "").strip().lower()
+    if s in ("science", "sci", "pcm", "pcb", "pcmb"):
+        return "science"
+    if s in ("commerce", "commercial", "comm", "accounts", "accountancy"):
+        return "commerce"
+    if s in ("arts", "art", "humanities", "humanity", "general"):
+        return "arts"
+    return "arts"
+
+
 # ── RIASEC Metadata ─────────────────────────────────────────────────
 
 RIASEC_META = {
@@ -506,21 +527,13 @@ def calculate_15d_scores(session) -> Tuple[dict, dict, dict, float]:
 
 def derive_holland_code(riasec_scores: dict) -> str:
     """Top-3 RIASEC types as a 3-letter Holland code (e.g. 'ISA')."""
-    sorted_types = sorted(
-        RIASEC_SLUGS,
-        key=lambda s: riasec_scores.get(s, 0),
-        reverse=True,
-    )
+    sorted_types = riasec_sorted_slugs(riasec_scores)
     return "".join(RIASEC_META[s]["code"] for s in sorted_types[:3])
 
 
 def detect_dominant_pattern(riasec_scores: dict, trait_scores: dict) -> dict:
     """Detect personality archetype from top-2 RIASEC codes."""
-    sorted_types = sorted(
-        RIASEC_SLUGS,
-        key=lambda s: riasec_scores.get(s, 0),
-        reverse=True,
-    )
+    sorted_types = riasec_sorted_slugs(riasec_scores)
     top1_code = RIASEC_META[sorted_types[0]]["code"]
     top2_code = RIASEC_META[sorted_types[1]]["code"]
 
@@ -540,7 +553,7 @@ def detect_dominant_pattern(riasec_scores: dict, trait_scores: dict) -> dict:
 
     strongest_trait_slug = max(
         CORE_TRAIT_SLUGS,
-        key=lambda s: trait_scores.get(s, 0),
+        key=lambda s: (trait_scores.get(s, 0), s),
     )
     strongest_trait = {
         "slug": strongest_trait_slug,
@@ -565,11 +578,7 @@ def recommend_subjects(
     recommended_stream: str,
 ) -> dict:
     """Map student profile to specific Class 11-12 subject combinations."""
-    sorted_riasec = sorted(
-        RIASEC_SLUGS,
-        key=lambda s: riasec_scores.get(s, 0),
-        reverse=True,
-    )
+    sorted_riasec = riasec_sorted_slugs(riasec_scores)
     top1 = RIASEC_META[sorted_riasec[0]]["code"]
     top2 = RIASEC_META[sorted_riasec[1]]["code"]
 
@@ -577,7 +586,7 @@ def recommend_subjects(
     empathy = trait_scores.get("trait_empathy_teamwork", 0)
     initiative = trait_scores.get("trait_initiative", 0)
 
-    stream = recommended_stream.lower()
+    stream = normalize_stream_for_subjects(recommended_stream)
     primary = None
     alternatives = []
 
