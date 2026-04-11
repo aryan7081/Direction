@@ -168,6 +168,7 @@ def _build_teaser(session) -> dict:
 
 class GameContentView(GenericAPIView):
     permission_classes = [AllowAny]
+    throttle_scope = "game_content"
 
     def get(self, request):
         n_free = expected_scenario_question_count("free")
@@ -186,6 +187,7 @@ class GameContentView(GenericAPIView):
 
 class StartSessionView(GenericAPIView):
     permission_classes = [AllowAny]
+    throttle_scope = "game_start"
 
     def post(self, request):
         session = GameSession.objects.create(
@@ -206,6 +208,7 @@ class SaveProgressView(GenericAPIView):
     """POST { session_id, email } — save email to pending_email for anonymous sessions."""
 
     permission_classes = [AllowAny]
+    throttle_scope = "game_progress"
     serializer_class = SaveProgressSerializer
 
     def post(self, request):
@@ -233,6 +236,7 @@ class CreateAccountFromSessionView(GenericAPIView):
     """POST { session_id, email, password } — create user from anonymous session with pending_email."""
 
     permission_classes = [AllowAny]
+    throttle_scope = "auth_session_signup"
     serializer_class = CreateAccountFromSessionSerializer
 
     def post(self, request):
@@ -300,6 +304,7 @@ def _get_session_for_request(request, session_id):
 
 class LogEventView(GenericAPIView):
     permission_classes = [AllowAny]
+    throttle_scope = "game_log"
     serializer_class = LogEventSerializer
 
     def post(self, request):
@@ -343,6 +348,7 @@ class LogEventView(GenericAPIView):
 
 class SubmitSessionView(GenericAPIView):
     permission_classes = [AllowAny]
+    throttle_scope = "game_submit"
     serializer_class = SubmitSessionSerializer
 
     def post(self, request):
@@ -422,6 +428,7 @@ class PremiumExtensionContentView(GenericAPIView):
     """GET — premium-only questions after ₹99 bundle (authenticated)."""
 
     permission_classes = [IsAuthenticated]
+    throttle_scope = "game_content"
 
     def get(self, request):
         session_id = request.query_params.get("session_id")
@@ -463,6 +470,7 @@ class SubmitPremiumExtensionView(GenericAPIView):
     """POST — rescore after user logs all premium-only answers."""
 
     permission_classes = [IsAuthenticated]
+    throttle_scope = "game_submit"
 
     def post(self, request):
         session_id = request.data.get("session_id")
@@ -522,6 +530,7 @@ class SubmitPremiumExtensionView(GenericAPIView):
 
 class SessionResultView(GenericAPIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = "report_json"
 
     def get(self, request, session_id):
         try:
@@ -585,6 +594,7 @@ def _detect_resume_phase(session):
 
 class GameDashboardView(GenericAPIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = "report_json"
 
     def get(self, request):
         sessions = (
@@ -632,6 +642,7 @@ class GameDashboardView(GenericAPIView):
 
 class ResumeSessionView(GenericAPIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = "game_content"
 
     def get(self, request):
         session = (
@@ -666,6 +677,7 @@ class ReportTeaserView(GenericAPIView):
     """GET — returns a partial report teaser (free, no payment needed)."""
 
     permission_classes = [AllowAny]
+    throttle_scope = "game_teaser"
 
     def get(self, request, session_id):
         try:
@@ -704,6 +716,7 @@ class CareerReportView(GenericAPIView):
     """GET — returns the full career report JSON (paid only)."""
 
     permission_classes = [IsAuthenticated]
+    throttle_scope = "report_json"
 
     def get(self, request, session_id):
         try:
@@ -744,6 +757,7 @@ class CareerReportPDFView(GenericAPIView):
     """GET — returns a downloadable A4 PDF career report (paid only)."""
 
     permission_classes = [IsAuthenticated]
+    throttle_scope = "report_pdf"
 
     def get(self, request, session_id):
         try:
@@ -806,6 +820,7 @@ class CreatePaymentOrderView(GenericAPIView):
     """POST — creates a Razorpay order for report (₹49) or premium bundle (₹99)."""
 
     permission_classes = [IsAuthenticated]
+    throttle_scope = "payment_create"
 
     def post(self, request):
         session_id = request.data.get("session_id")
@@ -936,6 +951,7 @@ class VerifyPaymentView(GenericAPIView):
     """POST — verifies Razorpay payment signature and unlocks the report."""
 
     permission_classes = [IsAuthenticated]
+    throttle_scope = "payment_verify"
 
     def post(self, request):
         razorpay_order_id = request.data.get("razorpay_order_id", "")

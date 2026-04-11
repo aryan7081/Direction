@@ -64,3 +64,24 @@ else:
     SECURE_HSTS_SECONDS = 0
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_HSTS_PRELOAD = False
+
+# Optional Redis for shared rate-limit counters across Gunicorn workers / tasks.
+# Without this, each worker uses its own in-memory cache (limits are per-process).
+_redis_url = os.environ.get("REDIS_URL", "").strip()
+if _redis_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": _redis_url,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "SOCKET_CONNECT_TIMEOUT": 5,
+                "SOCKET_TIMEOUT": 5,
+                "CONNECTION_POOL_KWARGS": {"max_connections": 50},
+                # Degrade gracefully if Redis is unavailable (availability over strict limits).
+                "IGNORE_EXCEPTIONS": True,
+            },
+            "KEY_PREFIX": "outcave",
+            "TIMEOUT": int(os.environ.get("CACHE_DEFAULT_TIMEOUT", "300")),
+        }
+    }

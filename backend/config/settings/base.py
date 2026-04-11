@@ -96,6 +96,25 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.User"
 
+# Shared cache for throttling (and future cache use). Production overrides with Redis.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "outcave-api",
+    }
+}
+
+
+def _throttle_rate(env_key: str, default: str) -> str:
+    """Allow env overrides, e.g. THROTTLE_AUTH_LOGIN=15/min — empty falls back to default."""
+    val = os.environ.get(env_key, "").strip()
+    return val if val else default
+
+
+# How many trusted reverse proxies sit in front of the app (DRF uses this for
+# X-Forwarded-For). Local dev: 0. Single AWS ALB: typically 1.
+DRF_NUM_PROXIES = int(os.environ.get("DRF_NUM_PROXIES", "0"))
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -104,11 +123,43 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "NUM_PROXIES": DRF_NUM_PROXIES,
     "DEFAULT_THROTTLE_CLASSES": (
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
+        "apps.common.throttling.ScopedRateThrottleWithLogging",
     ),
-    "DEFAULT_THROTTLE_RATES": {"anon": "100/hour", "user": "1000/hour"},
+    "DEFAULT_THROTTLE_RATES": {
+        # Global ceilings (per IP for anon, per user id for authenticated)
+        # Generous global anon ceiling — stricter limits come from `throttle_scope` per view.
+        "anon": _throttle_rate("THROTTLE_ANON", "8000/hour"),
+        "user": _throttle_rate("THROTTLE_USER", "12000/hour"),
+        # Auth & account abuse controls (per IP or per user per scope)
+        "auth_login": _throttle_rate("THROTTLE_AUTH_LOGIN", "10/min"),
+        "auth_register": _throttle_rate("THROTTLE_AUTH_REGISTER", "5/min"),
+        "auth_google": _throttle_rate("THROTTLE_AUTH_GOOGLE", "30/min"),
+        "auth_refresh": _throttle_rate("THROTTLE_AUTH_REFRESH", "60/min"),
+        "auth_session_signup": _throttle_rate("THROTTLE_AUTH_SESSION_SIGNUP", "5/min"),
+        # Game / anonymous assessment traffic
+        "game_content": _throttle_rate("THROTTLE_GAME_CONTENT", "120/min"),
+        "game_start": _throttle_rate("THROTTLE_GAME_START", "40/min"),
+        "game_progress": _throttle_rate("THROTTLE_GAME_PROGRESS", "30/min"),
+        "game_log": _throttle_rate("THROTTLE_GAME_LOG", "180/min"),
+        "game_submit": _throttle_rate("THROTTLE_GAME_SUBMIT", "30/hour"),
+        "game_teaser": _throttle_rate("THROTTLE_GAME_TEASER", "120/min"),
+        # Reports & payments
+        "report_json": _throttle_rate("THROTTLE_REPORT_JSON", "120/min"),
+        "report_pdf": _throttle_rate("THROTTLE_REPORT_PDF", "30/hour"),
+        "payment_create": _throttle_rate("THROTTLE_PAYMENT_CREATE", "30/min"),
+        "payment_verify": _throttle_rate("THROTTLE_PAYMENT_VERIFY", "40/min"),
+        # Legacy MCQ assessment + misc
+        "assessment_submit": _throttle_rate("THROTTLE_ASSESSMENT_SUBMIT", "40/hour"),
+        "assessment_read": _throttle_rate("THROTTLE_ASSESSMENT_READ", "120/min"),
+        "legacy_report_pdf": _throttle_rate("THROTTLE_LEGACY_REPORT_PDF", "20/hour"),
+        "recommendations_read": _throttle_rate("THROTTLE_RECOMMENDATIONS", "120/min"),
+        "careers_catalog": _throttle_rate("THROTTLE_CAREERS_CATALOG", "120/min"),
+        "visitor_ping": _throttle_rate("THROTTLE_VISITOR_PING", "240/min"),
+    },
     "EXCEPTION_HANDLER": "apps.common.exception_handler.custom_exception_handler",
 }
 

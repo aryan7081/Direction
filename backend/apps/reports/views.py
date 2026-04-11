@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class GenerateReportView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = "legacy_report_pdf"
 
     def get(self, request, attempt_id):
         attempt = AssessmentAttempt.objects.filter(

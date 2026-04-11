@@ -16,6 +16,7 @@ from apps.assessments.services import complete_assessment_flow
 
 class QuestionListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = "assessment_read"
     serializer_class = QuestionSerializer
     queryset = Question.objects.filter(is_active=True).select_related(
         "category"
@@ -24,6 +25,7 @@ class QuestionListView(generics.ListAPIView):
 
 class StartAssessmentView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = "game_start"
 
     def create(self, request, *args, **kwargs):
         from apps.assessments.models import AssessmentAttempt
@@ -37,6 +39,7 @@ class StartAssessmentView(generics.CreateAPIView):
 
 class SubmitAssessmentView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = "assessment_submit"
     serializer_class = SubmitAssessmentSerializer
 
     def post(self, request, attempt_id):
@@ -72,6 +75,7 @@ class SubmitAssessmentView(generics.GenericAPIView):
 
 class AssessmentResultView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = "report_json"
 
     def get(self, request, attempt_id):
         attempt = (
@@ -106,6 +110,7 @@ class AssessmentResultView(generics.GenericAPIView):
 
 class DashboardView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = "report_json"
 
     def get(self, request):
         attempts = (
