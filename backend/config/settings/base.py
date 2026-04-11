@@ -152,6 +152,7 @@ REST_FRAMEWORK = {
         "report_pdf": _throttle_rate("THROTTLE_REPORT_PDF", "30/hour"),
         "payment_create": _throttle_rate("THROTTLE_PAYMENT_CREATE", "30/min"),
         "payment_verify": _throttle_rate("THROTTLE_PAYMENT_VERIFY", "40/min"),
+        "payment_webhook": _throttle_rate("THROTTLE_PAYMENT_WEBHOOK", "600/min"),
         # Legacy MCQ assessment + misc
         "assessment_submit": _throttle_rate("THROTTLE_ASSESSMENT_SUBMIT", "40/hour"),
         "assessment_read": _throttle_rate("THROTTLE_ASSESSMENT_READ", "120/min"),
@@ -183,7 +184,39 @@ CORS_ALLOW_CREDENTIALS = True
 # Razorpay
 RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+# Dashboard → Webhooks → signing secret (HMAC of raw body). Required for /api/.../payment/webhook/.
+RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "").strip()
 from ..pricing import PREMIUM_BUNDLE_PRICE_INR, REPORT_PRICE_INR
 
 # Google OAuth (for Sign in with Google)
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+
+
+def _init_sentry() -> None:
+    """Optional error tracking (set SENTRY_DSN in production)."""
+    dsn = os.environ.get("SENTRY_DSN", "").strip()
+    if not dsn:
+        return
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+    except ImportError:
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "SENTRY_DSN is set but sentry-sdk is not installed; skip Sentry init."
+        )
+        return
+
+    traces = float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0") or "0")
+    env_name = os.environ.get("SENTRY_ENVIRONMENT", os.environ.get("DJANGO_ENV", "development"))
+    sentry_sdk.init(
+        dsn=dsn,
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=min(1.0, max(0.0, traces)),
+        send_default_pii=False,
+        environment=env_name,
+    )
+
+
+_init_sentry()

@@ -53,4 +53,9 @@ urlpatterns = [
         views.VerifyPaymentView.as_view(),
         name="payment-verify",
     ),
+    path(
+        "game/payment/webhook/",
+        views.RazorpayWebhookView.as_view(),
+        name="payment-webhook",
+    ),
 ]
