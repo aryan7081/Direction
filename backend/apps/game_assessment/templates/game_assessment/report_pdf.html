@@ -12,15 +12,12 @@
     @bottom-center { content: counter(page) " / " counter(pages); font-size: 8px; color: #9ca3af; }
     @bottom-right { content: "Confidential"; font-size: 8px; color: #9ca3af; }
   }
-
   @page :first {
     margin-top: 14mm;
     @top-left { content: ""; }
     @top-right { content: ""; }
   }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
     font-size: 11px;
@@ -28,342 +25,464 @@
     color: #1f2937;
   }
 
-  /* ── Header banner ── */
-  .report-header {
-    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0f9ff 100%);
-    border: 1px solid #d1fae5;
-    border-radius: 10px;
-    padding: 24px 28px;
-    margin-bottom: 20px;
-  }
-  .header-top {
+  .web-title-block {
     text-align: center;
-    margin-bottom: 16px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid #d1fae5;
+    margin-bottom: 22px;
+    page-break-inside: avoid;
   }
-  .header-top h1 {
+  .web-title-block h1 {
     font-size: 22px;
-    font-weight: 700;
+    font-weight: 800;
     color: #111827;
-    letter-spacing: -0.3px;
-    margin-bottom: 3px;
-  }
-  .header-top .subtitle {
-    font-size: 11px;
-    color: #6b7280;
-    font-weight: 400;
-  }
-  .header-body {
-    display: flex;
-    justify-content: space-between;
-  }
-  .header-student {
-    flex: 1;
-  }
-  .header-student .student-name {
-    font-size: 20px;
-    font-weight: 700;
-    color: #16a34a;
-    margin-bottom: 4px;
-  }
-  .header-student .student-details {
-    font-size: 10px;
-    color: #6b7280;
-    line-height: 1.7;
-  }
-  .header-meta {
-    text-align: right;
-    flex-shrink: 0;
-    padding-left: 20px;
-  }
-  .header-meta .assessment-id {
-    font-size: 9px;
-    color: #9ca3af;
-    word-break: break-all;
-    max-width: 180px;
-    margin-left: auto;
+    letter-spacing: -0.02em;
     margin-bottom: 6px;
   }
-  .header-meta .dates {
-    font-size: 10px;
+  .web-title-block .prepared {
     color: #6b7280;
-    line-height: 1.7;
+    font-size: 11px;
+  }
+  .web-title-block .prepared strong { color: #111827; font-weight: 700; }
+  .web-title-block .meta-muted {
+    color: #9ca3af;
+    font-size: 9px;
+    margin-top: 6px;
+  }
+  .web-title-block .meta-tiny {
+    color: #9ca3af;
+    font-size: 8.5px;
+    margin-top: 5px;
+    line-height: 1.5;
   }
 
-  /* ── Section headers ── */
-  h2 {
+  .section-band {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #94a3b8;
+    text-align: center;
+    margin: 22px 0 14px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e2e8f0;
+    page-break-after: avoid;
+  }
+
+  h2.section-title {
     font-size: 15px;
     font-weight: 700;
     color: #111827;
-    margin: 28px 0 10px 0;
+    margin: 22px 0 8px 0;
     padding-bottom: 6px;
     border-bottom: 2px solid #e5e7eb;
   }
-  h3 {
+  h3.sub-title {
     font-size: 12px;
     font-weight: 600;
     color: #374151;
-    margin: 14px 0 5px 0;
+    margin: 14px 0 6px 0;
   }
   .section-intro {
     font-size: 10px;
     color: #6b7280;
     margin-bottom: 12px;
-    line-height: 1.6;
+    line-height: 1.65;
   }
-
-  /* ── Trait bars ── */
-  .trait-row {
-    margin-bottom: 16px;
-    page-break-inside: avoid;
-  }
-  .trait-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 3px;
-  }
-  .trait-label {
-    font-weight: 600;
-    font-size: 11px;
-    color: #374151;
-  }
-  .trait-score {
-    font-weight: 600;
-    font-size: 11px;
-    color: #16a34a;
-  }
-  .trait-bar-bg {
-    height: 7px;
-    background: #f3f4f6;
-    border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 5px;
-  }
-  .trait-bar-fill {
-    height: 100%;
-    background: #16a34a;
-    border-radius: 4px;
-  }
-  .trait-desc {
-    font-size: 10px;
-    color: #6b7280;
+  .section-intro-muted {
+    font-size: 9.5px;
+    color: #9ca3af;
+    margin-bottom: 12px;
     line-height: 1.55;
   }
 
-  /* ── Career card ── */
-  .career-card {
+  /* Hero (matches HeroSection) */
+  .hero-pdf {
+    text-align: center;
+    padding: 22px 20px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0f9ff 100%);
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 14px 16px;
     margin-bottom: 14px;
     page-break-inside: avoid;
   }
-  .career-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 8px;
-  }
-  .career-rank {
-    display: inline-block;
-    background: #16a34a;
-    color: #fff;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 10px;
-    margin-right: 8px;
-  }
-  .career-rank.r2 { background: #3b82f6; }
-  .career-rank.r3 { background: #f59e0b; }
-  .career-name {
-    font-size: 14px;
-    font-weight: 700;
-    color: #111827;
-  }
-  .career-pct {
-    font-size: 18px;
-    font-weight: 700;
-    color: #16a34a;
-  }
-  .career-meta {
-    font-size: 10px;
-    color: #6b7280;
-    margin-bottom: 6px;
-  }
-  .career-meta strong { color: #374151; }
-  .career-why {
-    font-size: 10.5px;
-    color: #374151;
-    line-height: 1.6;
-    margin-top: 6px;
-  }
-
-  /* ── Info boxes ── */
-  .info-box {
-    border-radius: 8px;
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    page-break-inside: avoid;
-  }
-  .info-box-green {
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-  }
-  .info-box-blue {
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-  }
-  .info-box-amber {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-  }
-  .info-box-gray {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-  }
-  .info-box .box-title {
+  .hero-pdf .kicker {
     font-size: 10px;
     font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .hero-pdf .cat-large {
+    font-size: 21px;
+    font-weight: 800;
+    color: #15803d;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .hero-pdf .name-small {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 6px;
+    line-height: 1.35;
+  }
+  .hero-pdf .name-only {
+    font-size: 20px;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 8px;
+  }
+  .hero-pdf .pct {
+    font-size: 30px;
+    font-weight: 800;
+    color: #16a34a;
+    line-height: 1;
+    margin: 6px 0 12px 0;
+  }
+  .hero-chip {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 14px;
+  }
+
+  .confidence-box {
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    page-break-inside: avoid;
+  }
+  .confidence-box .cap {
+    font-size: 9px;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 6px;
   }
-  .info-box .box-heading {
-    font-size: 18px;
+  .confidence-box .body {
+    font-size: 10.5px;
+    color: #374151;
+    line-height: 1.7;
+  }
+
+  /* Stream card */
+  .stream-wrap {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid;
+    margin-bottom: 18px;
+    page-break-inside: avoid;
+  }
+  .stream-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+  }
+  .stream-head .ico { font-size: 26px; line-height: 1; }
+  .stream-head .over {
+    font-size: 9px;
     font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .stream-head .stream-name {
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .stream-body {
+    padding: 14px 18px;
+    background: #fff;
+    font-size: 10.5px;
+    color: #374151;
+    line-height: 1.75;
+  }
+
+  .readiness-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    page-break-inside: avoid;
+  }
+  .readiness-box .lbl {
+    font-size: 9px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     margin-bottom: 6px;
   }
-  .info-box .box-text {
+  .readiness-box .headline {
+    font-size: 14px;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 8px;
+  }
+  .readiness-box .detail {
     font-size: 10.5px;
-    line-height: 1.6;
-    color: #374151;
+    color: #475569;
+    line-height: 1.65;
   }
 
-  /* ── Bullet list inside cards ── */
-  .step-list {
-    margin: 6px 0 0 0;
-    padding-left: 16px;
+  /* Subject card shell */
+  .subject-shell {
+    border-radius: 12px;
+    border: 1px solid #d1fae5;
+    background: linear-gradient(135deg, #f0fdf4 0%, #f0f9ff 100%);
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    page-break-inside: avoid;
   }
-  .step-list li {
-    font-size: 10px;
-    color: #374151;
-    line-height: 1.6;
-    margin-bottom: 2px;
+  .subject-shell h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px 0;
+    border: none;
+    padding: 0;
   }
 
-  /* ── Roadmap ── */
-  .roadmap-step {
-    border-left: 3px solid #16a34a;
-    padding: 8px 0 8px 14px;
+  .subject-card {
+    border-radius: 10px;
+    padding: 12px 14px;
     margin-bottom: 10px;
     page-break-inside: avoid;
   }
-  .roadmap-step h4 {
-    font-size: 12px;
-    font-weight: 600;
-    color: #16a34a;
-    margin-bottom: 2px;
+  .subject-card.primary {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
   }
-  .roadmap-step p {
-    font-size: 10.5px;
-    color: #374151;
-    line-height: 1.6;
-  }
-
-  /* ── Improvement ── */
-  .improve-item {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 6px;
-    padding: 10px 14px;
-    margin-bottom: 10px;
-    page-break-inside: avoid;
-  }
-  .improve-item .improve-label {
-    font-weight: 600;
-    font-size: 11px;
-    color: #92400e;
-    margin-bottom: 2px;
-  }
-  .improve-item .improve-tip {
-    font-size: 10.5px;
-    color: #78350f;
-    line-height: 1.5;
-    margin-bottom: 4px;
-  }
-
-  /* ── Chart containers ── */
-  .chart-container {
-    text-align: center;
-    margin: 16px 0;
-  }
-
-  .riasec-chip {
-    display: inline-block;
-    font-size: 9px;
-    font-weight: 600;
-    color: #1e40af;
+  .subject-card.alt {
     background: #fff;
-    border: 1px solid #bfdbfe;
-    border-radius: 6px;
-    padding: 4px 8px;
-    margin: 2px 4px 2px 0;
+    border: 1px solid #e5e7eb;
+  }
+  .rec-chip {
+    display: inline-block;
+    font-size: 8px;
+    font-weight: 700;
+    background: #16a34a;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 6px;
+    vertical-align: middle;
   }
   .subject-pill {
     display: inline-block;
     font-size: 9px;
     font-weight: 600;
-    background: #dcfce7;
-    color: #166534;
     border-radius: 4px;
-    padding: 3px 8px;
+    padding: 4px 8px;
     margin: 2px 4px 2px 0;
   }
-  .subject-pill-alt {
-    background: #f3f4f6;
-    color: #374151;
+  .subject-pill.pri { background: #dcfce7; color: #166534; }
+  .subject-pill.altp { background: #f3f4f6; color: #374151; }
+
+  .dominant-card {
+    border-radius: 12px;
+    border: 1px solid #bfdbfe;
+    background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    page-break-inside: avoid;
   }
-  .mini-bar-bg {
+  .dominant-card .over {
+    font-size: 9px;
+    font-weight: 600;
+    color: #1d4ed8;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .dominant-card h3 {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1e40af;
+    margin: 6px 0 10px 0;
+  }
+
+  .interest-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    page-break-inside: avoid;
+  }
+  .holland-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    margin: 12px 0 14px 0;
+  }
+  .holland-badge span.lbl {
+    font-size: 9px;
+    font-weight: 600;
+    color: #15803d;
+  }
+  .holland-code-box {
+    display: inline-flex;
+    width: 26px;
+    height: 26px;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 11px;
+    color: #fff;
+    border-radius: 4px;
+  }
+  .dim-row {
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    page-break-inside: avoid;
+  }
+  .dim-row.top {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+  }
+  .dim-row.norm {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+  }
+  .dim-bar-bg {
+    height: 8px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .dim-bar-fill { height: 100%; border-radius: 4px; }
+
+  .outlined-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    page-break-inside: avoid;
+  }
+
+  .trait-tile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .trait-tile {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #fff;
+    page-break-inside: avoid;
+  }
+  .trait-tile-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .trait-tile-label { font-weight: 700; font-size: 10px; color: #111827; }
+  .trait-tile-score { font-weight: 800; font-size: 14px; }
+  .trait-mini-bar {
     height: 6px;
-    background: #e5e7eb;
+    background: #f3f4f6;
     border-radius: 3px;
     overflow: hidden;
-    width: 100%;
-    max-width: 100px;
+    margin-bottom: 8px;
   }
-  .mini-bar-fill {
-    height: 100%;
-    background: #3b82f6;
-    border-radius: 3px;
+  .trait-mini-fill { height: 100%; border-radius: 3px; }
+  .trait-level-pill {
+    display: inline-block;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
   }
-  .pdf-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 10px;
-    margin: 10px 0 16px 0;
+  .chips-row { margin: 10px 0 14px 0; font-size: 10px; line-height: 1.8; }
+  .chip-s {
+    display: inline-block;
+    font-size: 8.5px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin: 2px 4px 2px 0;
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
   }
-  .pdf-table td, .pdf-table th {
-    padding: 8px 6px;
-    border-bottom: 1px solid #f3f4f6;
-    vertical-align: top;
-    text-align: left;
+  .chip-d {
+    display: inline-block;
+    font-size: 8.5px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin: 2px 4px 2px 0;
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
   }
-  .pdf-table th {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
+  .legend-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 16px;
+    margin-top: 14px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 8.5px;
     color: #6b7280;
-    border-bottom: 1px solid #e5e7eb;
+    font-weight: 500;
   }
-  .career-desc {
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .career-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    page-break-inside: avoid;
+    border-left: 4px solid #16a34a;
+  }
+  .career-card.r2 { border-left-color: #3b82f6; }
+  .career-card.r3 { border-left-color: #f59e0b; }
+  .career-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .career-rank {
+    display: inline-block;
+    color: #fff;
     font-size: 10px;
-    color: #6b7280;
-    font-style: italic;
-    line-height: 1.55;
-    margin: 8px 0 10px 0;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+    margin-right: 8px;
+    background: #16a34a;
   }
+  .career-rank.r2 { background: #3b82f6; }
+  .career-rank.r3 { background: #f59e0b; }
+  .career-name-block .cat { font-size: 13px; font-weight: 800; color: #15803d; line-height: 1.25; display: block; margin-bottom: 3px; }
+  .career-name-block .nm { font-size: 11px; font-weight: 600; color: #64748b; }
+  .career-name-block .nm-only { font-size: 14px; font-weight: 700; color: #111827; }
+  .career-pct { font-size: 18px; font-weight: 800; color: #16a34a; }
+  .career-meta { font-size: 10px; color: #6b7280; margin-bottom: 6px; }
+  .career-desc { font-size: 10px; color: #6b7280; font-style: italic; line-height: 1.55; margin: 8px 0; }
+  .career-why { font-size: 10.5px; color: #374151; line-height: 1.6; }
   .career-meta-grid {
     font-size: 10px;
     color: #374151;
@@ -379,18 +498,97 @@
     letter-spacing: 0.3px;
   }
 
-  /* ── Disclaimer ── */
+  .chart-container { text-align: center; margin: 14px 0; }
+
+  .roadmap-step {
+    border-left: 3px solid #16a34a;
+    padding: 8px 0 8px 14px;
+    margin-bottom: 10px;
+    page-break-inside: avoid;
+  }
+  .roadmap-step h4 { font-size: 12px; font-weight: 600; color: #16a34a; margin-bottom: 2px; }
+  .roadmap-step p { font-size: 10.5px; color: #374151; line-height: 1.6; }
+
+  .improve-item {
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    page-break-inside: avoid;
+  }
+  .improve-item.stretch { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .improve-item.norm { background: #fffbeb; border: 1px solid #fde68a; }
+  .improve-item .improve-label { font-weight: 700; font-size: 11px; margin-bottom: 2px; }
+  .improve-item.stretch .improve-label { color: #15803d; }
+  .improve-item.norm .improve-label { color: #92400e; }
+  .improve-tip { font-size: 10.5px; line-height: 1.5; margin-bottom: 4px; }
+  .step-list { margin: 6px 0 0 16px; padding: 0; }
+  .step-list li { font-size: 10px; line-height: 1.55; margin-bottom: 2px; }
+
+  .next-step {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 10px;
+    page-break-inside: avoid;
+  }
+  .next-step .ico { font-size: 20px; flex-shrink: 0; }
+  .next-step .t { font-weight: 700; font-size: 10.5px; color: #111827; margin-bottom: 3px; }
+  .next-step .d { font-size: 10px; color: #6b7280; line-height: 1.65; }
+
+  .riasec-chip {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 600;
+    color: #1e40af;
+    background: #fff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin: 2px 4px 2px 0;
+  }
+
   .disclaimer {
-    margin-top: 20px;
+    margin-top: 18px;
     padding: 10px 14px;
     background: #f9fafb;
     border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 9px;
     color: #9ca3af;
     font-style: italic;
-    line-height: 1.5;
+    line-height: 1.55;
     page-break-inside: avoid;
+  }
+
+  .trait-row { margin-bottom: 14px; page-break-inside: avoid; }
+  .trait-header { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  .trait-label { font-weight: 600; font-size: 11px; color: #374151; }
+  .trait-score { font-weight: 600; font-size: 11px; color: #16a34a; }
+  .trait-bar-bg { height: 7px; background: #f3f4f6; border-radius: 4px; overflow: hidden; margin-bottom: 5px; }
+  .trait-bar-fill { height: 100%; background: #16a34a; border-radius: 4px; }
+  .trait-desc { font-size: 10px; color: #6b7280; line-height: 1.55; }
+
+  .spectrum-bar-bg {
+    height: 8px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    position: relative;
+    margin: 6px 0;
+  }
+  .spectrum-dot {
+    position: absolute;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    margin-top: -6px;
+    border-radius: 50%;
+    background: #2563eb;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
   }
 
   .page-break { page-break-before: always; }
@@ -398,266 +596,337 @@
 </head>
 <body>
 
-<!-- ═══ COMPACT HEADER ═══ -->
-<div class="report-header">
-  <div class="header-top">
-    {% if logo_uri %}<img src="{{ logo_uri }}" alt="Outcave" style="width:64px; height:64px; margin-bottom:8px; object-fit:contain; object-position:center;">{% endif %}
-    <h1>Career Intelligence Report</h1>
-    <p class="subtitle">
-      15 profile dimensions · RIASEC, personality (Big Five–style), values, readiness &amp; aptitude ·
-      career matching on an 8-trait model
-    </p>
-  </div>
-  <div class="header-body">
-    <div class="header-student">
-      <div class="student-name">{{ report.student.name|default:"Student" }}</div>
-      <div class="student-details">
-        {% if report.student.age %}Age: {{ report.student.age }} years{% endif %}
-        {% if report.student.grade %} &nbsp;·&nbsp; Class {{ report.student.grade }}{% endif %}
-        {% if report.student.school %}<br>{{ report.student.school }}{% endif %}
-      </div>
-    </div>
-    <div class="header-meta">
-      <div class="assessment-id">ID: {{ report.session_id }}</div>
-      <div class="dates">
-        {% if report.completed_at %}Assessed: {{ report.completed_at }}<br>{% endif %}
-        Generated: {{ report.generated_at }}
-        {% if report.assessment_snapshot %}
-        <br><span style="color:#9ca3af;">{{ report.assessment_snapshot.answered_count }} questionnaire responses
-        · {% if report.assessment_snapshot.premium_extension_complete %}Phase 1 + premium extension{% else %}Phase 1{% endif %}</span>
-        {% endif %}
-      </div>
-    </div>
-  </div>
+<!-- Title block (CareerReportPage) -->
+<div class="web-title-block">
+  <h1>Career Intelligence Report</h1>
+  <p class="prepared">
+    Prepared for <strong>{{ report.student.name|default:"Student" }}</strong>
+    {% if report.student.grade %} · {{ report.student.grade }}{% endif %}
+    {% if report.student.school %} · {{ report.student.school }}{% endif %}
+  </p>
+  <p class="meta-muted">
+    {% if report.generated_at %}Generated on {{ report.generated_at }}{% endif %}
+    {% if report.completed_at %} · Assessment completed {{ report.completed_at }}{% endif %}
+  </p>
+  <p class="meta-tiny">
+    15 profile dimensions ·
+    {% if report.assessment_snapshot and report.assessment_snapshot.answered_count %}
+      {{ report.assessment_snapshot.answered_count }} questionnaire responses
+    {% else %}
+      Your questionnaire responses
+    {% endif %}
+    · {% if report.assessment_snapshot and report.assessment_snapshot.premium_extension_complete %}Phase 1 + premium extension{% else %}Phase 1{% endif %}
+    · RIASEC, personality (Big Five–style), values, readiness &amp; aptitude
+  </p>
 </div>
 
-<!-- ═══ TOP CAREER + STREAM (same order as web: hero, then stream) ═══ -->
-<table style="width:100%; border-collapse:separate; border-spacing:12px 0; margin-top:12px; margin-bottom:18px;">
-  <tr>
-    <td style="width:50%; vertical-align:top; border:1px solid #d1fae5; border-radius:10px; padding:18px 16px; background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 60%, #f0f9ff 100%); text-align:center;">
-      <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Top career match</div>
-      {% if report.hero.career_category %}
-      <div style="font-size:22px; font-weight:800; color:#15803d; margin-bottom:6px; line-height:1.2;">{{ report.hero.career_category }}</div>
-      <div style="font-size:13px; font-weight:600; color:#64748b; margin-bottom:4px; line-height:1.35;">{{ report.hero.career_name }}</div>
-      {% else %}
-      <div style="font-size:20px; font-weight:700; color:#111827; margin-bottom:4px;">{{ report.hero.career_name }}</div>
-      {% endif %}
-      <div style="font-size:28px; font-weight:700; color:#16a34a; margin:4px 0;">{{ report.hero.score_percent }}%</div>
-      <span style="display:inline-block; background:#fff; border:1px solid #bbf7d0; border-radius:12px; padding:3px 14px; font-size:10px; font-weight:600; color:#16a34a;">{{ report.hero.confidence }} confidence</span>
-    </td>
-    <td style="width:50%; vertical-align:top; border:1px solid #bbf7d0; border-radius:10px; padding:18px 16px; background:#f0fdf4;">
-      <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Recommended stream</div>
-      <div style="font-size:20px; font-weight:700; color:#16a34a; margin-bottom:8px;">{{ report.stream_recommendation.stream }}</div>
-      <div style="font-size:10px; color:#374151; line-height:1.5;">{{ report.stream_recommendation.reasoning }}</div>
-    </td>
-  </tr>
-</table>
+<div class="section-band">Section 1 · The big answers</div>
 
-{% if report.hero.confidence_explanation %}
-<div class="info-box info-box-green">
-  <div class="box-title" style="color:#15803d;">What &ldquo;{{ report.hero.confidence }} confidence&rdquo; means</div>
-  <div class="box-text">{{ report.hero.confidence_explanation }}</div>
+<!-- Hero -->
+{% if report.hero %}
+<div class="hero-pdf">
+  <div class="kicker">#1 Career Match</div>
+  {% if report.hero.career_category %}
+  <div class="cat-large">{{ report.hero.career_category }}</div>
+  <div class="name-small">{{ report.hero.career_name }}</div>
+  {% else %}
+  <div class="name-only">{{ report.hero.career_name }}</div>
+  {% endif %}
+  <div class="pct">{{ report.hero.score_percent }}%</div>
+  <span class="hero-chip" style="background:{{ hero_badge_style.bg }};color:{{ hero_badge_style.text }};border:1px solid {{ hero_badge_style.border }};">
+    {{ report.hero.confidence }} Confidence
+  </span>
+</div>
+{% endif %}
+
+{% if report.hero and report.hero.confidence_explanation %}
+<div class="confidence-box" style="background:{{ hero_badge_style.bg }};border:1px solid {{ hero_badge_style.border }};">
+  <div class="cap" style="color:{{ hero_badge_style.text }};">What &ldquo;{{ report.hero.confidence }} Confidence&rdquo; means</div>
+  <div class="body">{{ report.hero.confidence_explanation }}</div>
+</div>
+{% endif %}
+
+<!-- Stream -->
+{% if report.stream_recommendation %}
+<div class="stream-wrap" style="border-color:{{ stream_theme.border }};">
+  <div class="stream-head" style="background:{{ stream_theme.header_bg }};">
+    <div class="ico">{{ stream_theme.icon }}</div>
+    <div>
+      <div class="over" style="color:{{ stream_theme.accent }};">Recommended Stream</div>
+      <div class="stream-name" style="color:{{ stream_theme.accent }};">{{ report.stream_recommendation.stream }}</div>
+    </div>
+  </div>
+  <div class="stream-body">{{ report.stream_recommendation.reasoning }}</div>
 </div>
 {% endif %}
 
 {% if report.readiness %}
-<div class="info-box info-box-gray">
-  <div class="box-title" style="color:#64748b;">Career readiness</div>
-  <div class="box-heading" style="color:#111827;">{{ report.readiness.headline }}</div>
-  <div class="box-text">{{ report.readiness.detail }}</div>
+<div class="readiness-box">
+  <div class="lbl">Career readiness</div>
+  <div class="headline">{{ report.readiness.headline }}</div>
+  <div class="detail">{{ report.readiness.detail }}</div>
 </div>
 {% endif %}
 
 {% if report.subject_recommendation.primary %}
-<h2>Subject combinations (Class 11–12)</h2>
-<p class="section-intro">
-  Picked for your profile and <strong>{{ report.stream_recommendation.stream }}</strong> stream — same logic as the live report.
-</p>
-<div class="info-box info-box-green">
-  <div class="box-title" style="color:#15803d;">Recommended</div>
-  <div class="box-heading" style="color:#166534; font-size:15px;">{{ report.subject_recommendation.primary.label }}</div>
-  <div style="margin:8px 0;">
-    {% for subj in report.subject_recommendation.primary.subjects %}
-    <span class="subject-pill">{{ subj }}</span>
-    {% endfor %}
+<div class="subject-shell">
+  <h2>📚 Recommended Subjects for Class 11-12</h2>
+  <p class="section-intro">
+    Based on your interest profile{% if report.stream_recommendation.stream %} and {{ report.stream_recommendation.stream }} stream recommendation{% endif %},
+    here are the specific subject combinations that align best with your strengths.
+  </p>
+  <div class="subject-card primary">
+    <div style="margin-bottom:8px;">
+      <span class="rec-chip">Recommended</span>
+      <strong style="font-size:11px;color:#15803d;">{{ report.subject_recommendation.primary.label }}</strong>
+    </div>
+    <div style="margin-bottom:8px;">
+      {% for subj in report.subject_recommendation.primary.subjects %}
+      <span class="subject-pill pri">{{ subj }}</span>
+      {% endfor %}
+    </div>
+    <div style="font-size:9.5px;color:#6b7280;margin-bottom:6px;"><strong style="color:#374151;">Best for:</strong> {{ report.subject_recommendation.primary.best_for }}</div>
+    {% if report.subject_recommendation.primary.why %}
+    <div style="font-size:10px;color:#374151;line-height:1.6;">{{ report.subject_recommendation.primary.why }}</div>
+    {% endif %}
   </div>
-  <div class="box-text"><strong>Best for:</strong> {{ report.subject_recommendation.primary.best_for }}</div>
-  {% if report.subject_recommendation.primary.why %}
-  <div class="box-text" style="margin-top:8px;">{{ report.subject_recommendation.primary.why }}</div>
+  {% if report.subject_recommendation.alternatives %}
+  <p style="font-size:9.5px;font-weight:600;color:#6b7280;margin:12px 0 6px 0;">Also worth considering:</p>
+  {% for alt in report.subject_recommendation.alternatives %}
+  <div class="subject-card alt">
+    <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:6px;">{{ alt.label }}</div>
+    <div style="margin-bottom:6px;">
+      {% for subj in alt.subjects %}
+      <span class="subject-pill altp">{{ subj }}</span>
+      {% endfor %}
+    </div>
+    <div style="font-size:9.5px;color:#6b7280;"><strong style="color:#374151;">Best for:</strong> {{ alt.best_for }}</div>
+  </div>
+  {% endfor %}
   {% endif %}
 </div>
-{% if report.subject_recommendation.alternatives %}
-<h3>Alternative combinations</h3>
-{% for alt in report.subject_recommendation.alternatives %}
-<div class="info-box info-box-gray" style="margin-bottom:10px;">
-  <div style="font-size:12px; font-weight:700; color:#374151; margin-bottom:6px;">{{ alt.label }}</div>
-  <div style="margin-bottom:6px;">
-    {% for subj in alt.subjects %}
-    <span class="subject-pill subject-pill-alt">{{ subj }}</span>
-    {% endfor %}
-  </div>
-  <div class="box-text"><strong>Best for:</strong> {{ alt.best_for }}</div>
-</div>
-{% endfor %}
-{% endif %}
 {% endif %}
 
+<div class="section-band">Section 2 · Your profile</div>
+
 {% if report.dominant_pattern %}
-<div class="info-box info-box-blue">
-  <div class="box-title" style="color:#1d4ed8;">Your dominant pattern</div>
-  <div class="box-heading" style="color:#1e40af;">{{ report.dominant_pattern.name }}</div>
-  <div class="box-text">{{ report.dominant_pattern.description }}</div>
+<div class="dominant-card">
+  <div class="over">Your Dominant Pattern</div>
+  <h3>{{ report.dominant_pattern.name }}</h3>
+  <p style="font-size:10.5px;color:#374151;line-height:1.75;margin-bottom:12px;">{{ report.dominant_pattern.description }}</p>
   {% if report.dominant_pattern.career_examples %}
-  <div class="box-text" style="margin-top:8px;"><strong>Career examples:</strong> {{ report.dominant_pattern.career_examples }}</div>
+  <p style="font-size:10.5px;color:#374151;line-height:1.65;margin-bottom:10px;"><strong>Career examples:</strong> {{ report.dominant_pattern.career_examples }}</p>
   {% endif %}
   {% if report.dominant_pattern.top_riasec %}
-  <div style="margin-top:10px;">
-    <div class="box-title" style="color:#1e40af;">Driven by your top interests</div>
+  <div style="padding:10px 12px;border-radius:8px;background:rgba(255,255,255,0.75);border:1px solid rgba(29,78,216,0.12);margin-bottom:10px;">
+    <div style="font-size:8.5px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Driven by your top interests</div>
     {% for r in report.dominant_pattern.top_riasec %}
     <span class="riasec-chip">{{ r.code }} · {{ r.label }} ({{ r.score }})</span>
     {% endfor %}
   </div>
   {% endif %}
   {% if report.dominant_pattern.strongest_trait %}
-  <div class="box-text" style="margin-top:8px;">
+  <p style="font-size:10px;color:#374151;">
     <strong>Strongest work-style signal:</strong> {{ report.dominant_pattern.strongest_trait.label }} ({{ report.dominant_pattern.strongest_trait.score }}/10)
-  </div>
+  </p>
   {% endif %}
 </div>
 {% endif %}
 
 {% if report.interest_profile %}
-<h2>Interest profile (RIASEC)</h2>
-<p class="section-intro">
-  Holland-style code: <strong>{{ report.interest_profile.holland_code }}</strong>. Higher scores show stronger interest in that area (0–10).
-</p>
-<table class="pdf-table">
-  <thead>
-    <tr>
-      <th>Dimension</th>
-      <th style="width:72px;">Score</th>
-      <th style="width:110px;"></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for d in report.interest_profile.dimensions %}
-    <tr>
-      <td>
-        <strong>{{ d.emoji }} {{ d.label }}</strong> <span style="color:#9ca3af;">({{ d.code }})</span><br>
-        <span style="color:#6b7280; font-size:9px; line-height:1.4;">{{ d.description }}</span>
-      </td>
-      <td>{{ d.score }} / {{ d.max }}</td>
-      <td><div class="mini-bar-bg"><div class="mini-bar-fill" style="width: {% widthratio d.score d.max 100 %}%;"></div></div></td>
-    </tr>
-    <tr>
-      <td colspan="3" style="font-size:9px; color:#4b5563; padding-top:0; border-bottom:1px solid #e5e7eb;"><em>Careers hint:</em> {{ d.careers_hint }}</td>
-    </tr>
+<div class="interest-card">
+  <h2 class="section-title" style="margin-top:0;border:none;padding:0;">Your Interest Profile</h2>
+  <p class="section-intro">
+    Based on your RIASEC interest responses (scenario-style items in the questionnaire).
+    Your top codes show the kinds of work that will feel most naturally engaging.
+  </p>
+  {% if report.interest_profile.holland_code %}
+  <div class="holland-badge">
+    <span class="lbl">Your Holland Code:</span>
+    {% for code in report.interest_profile.holland_code %}
+    <span class="holland-code-box" style="background:{% if forloop.counter0 == 0 %}#16a34a{% elif forloop.counter0 == 1 %}#3b82f6{% else %}#f59e0b{% endif %};">{{ code }}</span>
     {% endfor %}
-  </tbody>
-</table>
+  </div>
+  {% endif %}
+  {% for d in report.interest_profile.dimensions %}
+  <div class="dim-row {% if forloop.counter0 < 3 %}top{% else %}norm{% endif %}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:16px;">{{ d.emoji }}</span>
+          <strong style="font-size:10.5px;color:#111827;">{{ d.label }}</strong>
+          <span style="font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;background:{% if forloop.counter0 < 3 %}#dcfce7{% else %}#f3f4f6{% endif %};color:{% if forloop.counter0 < 3 %}#15803d{% else %}#6b7280{% endif %};">{{ d.code }}</span>
+          {% if forloop.counter0 < 3 %}
+          <span style="font-size:7.5px;font-weight:700;padding:2px 6px;border-radius:4px;background:#16a34a;color:#fff;">Top Interest</span>
+          {% endif %}
+        </div>
+        <div style="font-size:8.5px;color:#9ca3af;margin-top:4px;">{{ d.careers_hint }}</div>
+      </div>
+      <strong style="font-size:14px;color:{% if d.score >= 8 %}#16a34a{% elif d.score >= 6 %}#3b82f6{% elif d.score >= 4 %}#f59e0b{% else %}#ef4444{% endif %};">{{ d.score }}</strong>
+    </div>
+    <div class="dim-bar-bg">
+      <div class="dim-bar-fill" style="width:{% widthratio d.score d.max 100 %}%;background:{% if d.score >= 8 %}#16a34a{% elif d.score >= 6 %}#3b82f6{% elif d.score >= 4 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+    </div>
+    {% if forloop.counter0 < 3 %}
+    <p style="font-size:9.5px;color:#374151;line-height:1.6;margin-top:8px;">{{ d.description }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
 {% endif %}
 
 {% if report.core_traits %}
-<h2>Work DNA — core traits</h2>
-<p class="section-intro">Five habits and mindsets that shape how you learn and work — with a link to your stream.</p>
-{% for ct in report.core_traits %}
-<div class="trait-row">
-  <div class="trait-header">
-    <span class="trait-label">{{ ct.emoji }} {{ ct.label }}</span>
-    <span class="trait-score">{{ ct.score }} / {{ ct.max }}</span>
+<div class="outlined-card">
+  <h2 class="section-title" style="margin-top:0;border:none;padding:0;">Your Work DNA</h2>
+  <p class="section-intro">
+    These five dimensions summarize how you tend to approach work and learning. They are derived from
+    your personality, values, and interest pattern — not from one isolated habit checklist.
+  </p>
+  {% for ct in report.core_traits %}
+  <div class="trait-row" style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:10px;">
+    <div class="trait-header">
+      <span class="trait-label">{{ ct.emoji }} {{ ct.label }}</span>
+      <span class="trait-score" style="color:{% if ct.score >= 8 %}#16a34a{% elif ct.score >= 6 %}#3b82f6{% elif ct.score >= 4 %}#f59e0b{% else %}#ef4444{% endif %};">{{ ct.score }} <span style="font-size:9px;color:#9ca3af;">/10</span></span>
+    </div>
+    <div class="trait-bar-bg">
+      <div class="trait-bar-fill" style="width:{% widthratio ct.score ct.max 100 %}%;background:{% if ct.score >= 8 %}#16a34a{% elif ct.score >= 6 %}#3b82f6{% elif ct.score >= 4 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+    </div>
+    <div class="trait-desc" style="margin-top:6px;">{{ ct.description }}</div>
+    {% if ct.stream_connection %}
+    <div style="margin-top:8px;padding:8px 10px;border-radius:6px;background:#f0fdf4;border:1px solid #dcfce7;font-size:9.5px;color:#166534;line-height:1.5;">💡 {{ ct.stream_connection }}</div>
+    {% endif %}
   </div>
-  <div class="trait-bar-bg">
-    <div class="trait-bar-fill" style="width: {% widthratio ct.score ct.max 100 %}%;"></div>
+  {% endfor %}
+  <div class="legend-row">
+    <span class="legend-item"><span class="legend-dot" style="background:#16a34a;"></span>Excellent (8+)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#3b82f6;"></span>Strong (6–7)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Developing (4–5)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span>Growing (0–3)</span>
   </div>
-  <div class="trait-desc">{{ ct.description }}</div>
-  {% if ct.stream_connection %}
-  <div class="trait-desc" style="color:#1d4ed8; margin-top:4px;"><strong>Stream link:</strong> {{ ct.stream_connection }}</div>
-  {% endif %}
 </div>
-{% endfor %}
 {% endif %}
 
 {% if report.personality_style %}
-<div class="page-break"></div>
-<h2>Personality style</h2>
-<p class="section-intro">Four dimensions (roughly Big Five–style), scored 1–5, with what that tends to mean for you.</p>
-{% for p in report.personality_style %}
-<div class="trait-row">
-  <div class="trait-header">
-    <span class="trait-label">{{ p.emoji }} {{ p.label_low }} ↔ {{ p.label_high }}</span>
-    <span class="trait-score">{{ p.score }} / {{ p.max }}</span>
+<div class="outlined-card">
+  <h2 class="section-title" style="margin-top:0;border:none;padding:0;">Your Personality Style</h2>
+  <p class="section-intro">These 4 dimensions describe your natural behavioural tendencies. There are no right or wrong answers — each end of the spectrum has its own strengths.</p>
+  <p class="section-intro-muted">The marker shows where you fall on each spectrum based on your Big Five–style questionnaire responses.</p>
+  {% for p in report.personality_style %}
+  <div class="trait-row" style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="font-size:18px;">{{ p.emoji }}</span>
+      <span style="font-size:9.5px;color:#6b7280;line-height:1.5;">{{ p.description }}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:4px;">
+      <span style="font-weight:{% if p.position <= 35 %}700{% else %}500{% endif %};color:{% if p.position <= 35 %}#1d4ed8{% else %}#9ca3af{% endif %};">{{ p.label_low }}</span>
+      <span style="font-weight:{% if p.position >= 65 %}700{% else %}500{% endif %};color:{% if p.position >= 65 %}#7c3aed{% else %}#9ca3af{% endif %};">{{ p.label_high }}</span>
+    </div>
+    <div class="spectrum-bar-bg">
+      <span class="spectrum-dot" style="left:{{ p.position }}%;"></span>
+    </div>
+    <div style="font-size:9px;color:#9ca3af;margin-bottom:6px;">Score {{ p.score }} / {{ p.max }} (position {{ p.position }}%)</div>
+    <div style="padding:8px 10px;border-radius:6px;font-size:9.5px;color:#374151;line-height:1.55;background:{% if p.position <= 35 %}#eff6ff{% elif p.position >= 65 %}#f5f3ff{% else %}#f9fafb{% endif %};border:1px solid {% if p.position <= 35 %}#bfdbfe{% elif p.position >= 65 %}#ddd6fe{% else %}#e5e7eb{% endif %};"><strong>Insight:</strong> {{ p.insight }}</div>
   </div>
-  <div class="trait-bar-bg">
-    <div class="trait-bar-fill" style="width: {{ p.position }}%;"></div>
-  </div>
-  <div class="trait-desc">{{ p.description }}</div>
-  <div class="trait-desc" style="margin-top:4px;"><strong>Insight:</strong> {{ p.insight }}</div>
+  {% endfor %}
 </div>
-{% endfor %}
 {% endif %}
 
 {% if report.working_style %}
-<h2>Working style</h2>
-<p class="section-intro">How you may prefer to collaborate, take risks, structure work, and steer your own path.</p>
-{% for w in report.working_style %}
-<div class="improve-item" style="background:#f8fafc; border-color:#e2e8f0;">
-  <div class="improve-label" style="color:#334155;">{{ w.emoji }} {{ w.label_low }} ↔ {{ w.label_high }}</div>
-  <div class="improve-tip" style="color:#475569;">{{ w.insight }}</div>
-  <div style="font-size:9px; color:#94a3b8;">Score {{ w.score }} / {{ w.max }} (position {{ w.position }}%)</div>
+<div class="outlined-card">
+  <h2 class="section-title" style="margin-top:0;border:none;padding:0;">Your Working Style</h2>
+  <p class="section-intro">How you prefer to work, learn, and make decisions. Understanding this helps you choose environments where you&apos;ll thrive.</p>
+  {% for w in report.working_style %}
+  <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:16px;">{{ w.emoji }}</span>
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:4px;">
+          <span style="font-weight:{% if w.position <= 35 %}700{% else %}500{% endif %};color:{% if w.position <= 35 %}#1d4ed8{% else %}#9ca3af{% endif %};">{{ w.label_low }}</span>
+          <span style="font-weight:{% if w.position >= 65 %}700{% else %}500{% endif %};color:{% if w.position >= 65 %}#7c3aed{% else %}#9ca3af{% endif %};">{{ w.label_high }}</span>
+        </div>
+        <div class="spectrum-bar-bg">
+          <span class="spectrum-dot" style="left:{{ w.position }}%;"></span>
+        </div>
+        <div style="font-size:10px;color:#475569;line-height:1.55;margin-top:6px;">{{ w.insight }}</div>
+        <div style="font-size:8.5px;color:#94a3b8;margin-top:4px;">Score {{ w.score }} / {{ w.max }} (position {{ w.position }}%)</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
 </div>
-{% endfor %}
 {% endif %}
 
-<!-- ═══ 8-trait model (career matching) + radar ═══ -->
-<div class="page-break"></div>
-<h2>Career-matching profile (8 traits)</h2>
-<p class="section-intro">
-  These eight scores are the consolidated model used to rank career matches (alongside the richer questionnaire signals above).
-  The radar chart shows relative strength; the list below adds definitions.
-</p>
-<div class="chart-container">
-  {{ radar_svg|safe }}
-</div>
-
-<h2>Trait breakdown (career matching)</h2>
-<p class="section-intro">
-  Each score is 0–10. Above 7 suggests strong alignment for roles that need this; 4–7 is developing; below 4 is a growth area.
-</p>
-{% for t in report.traits %}
-<div class="trait-row">
-  <div class="trait-header">
-    <span class="trait-label">{{ t.label }}</span>
-    <span class="trait-score">{{ t.score }} / {{ t.max }}</span>
+{% if trait_tiles %}
+<div class="outlined-card">
+  <h2 class="section-title" style="margin-top:0;border:none;padding:0;">Career-matching profile (8 traits)</h2>
+  <p class="section-intro">
+    These eight scores summarize your questionnaire for career matching (each 0–10). The sections above
+    show your 15 student-facing profile dimensions (RIASEC, work-style summary, and personality sliders).
+    {% if report.assessment_snapshot and report.assessment_snapshot.answered_count %}
+    Based on {{ report.assessment_snapshot.answered_count }} logged responses in this session.
+    {% endif %}
+  </p>
+  <div class="chips-row">
+    <strong style="color:#111827;">Strongest:</strong>
+    {% for c in trait_strongest %}
+    <span class="chip-s">{{ c.emoji }} {{ c.label }}</span>
+    {% endfor %}
+    {% if trait_developing %}
+    <strong style="color:#111827;margin-left:6px;">Developing:</strong>
+    {% for c in trait_developing %}
+    <span class="chip-d">{{ c.emoji }} {{ c.label }}</span>
+    {% endfor %}
+    {% endif %}
   </div>
-  <div class="trait-bar-bg">
-    <div class="trait-bar-fill" style="width: {{ t.bar_width }}%;"></div>
+  <div class="trait-tile-grid">
+    {% for t in trait_tiles %}
+    <div class="trait-tile">
+      <div class="trait-tile-top">
+        <div>
+          <span style="font-size:16px;">{{ t.emoji }}</span>
+          <span class="trait-tile-label" style="margin-left:4px;">{{ t.short_label }}</span>
+        </div>
+        <span class="trait-tile-score" style="color:{{ t.bar_color }};">{{ t.score }}</span>
+      </div>
+      <div class="trait-mini-bar">
+        <div class="trait-mini-fill" style="width:{{ t.bar_width_pct }}%;background:{{ t.bar_color }};"></div>
+      </div>
+      <span class="trait-level-pill" style="background:{{ t.level_bg }};color:{{ t.level_color }};">{{ t.level_label }}</span>
+    </div>
+    {% endfor %}
   </div>
-  <div class="trait-desc">{{ t.description }}</div>
+  <div class="legend-row">
+    <span class="legend-item"><span class="legend-dot" style="background:#16a34a;"></span>Excellent (8+)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#3b82f6;"></span>Strong (6–7)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Developing (4–5)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span>Growing (0–3)</span>
+  </div>
 </div>
-{% endfor %}
+{% endif %}
 
-<!-- ═══ CAREER CARDS ═══ -->
 <div class="page-break"></div>
-<h2>Your career matches</h2>
-<p class="section-intro">
-  Ranked by fit with your profile &mdash; same data as the interactive report. &ldquo;Why this match&rdquo; is personalised to your trait scores.
-</p>
+<div class="section-band">Section 3 · Career matches</div>
+
+<h2 class="section-title">Your Top Career Matches</h2>
+<p class="section-intro">Ranked by fit with your profile — same data as the interactive report. &ldquo;Why this match&rdquo; is personalised to your trait scores.</p>
 {% for c in report.careers %}
-<div class="career-card">
+<div class="career-card{% if c.rank == 2 %} r2{% elif c.rank == 3 %} r3{% endif %}">
   <div class="career-card-header">
     <div>
       <span class="career-rank{% if c.rank == 2 %} r2{% elif c.rank == 3 %} r3{% endif %}">#{{ c.rank }}</span>
-      <span class="career-name">{% if c.career_category %}<span style="display:block;font-size:13px;font-weight:800;color:#15803d;margin-bottom:3px;line-height:1.25;">{{ c.career_category }}</span><span style="display:block;font-size:11px;font-weight:600;color:#64748b;">{{ c.career_name }}</span>{% else %}<span style="font-size:14px;font-weight:700;color:#111827;">{{ c.career_name }}</span>{% endif %}</span>
+      <span class="career-name-block">
+        {% if c.career_category %}
+        <span class="cat">{{ c.career_category }}</span>
+        <span class="nm">{{ c.career_name }}</span>
+        {% else %}
+        <span class="nm-only">{{ c.career_name }}</span>
+        {% endif %}
+      </span>
     </div>
     <span class="career-pct">{{ c.score_percent }}%</span>
   </div>
-  <div class="career-meta">
-    <strong>Stream:</strong> {{ c.stream }} &nbsp;|&nbsp;
-    <strong>Confidence:</strong> {{ c.confidence }}
-  </div>
-  {% if c.description %}
-  <div class="career-desc">{{ c.description }}</div>
-  {% endif %}
+  <div class="career-meta"><strong>Stream:</strong> {{ c.stream }} &nbsp;|&nbsp; <strong>Confidence:</strong> {{ c.confidence }}</div>
+  {% if c.description %}<div class="career-desc">{{ c.description }}</div>{% endif %}
   <div class="career-why">{{ c.why_match }}</div>
   <div class="career-meta-grid">
     <div style="margin-bottom:6px;"><strong>Work style</strong><br>{{ c.work_style }}</div>
@@ -669,93 +938,101 @@
 </div>
 {% endfor %}
 
-<!-- ═══ CAREER COMPARISON ═══ -->
-<h2>Career Comparison</h2>
-{% if report.career_comparison_text %}
-<p class="section-intro">{{ report.career_comparison_text }}</p>
-{% endif %}
-<div class="chart-container">
-  {{ bar_chart_svg|safe }}
-</div>
+<h2 class="section-title">Career Comparison</h2>
+{% if report.career_comparison_text %}<p class="section-intro">{{ report.career_comparison_text }}</p>{% else %}<p class="section-intro">Side-by-side comparison of your top career matches by compatibility percentage.</p>{% endif %}
+<div class="chart-container">{{ bar_chart_svg|safe }}</div>
 
-<!-- ═══ CAREERS THAT MAY FEEL LESS NATURAL ═══ -->
 {% if report.less_natural_careers %}
-<h2>Careers That May Need Extra Effort</h2>
-<p class="section-intro">
-  These are not closed doors — they are areas where deliberate skill-building would be needed.
-  Understanding this helps you make informed decisions.
-</p>
+<h2 class="section-title">Careers That May Need Extra Effort</h2>
+<p class="section-intro">These are not closed doors — they are areas where deliberate skill-building would be needed. Understanding this helps you make informed decisions.</p>
 {% for item in report.less_natural_careers %}
-<div class="info-box info-box-gray">
-  <div style="font-size:11px; font-weight:600; color:#374151; margin-bottom:3px;">{{ item.domain }}</div>
-  <div class="box-text">{{ item.note }}</div>
+<div style="padding:12px 14px;border-radius:8px;background:#f9fafb;border:1px solid #e5e7eb;margin-bottom:10px;page-break-inside:avoid;">
+  <div style="font-size:11px;font-weight:600;color:#374151;margin-bottom:3px;">{{ item.domain }}</div>
+  <div style="font-size:10.5px;color:#374151;line-height:1.6;">{{ item.note }}</div>
 </div>
 {% endfor %}
 {% endif %}
 
-<!-- ═══ ROADMAP ═══ -->
 <div class="page-break"></div>
-<h2>Development Roadmap</h2>
-<p class="section-intro">
-  A step-by-step guide tailored to your top career match and current trait profile.
-</p>
+<div class="section-band">Section 4 · Your growth path</div>
 
+<h2 class="section-title">Development Roadmap</h2>
+<p class="section-intro">A step-by-step guide tailored to your top career match.</p>
+{% if report.roadmap %}
 {% if report.roadmap.class_10 %}
-<div class="roadmap-step">
-  <h4>Class 10 — Build Your Foundation</h4>
-  <p>{{ report.roadmap.class_10 }}</p>
-</div>
+<div class="roadmap-step"><h4>Class 10 — Build Your Foundation</h4><p>{{ report.roadmap.class_10 }}</p></div>
 {% endif %}
-
 {% if report.roadmap.class_11_12 %}
-<div class="roadmap-step">
-  <h4>Class 11–12 — Choose Your Stream</h4>
-  <p>{{ report.roadmap.class_11_12 }}</p>
-</div>
+<div class="roadmap-step"><h4>Class 11–12 — Choose Your Stream</h4><p>{{ report.roadmap.class_11_12 }}</p></div>
 {% endif %}
-
 {% if report.roadmap.after_12th %}
-<div class="roadmap-step">
-  <h4>After 12th — Launch Your Career</h4>
-  <p>{{ report.roadmap.after_12th }}</p>
-</div>
+<div class="roadmap-step"><h4>After 12th — Launch Your Career</h4><p>{{ report.roadmap.after_12th }}</p></div>
+{% endif %}
 {% endif %}
 
-<!-- ═══ AREAS TO DEVELOP ═══ -->
-<h2>Areas to Develop</h2>
+{% if report.areas_to_improve %}
+<h2 class="section-title">{% if report.areas_to_improve.0.is_stretch %}🚀 Stretch Goals{% else %}Areas to Develop{% endif %}</h2>
 <p class="section-intro">
+  {% if report.areas_to_improve.0.is_stretch %}
+  Your profile is exceptionally strong across all traits. Here&apos;s how to go from great to outstanding — push these already-solid skills to an elite level.
+  {% else %}
   These are not weaknesses — they are growth opportunities. Even small effort here can expand your career options.
+  {% endif %}
 </p>
 {% for area in report.areas_to_improve %}
-<div class="improve-item">
-  <div class="improve-label">{{ area.label }} ({{ area.score }}/10)</div>
-  <div class="improve-tip">{{ area.tip }}</div>
+<div class="improve-item {% if area.is_stretch %}stretch{% else %}norm{% endif %}">
+  <div class="improve-label" style="display:flex;justify-content:space-between;">
+    <span>{{ area.label }}</span>
+    <span style="font-size:9px;font-weight:700;color:{% if area.is_stretch %}#16a34a{% else %}#d97706{% endif %};">{{ area.score }}/10</span>
+  </div>
+  <div class="improve-tip" style="color:{% if area.is_stretch %}#166534{% else %}#78350f{% endif %};">{{ area.tip }}</div>
   {% if area.steps %}
   <ul class="step-list">
-    {% for step in area.steps %}
-    <li>{{ step }}</li>
-    {% endfor %}
+    {% for step in area.steps %}<li>{{ step }}</li>{% endfor %}
   </ul>
   {% endif %}
 </div>
 {% endfor %}
+{% endif %}
 
-<h2>Next steps</h2>
-<div class="info-box info-box-amber">
-  <div class="box-text">
-    Share this PDF with a parent or counsellor.     Discuss your recommended stream
-    (<strong>{{ report.stream_recommendation.stream }}</strong>) and strongest career direction
-    ({% if report.hero.career_category %}<strong>{{ report.hero.career_category }}</strong>
-    &mdash; <span style="font-weight:600;color:#64748b;">{{ report.hero.career_name }}</span>{% else %}<strong>{{ report.hero.career_name }}</strong>{% endif %}), and align Class 11&ndash;12 subject choices with the combinations above.
+<div class="outlined-card">
+  <h2 class="section-title" style="margin-top:0;border:none;padding:0;">✅ Your Next Steps</h2>
+  <p class="section-intro">Here&apos;s what to do with this report — start with step 1 this week.</p>
+  <div class="next-step">
+    <div class="ico">👨‍👩‍👧</div>
+    <div>
+      <div class="t">1. Discuss with your parents</div>
+      <div class="d">Show them this report and the stream recommendation{% if report.stream_recommendation.stream %} ({{ report.stream_recommendation.stream }}){% endif %}. Having a data-backed conversation removes guesswork.</div>
+    </div>
+  </div>
+  <div class="next-step">
+    <div class="ico">🏫</div>
+    <div>
+      <div class="t">2. Talk to your school counsellor</div>
+      <div class="d">Share your PDF report with a counsellor at school. They can help align your subject choices with your assessment results.</div>
+    </div>
+  </div>
+  <div class="next-step">
+    <div class="ico">🔍</div>
+    <div>
+      <div class="t">3. Explore {% if report.hero %}{{ report.hero.career_name|default:"your top career" }}{% else %}your top career{% endif %} online</div>
+      <div class="d">Watch YouTube videos, read articles, and find professionals in {% if report.hero %}{{ report.hero.career_name|default:"your top career match" }}{% else %}your top career match{% endif %} to understand what a day in this career looks like.</div>
+    </div>
+  </div>
+  <div class="next-step">
+    <div class="ico">📚</div>
+    <div>
+      <div class="t">4. Start building relevant skills</div>
+      <div class="d">Check the Development Roadmap above and pick one small action to start this week. Progress compounds — even 30 minutes a week adds up.</div>
+    </div>
   </div>
 </div>
 
 <p class="disclaimer">{{ report.disclaimer }}</p>
 
-<!-- ═══ BRANDED FOOTER ═══ -->
-<div style="margin-top:30px; padding-top:16px; border-top:1px solid #e5e7eb; text-align:center; page-break-inside:avoid;">
-  {% if logo_uri %}<img src="{{ logo_uri }}" alt="Outcave" style="width:36px; height:36px; vertical-align:middle; object-fit:contain; object-position:center;">{% endif %}
-  <span style="font-size:9px; color:#9ca3af; margin-left:4px; vertical-align:middle;">— Break the cave.</span>
+<div style="margin-top:24px;padding-top:14px;border-top:1px solid #e5e7eb;text-align:center;page-break-inside:avoid;">
+  {% if logo_uri %}<img src="{{ logo_uri }}" alt="Outcave" style="width:36px;height:36px;vertical-align:middle;object-fit:contain;">{% endif %}
+  <span style="font-size:9px;color:#9ca3af;margin-left:4px;vertical-align:middle;">— Break the cave.</span>
 </div>
 
 </body>

@@ -1,74 +1,125 @@
 """
 Renders the career report as an A4 PDF using WeasyPrint.
 Falls back gracefully if WeasyPrint is not installed.
+
+Context mirrors the web CareerReportPage (hero → stream → profile → matches → growth).
 """
 from __future__ import annotations
 
 import base64
-import math
 import os
+from typing import Any, Dict, List, Tuple
+
 from django.template.loader import render_to_string
 
+# Match frontend TraitRadarChart.tsx
+_TRAIT_ICON_MAP = {
+    "brain": "🧠",
+    "calculator": "🔢",
+    "lightbulb": "💡",
+    "message-circle": "💬",
+    "users": "👥",
+    "trophy": "🏆",
+    "zap": "⚡",
+    "calendar": "📅",
+}
+_TRAIT_SHORT_LABELS = {
+    "Analytical Reasoning": "Analytical",
+    "Quantitative Comfort": "Numbers",
+    "Creativity & Innovation": "Creativity",
+    "Verbal & Communication": "Communication",
+    "Social Orientation": "Social",
+    "Leadership Drive": "Leadership",
+    "Risk Appetite": "Risk-Taking",
+    "Structure & Discipline": "Discipline",
+}
 
-def _generate_svg_radar(traits: list) -> str:
-    """Generate an inline SVG radar chart from trait scores."""
-    n = len(traits)
-    if n == 0:
-        return ""
 
-    vw, vh = 460, 400
-    cx, cy, r = vw // 2, vh // 2, 120
-    angle_step = 2 * math.pi / n
+def _trait_tile_label(trait: dict) -> str:
+    label = trait.get("label") or ""
+    return _TRAIT_SHORT_LABELS.get(label, label)
 
-    grid_lines = []
-    for level in [0.25, 0.5, 0.75, 1.0]:
-        points = []
-        for i in range(n):
-            angle = -math.pi / 2 + i * angle_step
-            x = cx + r * level * math.cos(angle)
-            y = cy + r * level * math.sin(angle)
-            points.append(f"{x:.1f},{y:.1f}")
-        grid_lines.append(" ".join(points))
 
-    axis_lines = []
-    label_positions = []
-    for i, t in enumerate(traits):
-        angle = -math.pi / 2 + i * angle_step
-        x_end = cx + r * math.cos(angle)
-        y_end = cy + r * math.sin(angle)
-        axis_lines.append(f'<line x1="{cx}" y1="{cy}" x2="{x_end:.1f}" y2="{y_end:.1f}" stroke="#e5e7eb" stroke-width="1"/>')
+def _trait_tile_emoji(trait: dict) -> str:
+    return _TRAIT_ICON_MAP.get(trait.get("icon") or "", "●")
 
-        label_r = r + 24
-        lx = cx + label_r * math.cos(angle)
-        ly = cy + label_r * math.sin(angle)
 
-        anchor = "middle"
-        if math.cos(angle) > 0.3:
-            anchor = "start"
-        elif math.cos(angle) < -0.3:
-            anchor = "end"
+def _trait_level(score: float) -> Tuple[str, str, str]:
+    if score >= 8:
+        return "Excellent", "#15803d", "#f0fdf4"
+    if score >= 6:
+        return "Strong", "#1d4ed8", "#eff6ff"
+    if score >= 4:
+        return "Developing", "#d97706", "#fffbeb"
+    return "Growing", "#dc2626", "#fef2f2"
 
-        label_positions.append(
-            f'<text x="{lx:.1f}" y="{ly:.1f}" text-anchor="{anchor}" '
-            f'dominant-baseline="central" font-size="11" fill="#6b7280">'
-            f'{t["label"]}</text>'
-        )
 
-    data_points = []
-    for i, t in enumerate(traits):
-        frac = t["score"] / t["max"] if t["max"] > 0 else 0
-        angle = -math.pi / 2 + i * angle_step
-        x = cx + r * frac * math.cos(angle)
-        y = cy + r * frac * math.sin(angle)
-        data_points.append(f"{x:.1f},{y:.1f}")
+def _trait_bar_color(score: float) -> str:
+    if score >= 8:
+        return "#16a34a"
+    if score >= 6:
+        return "#3b82f6"
+    if score >= 4:
+        return "#f59e0b"
+    return "#ef4444"
 
-    svg = f'''<svg viewBox="0 0 {vw} {vh}" xmlns="http://www.w3.org/2000/svg" width="{vw}" height="{vh}">
-    {''.join(f'<polygon points="{pts}" fill="none" stroke="#e5e7eb" stroke-width="1"/>' for pts in grid_lines)}
-    {''.join(axis_lines)}
-    <polygon points="{' '.join(data_points)}" fill="rgba(22,163,74,0.2)" stroke="#16a34a" stroke-width="2"/>
-    {''.join(label_positions)}
-    </svg>'''
-    return svg
+
+def _trait_chips_for_pdf(traits: List[dict]) -> Tuple[List[dict], List[dict]]:
+    sorted_t = sorted(traits, key=lambda t: -float(t.get("score") or 0))
+    strongest = sorted_t[:3]
+    developing = [t for t in sorted_t if float(t.get("score") or 0) < 6][:2]
+    out_s = [
+        {"emoji": _trait_tile_emoji(t), "label": _trait_tile_label(t)}
+        for t in strongest
+    ]
+    out_d = [
+        {"emoji": _trait_tile_emoji(t), "label": _trait_tile_label(t)}
+        for t in developing
+    ]
+    return out_s, out_d
+
+
+def _trait_tiles_enriched(traits: List[dict]) -> List[dict]:
+    rows = []
+    for t in traits:
+        score = float(t.get("score") or 0)
+        mx = float(t.get("max") or 10)
+        pct = int(round((score / mx) * 100)) if mx else 0
+        lvl, lc, bg = _trait_level(score)
+        rows.append({
+            **t,
+            "short_label": _trait_tile_label(t),
+            "emoji": _trait_tile_emoji(t),
+            "bar_width_pct": pct,
+            "bar_color": _trait_bar_color(score),
+            "level_label": lvl,
+            "level_color": lc,
+            "level_bg": bg,
+        })
+    return rows
+
+
+def _stream_theme(stream: str) -> Dict[str, str]:
+    """Match frontend StreamSection STREAM_THEME."""
+    s = (stream or "").strip()
+    themes = {
+        "Science": {"icon": "🔬", "header_bg": "#eff6ff", "accent": "#1d4ed8", "border": "#bfdbfe"},
+        "Commerce": {"icon": "📈", "header_bg": "#fefce8", "accent": "#a16207", "border": "#fde68a"},
+        "Arts": {"icon": "🎨", "header_bg": "#fdf2f8", "accent": "#be185d", "border": "#fbcfe8"},
+        "Humanities": {"icon": "📚", "header_bg": "#fdf2f8", "accent": "#be185d", "border": "#fbcfe8"},
+        "General": {"icon": "🎓", "header_bg": "#f3f4f6", "accent": "#374151", "border": "#d1d5db"},
+    }
+    return themes.get(s, themes["General"])
+
+
+def _hero_confidence_style(confidence: str) -> Dict[str, str]:
+    """Match frontend HeroSection BADGE_COLORS."""
+    c = (confidence or "").strip()
+    if c == "High":
+        return {"bg": "#f0fdf4", "text": "#16a34a", "border": "#bbf7d0"}
+    if c == "Moderate":
+        return {"bg": "#eff6ff", "text": "#2563eb", "border": "#bfdbfe"}
+    return {"bg": "#fffbeb", "text": "#d97706", "border": "#fde68a"}
 
 
 def _generate_svg_bar_chart(careers: list) -> str:
@@ -123,23 +174,27 @@ def _get_logo_data_uri() -> str:
         return ""
 
 
+def _pdf_context(report: dict) -> Dict[str, Any]:
+    traits = report.get("traits") or []
+    trait_strongest, trait_developing = _trait_chips_for_pdf(traits)
+    stream = (report.get("stream_recommendation") or {}).get("stream") or ""
+    hero = report.get("hero") or {}
+    return {
+        "report": report,
+        "bar_chart_svg": _generate_svg_bar_chart(report.get("careers") or []),
+        "logo_uri": _get_logo_data_uri(),
+        "stream_theme": _stream_theme(stream),
+        "hero_badge_style": _hero_confidence_style(hero.get("confidence") or ""),
+        "trait_strongest": trait_strongest,
+        "trait_developing": trait_developing,
+        "trait_tiles": _trait_tiles_enriched(traits),
+    }
+
+
 def render_report_pdf(report: dict) -> bytes:
     """Render the report dict to a PDF byte string."""
     from weasyprint import HTML
 
-    radar_svg = _generate_svg_radar(report.get("traits", []))
-    bar_svg = _generate_svg_bar_chart(report.get("careers", []))
-    logo_uri = _get_logo_data_uri()
-
-    html_string = render_to_string(
-        "game_assessment/report_pdf.html",
-        {
-            "report": report,
-            "radar_svg": radar_svg,
-            "bar_chart_svg": bar_svg,
-            "logo_uri": logo_uri,
-        },
-    )
-
-    pdf = HTML(string=html_string).write_pdf()
-    return pdf
+    ctx = _pdf_context(report)
+    html_string = render_to_string("game_assessment/report_pdf.html", ctx)
+    return HTML(string=html_string).write_pdf()
