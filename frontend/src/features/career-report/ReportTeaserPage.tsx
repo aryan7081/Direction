@@ -634,31 +634,47 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                               style={{ width: '100%', textAlign: 'left' }}
                             >
                               {teaser.hero_career_category ? (
+                                <>
+                                  <Typography
+                                    sx={{
+                                      fontSize: '0.92rem',
+                                      fontWeight: 800,
+                                      color: '#15803d',
+                                      display: 'block',
+                                      mb: 0.2,
+                                      textAlign: 'left',
+                                      width: '100%',
+                                      lineHeight: 1.25,
+                                    }}
+                                  >
+                                    {teaser.hero_career_category}
+                                  </Typography>
+                                  <Typography
+                                    sx={{
+                                      fontSize: '0.72rem',
+                                      fontWeight: 600,
+                                      color: '#64748b',
+                                      textAlign: 'left',
+                                      width: '100%',
+                                      lineHeight: 1.3,
+                                    }}
+                                  >
+                                    {teaser.hero_career}
+                                  </Typography>
+                                </>
+                              ) : (
                                 <Typography
                                   sx={{
-                                    fontSize: '0.72rem',
-                                    fontWeight: 700,
-                                    color: '#15803d',
-                                    display: 'block',
-                                    mb: 0.15,
+                                    fontSize: '0.92rem',
+                                    fontWeight: 800,
+                                    color: '#0f172a',
                                     textAlign: 'left',
                                     width: '100%',
                                   }}
                                 >
-                                  {teaser.hero_career_category}
+                                  {teaser.hero_career}
                                 </Typography>
-                              ) : null}
-                              <Typography
-                                sx={{
-                                  fontSize: '0.92rem',
-                                  fontWeight: 800,
-                                  color: '#0f172a',
-                                  textAlign: 'left',
-                                  width: '100%',
-                                }}
-                              >
-                                {teaser.hero_career}
-                              </Typography>
+                              )}
                             </motion.div>
                           </Box>
                           <Chip
@@ -979,9 +995,17 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                       {isRevealed ? (
                         <Box sx={{ flex: 1 }}>
                           {c.career_category ? (
-                            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803d' }}>{c.career_category}</Typography>
-                          ) : null}
-                          <Typography sx={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a' }}>{c.career_name}</Typography>
+                            <>
+                              <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: '#15803d', lineHeight: 1.25 }}>
+                                {c.career_category}
+                              </Typography>
+                              <Typography sx={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', mt: 0.1 }}>
+                                {c.career_name}
+                              </Typography>
+                            </>
+                          ) : (
+                            <Typography sx={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a' }}>{c.career_name}</Typography>
+                          )}
                         </Box>
                       ) : (
                         <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flex: 1, color: '#94a3b8' }}>

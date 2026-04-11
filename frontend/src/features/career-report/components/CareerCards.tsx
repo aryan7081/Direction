@@ -36,13 +36,28 @@ function CareerCard({ career, index }: { career: ReportCareer; index: number }) 
               />
               <Box>
                 {career.career_category ? (
-                  <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, color: '#15803d', mb: 0.25 }}>
-                    {career.career_category}
+                  <>
+                    <Typography
+                      sx={{
+                        display: 'block',
+                        fontWeight: 800,
+                        color: '#15803d',
+                        fontSize: '1.1rem',
+                        lineHeight: 1.25,
+                        mb: 0.35,
+                      }}
+                    >
+                      {career.career_category}
+                    </Typography>
+                    <Typography sx={{ fontWeight: 600, color: '#64748b', fontSize: '0.875rem', lineHeight: 1.35, mb: 0.15 }}>
+                      {career.career_name}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+                    {career.career_name}
                   </Typography>
-                ) : null}
-                <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2 }}>
-                  {career.career_name}
-                </Typography>
+                )}
                 <Typography variant="caption" color="text.secondary">
                   {career.stream}
                 </Typography>

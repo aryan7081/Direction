@@ -339,27 +339,47 @@ export function DashboardPage() {
               </Typography>
               <Box sx={{ mb: 2 }}>
                 {teaser.hero_career_category ? (
-                  <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#15803d', mb: 0.5 }}>
-                    {teaser.hero_career_category}
-                  </Typography>
-                ) : null}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Typography sx={{ fontSize: '1.25rem', fontWeight: 800, color: '#16a34a' }}>
-                  {teaser.hero_career}
-                </Typography>
-                <Chip
-                  label={teaser.hero_confidence}
-                  size="small"
-                  sx={{
-                    height: 24,
-                    fontSize: '0.72rem',
-                    fontWeight: 600,
-                    bgcolor: '#fff',
-                    color: '#16a34a',
-                    border: '1px solid #bbf7d0',
-                  }}
-                />
-              </Box>
+                  <>
+                    <Typography sx={{ fontSize: '1.25rem', fontWeight: 800, color: '#15803d', mb: 0.35, lineHeight: 1.2 }}>
+                      {teaser.hero_career_category}
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                      <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: '#64748b' }}>
+                        {teaser.hero_career}
+                      </Typography>
+                      <Chip
+                        label={teaser.hero_confidence}
+                        size="small"
+                        sx={{
+                          height: 24,
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          bgcolor: '#fff',
+                          color: '#16a34a',
+                          border: '1px solid #bbf7d0',
+                        }}
+                      />
+                    </Box>
+                  </>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Typography sx={{ fontSize: '1.25rem', fontWeight: 800, color: '#16a34a' }}>
+                      {teaser.hero_career}
+                    </Typography>
+                    <Chip
+                      label={teaser.hero_confidence}
+                      size="small"
+                      sx={{
+                        height: 24,
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        bgcolor: '#fff',
+                        color: '#16a34a',
+                        border: '1px solid #bbf7d0',
+                      }}
+                    />
+                  </Box>
+                )}
               </Box>
               <Button
                 variant="contained"
