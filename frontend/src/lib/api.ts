@@ -12,10 +12,13 @@ function getApiBase(): string {
     const tunnelUrl = process.env.NEXT_PUBLIC_API_URL_TUNNEL;
     if (tunnelUrl) return tunnelUrl;
   }
-  // Use same-origin proxy to avoid CORS and ensure secure requests
   const host = window.location.hostname;
+  // Same-origin proxy: avoids browser console noise (and CORS) when the API is only reachable from the Next server
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return '/api';
+  }
   if (host.includes('vercel.app') || host === 'outcave.in' || host === 'www.outcave.in') {
-    return '/api'; // Next.js rewrites proxy /api/* to backend
+    return '/api';
   }
   // Always use env URL when set
   if (envUrl) return envUrl;

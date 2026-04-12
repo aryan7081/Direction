@@ -18,3 +18,146 @@ body {
 
 /* Improve touch targets on mobile - applied via MUI sx where needed */
 
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+}
+
+/* ── Landing hero: CSS-only motion (keeps framer-motion off the critical path) ── */
+@keyframes landing-reveal-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes landing-orb-a {
+  0%,
+  100% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.15) translate3d(20px, -15px, 0);
+  }
+}
+
+@keyframes landing-orb-b {
+  0%,
+  100% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.2) translate3d(-15px, 20px, 0);
+  }
+}
+
+@keyframes landing-scroll-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+@keyframes landing-social-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.landing-reveal {
+  animation: landing-reveal-up 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.landing-reveal-1 {
+  animation-delay: 0.05s;
+}
+.landing-reveal-2 {
+  animation-delay: 0.12s;
+}
+.landing-reveal-3 {
+  animation-delay: 0.2s;
+}
+.landing-reveal-4 {
+  animation-delay: 0.28s;
+}
+.landing-reveal-5 {
+  animation-delay: 0.38s;
+}
+.landing-reveal-6 {
+  animation-delay: 0.48s;
+}
+
+.landing-orbs-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.landing-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(50px);
+  pointer-events: none;
+}
+
+.landing-orb-a {
+  width: 500px;
+  height: 500px;
+  top: -10%;
+  right: -8%;
+  background: radial-gradient(circle, rgba(22, 163, 74, 0.1) 0%, transparent 70%);
+  animation: landing-orb-a 10s ease-in-out infinite;
+}
+
+.landing-orb-b {
+  width: 400px;
+  height: 400px;
+  bottom: 5%;
+  left: -5%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+  animation: landing-orb-b 12s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.landing-scroll-hint {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  margin-left: -12px;
+  z-index: 1;
+  animation: landing-scroll-y 2s ease-in-out infinite;
+}
+
+.landing-social-fade {
+  animation: landing-social-in 0.6s ease-out 0.5s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-reveal,
+  .landing-social-fade {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+  .landing-orb-a,
+  .landing-orb-b {
+    animation: none !important;
+    transform: none;
+  }
+  .landing-scroll-hint {
+    animation: none !important;
+  }
+}
+

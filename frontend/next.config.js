@@ -1,7 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
+  productionBrowserSourceMaps: true,
   skipTrailingSlashRedirect: true,
+
+  compiler: {
+    removeConsole:
+      process.env.NODE_ENV === "production" ? { exclude: ["error"] } : false,
+  },
+
+  experimental: {
+    optimizePackageImports: ["@mui/material"],
+  },
 
   // Google Sign-In: COOP allows the OAuth popup to postMessage back to the opener.
   // Apply only in production — in dev, this header breaks Next.js internals (e.g.
@@ -18,6 +29,15 @@ const nextConfig = {
           {
             key: "Cross-Origin-Opener-Policy",
             value: "same-origin-allow-popups",
+          },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
           },
         ],
       },
