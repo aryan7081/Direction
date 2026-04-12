@@ -35,7 +35,16 @@ class ReportOrderInline(admin.TabularInline):
     model = ReportOrder
     extra = 0
     max_num = 1
-    readonly_fields = ("id", "amount", "status", "razorpay_order_id", "razorpay_payment_id", "paid_at", "created_at")
+    readonly_fields = (
+        "id",
+        "product_type",
+        "amount",
+        "status",
+        "razorpay_order_id",
+        "razorpay_payment_id",
+        "paid_at",
+        "created_at",
+    )
     can_delete = True
     show_change_link = True
 
@@ -92,12 +101,13 @@ class ReportOrderAdmin(admin.ModelAdmin):
         "id_short",
         "user_email",
         "session_link",
+        "product_type",
         "amount",
         "status",
         "paid_at",
         "created_at",
     )
-    list_filter = ("status", "created_at")
+    list_filter = ("status", "product_type", "created_at")
     search_fields = ("user__email", "user__first_name", "user__last_name", "razorpay_order_id", "razorpay_payment_id", "session__id")
     list_editable = ("status",)
     list_per_page = 25
@@ -108,7 +118,14 @@ class ReportOrderAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            "fields": ("id", "user", "session", "amount", "status"),
+            "fields": (
+                "id",
+                "user",
+                "session",
+                "product_type",
+                "amount",
+                "status",
+            ),
         }),
         ("Payment details", {
             "fields": ("razorpay_order_id", "razorpay_payment_id", "razorpay_signature", "paid_at"),
