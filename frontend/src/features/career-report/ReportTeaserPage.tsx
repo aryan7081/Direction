@@ -344,6 +344,9 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const bundlePrice = teaser.premium_bundle_price_inr ?? PREMIUM_BUNDLE_PRICE_INR;
   const streamColor = STREAM_COLORS[teaser.stream_recommendation] || STREAM_COLORS.Science;
   const firstNameToken = teaser.student_name?.split(/\s+/)[0]?.trim();
+  /** Paid ₹99 bundle but add-on not finished — do not show duplicate checkout. */
+  const bundleAddOnPending =
+    !teaser.report_accessible && !!teaser.premium_unlocked && !teaser.premium_extension_complete;
 
   if (showSignInStep) {
     return (
@@ -742,6 +745,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                     </motion.div>
                   )}
 
+                  {!bundleAddOnPending && (
                   <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.35 }}>
                     <Typography
                       component="h2"
@@ -951,6 +955,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                     </Box>
                     <CheckoutTrustFooter compact />
                   </motion.div>
+                  )}
                 </Box>
               </Box>
             </Box>
@@ -1059,6 +1064,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
               </motion.div>
             )}
 
+            {!bundleAddOnPending && (
             <Box
               sx={{
                 textAlign: 'center',
@@ -1075,6 +1081,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                 One-on-one counselling often starts around <strong>{COUNSELLING_ANCHOR_LABEL}</strong>. Both options above are built for students — clear, structured, and a fraction of that cost.
               </Typography>
             </Box>
+            )}
 
             <Box
               sx={{
@@ -1091,7 +1098,9 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                   Inside the full report
                 </Typography>
                 <Typography sx={{ fontSize: '0.82rem', color: '#64748b', mt: 0.5, fontWeight: 500 }}>
-                  Included with both ₹{reportPrice} and ₹{bundlePrice} — same full report format.
+                  {bundleAddOnPending
+                    ? 'Same full report format — unlocks after you finish the short premium add-on above.'
+                    : `Included with both ₹${reportPrice} and ₹${bundlePrice} — same full report format.`}
                 </Typography>
               </Box>
               <Box sx={{ p: { xs: 2, sm: 2.5 }, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: { xs: 1.5, sm: 2 } }}>

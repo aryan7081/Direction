@@ -3,6 +3,7 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import { Box, Alert, Button, Container, Typography } from '@mui/material';
 import { PageLoader } from '@/components/ui/Loaders';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
@@ -168,10 +169,23 @@ function PremiumExtensionEngine({ sessionId }: { sessionId: string }) {
   }
 
   if (qError || (!isLoading && !data)) {
+    let loadErr =
+      'Could not load premium questions. Go back to your report preview and tap “Continue premium assessment”, or refresh this page.';
+    if (isAxiosError(qError)) {
+      const detail = (qError.response?.data as { detail?: string } | undefined)?.detail;
+      if (typeof detail === 'string' && detail.trim()) {
+        loadErr = detail.trim();
+      } else if (qError.response?.status === 402) {
+        loadErr =
+          'We could not confirm your premium bundle yet. Open your report preview once (it syncs your access), then try “Continue premium assessment” again.';
+      }
+    } else if (qError instanceof Error && qError.message) {
+      loadErr = qError.message;
+    }
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
         <Alert severity="error" sx={{ mb: 2 }}>
-          {(qError as Error)?.message || 'Could not load premium questions. Check payment or try again.'}
+          {loadErr}
         </Alert>
         <Button variant="outlined" onClick={() => router.push(`/report?session=${sessionId}`)}>
           Back to results

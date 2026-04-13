@@ -76,6 +76,24 @@ def _has_report_access(user, session) -> bool:
     return False
 
 
+def _sync_session_premium_unlock_from_bundle_order(session: GameSession) -> None:
+    """
+    If a paid premium-bundle ReportOrder exists for this session, ensure premium_unlocked.
+    Single source of truth for bundle entitlement (covers admin mark-paid and stale session rows).
+    """
+    if session.premium_unlocked or not session.pk:
+        return
+    if ReportOrder.objects.filter(
+        session_id=session.pk,
+        status="paid",
+        product_type=ReportOrder.ProductType.PREMIUM_BUNDLE,
+    ).exists():
+        GameSession.objects.filter(pk=session.pk, premium_unlocked=False).update(
+            premium_unlocked=True
+        )
+        session.premium_unlocked = True
+
+
 def _build_teaser(session) -> dict:
     """Build a partial report that reveals just enough to create desire.
     Does NOT expose trait scores or career names — only labels and count.
@@ -317,6 +335,8 @@ class LogEventView(GenericAPIView):
         if err:
             return Response({"detail": err}, status=status.HTTP_404_NOT_FOUND)
 
+        _sync_session_premium_unlock_from_bundle_order(session)
+
         can_extend = (
             session.is_complete
             and session.premium_unlocked
@@ -449,6 +469,7 @@ class PremiumExtensionContentView(GenericAPIView):
                 {"detail": "Complete the main assessment first."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        _sync_session_premium_unlock_from_bundle_order(session)
         if not session.premium_unlocked:
             return Response(
                 {"detail": "Premium bundle not unlocked."},
@@ -491,6 +512,7 @@ class SubmitPremiumExtensionView(GenericAPIView):
                 {"detail": "Invalid session state."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        _sync_session_premium_unlock_from_bundle_order(session)
         if not session.premium_unlocked:
             return Response(
                 {"detail": "Premium bundle not unlocked."},
@@ -605,6 +627,7 @@ class GameDashboardView(GenericAPIView):
 
         attempts = []
         for s in sessions:
+            _sync_session_premium_unlock_from_bundle_order(s)
             entry = {
                 "id": str(s.id),
                 "is_complete": s.is_complete,
@@ -625,6 +648,8 @@ class GameDashboardView(GenericAPIView):
             .order_by("-completed_at")
             .first()
         )
+        if latest_complete:
+            _sync_session_premium_unlock_from_bundle_order(latest_complete)
 
         return Response(
             {
@@ -688,6 +713,8 @@ class ReportTeaserView(GenericAPIView):
                 {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
             )
 
+        _sync_session_premium_unlock_from_bundle_order(session)
+
         if not session.is_complete:
             return Response(
                 {"detail": "Session not yet completed."},
@@ -733,6 +760,8 @@ class CareerReportView(GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        _sync_session_premium_unlock_from_bundle_order(session)
+
         if not _has_report_access(request.user, session):
             if session.premium_unlocked and not session.premium_extension_complete:
                 return Response(
@@ -773,6 +802,8 @@ class CareerReportPDFView(GenericAPIView):
                 {"detail": "Session not yet completed."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        _sync_session_premium_unlock_from_bundle_order(session)
 
         if not _has_report_access(request.user, session):
             if session.premium_unlocked and not session.premium_extension_complete:
@@ -851,6 +882,8 @@ class CreatePaymentOrderView(GenericAPIView):
                 {"detail": "Session not yet completed."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        _sync_session_premium_unlock_from_bundle_order(session)
 
         if _has_paid_order(request.user, session):
             if _has_report_access(request.user, session):
