@@ -193,5 +193,20 @@ class ReportOrder(TimeStampedModel):
         ordering = ["-created_at"]
         unique_together = ("user", "session")
 
+    def ensure_premium_bundle_session_unlocked(self) -> None:
+        """Paid premium-bundle orders must set session.premium_unlocked (admin bulk-update skips save())."""
+        if (
+            self.status == "paid"
+            and self.product_type == self.ProductType.PREMIUM_BUNDLE
+            and self.session_id
+        ):
+            GameSession.objects.filter(pk=self.session_id, premium_unlocked=False).update(
+                premium_unlocked=True
+            )
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.ensure_premium_bundle_session_unlocked()
+
     def __str__(self):
         return f"Order {self.id} ({self.status}) — {self.user.email}"

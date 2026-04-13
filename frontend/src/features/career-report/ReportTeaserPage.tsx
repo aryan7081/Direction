@@ -247,7 +247,9 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
       const orderData = await createPaymentOrder(sessionId, { product_type: productType });
 
       if (orderData.premium_pending_extension) {
-        showError('Finish your premium questions first, then your report unlocks.');
+        // Paid premium bundle but add-on not done — same as successful bundle checkout (not an error).
+        queryClient.invalidateQueries({ queryKey: ['report-teaser', sessionId] });
+        router.push(`/game-assessment?premium_continue=${sessionId}`);
         return;
       }
 

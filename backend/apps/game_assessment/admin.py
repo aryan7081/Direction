@@ -85,7 +85,10 @@ class GameCareerTraitWeightAdmin(admin.ModelAdmin):
 
 @admin.action(description="Mark selected as PAID (grant report access)")
 def mark_orders_paid(modeladmin, request, queryset):
+    pending_ids = list(queryset.exclude(status="paid").values_list("pk", flat=True))
     updated = queryset.exclude(status="paid").update(status="paid", paid_at=timezone.now())
+    for order in ReportOrder.objects.filter(pk__in=pending_ids):
+        order.ensure_premium_bundle_session_unlocked()
     modeladmin.message_user(request, f"{updated} order(s) marked as paid. Users now have report access.")
 
 
