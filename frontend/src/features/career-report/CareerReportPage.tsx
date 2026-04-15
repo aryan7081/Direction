@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type { AxiosError } from 'axios';
@@ -23,6 +23,8 @@ import { DevelopmentRoadmap } from './components/DevelopmentRoadmap';
 import { AreasToImprove } from './components/AreasToImprove';
 import { NextSteps } from './components/NextSteps';
 import { TraitRadarChart } from './components/TraitRadarChart';
+import { PremiumUpgradeCard } from './components/PremiumUpgradeCard';
+import { PREMIUM_UPGRADE_FROM_REPORT_INR } from '@/lib/productCopy';
 
 export function CareerReportPage({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -34,6 +36,15 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
     queryFn: () => fetchCareerReport(sessionId),
     enabled: !!sessionId,
   });
+
+  useEffect(() => {
+    if (!report?.premium_upgrade?.available) return;
+    if (typeof window === 'undefined' || window.location.hash !== '#premium-upgrade') return;
+    const id = window.setTimeout(() => {
+      document.getElementById('premium-upgrade')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+    return () => window.clearTimeout(id);
+  }, [report, sessionId]);
 
   const handleDownloadPdf = async () => {
     setDownloadError(null);
@@ -192,6 +203,15 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
           </Typography>
         )}
       </motion.div>
+
+      {report.premium_upgrade?.available && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+          <PremiumUpgradeCard
+            sessionId={sessionId}
+            upgradePriceInr={report.premium_upgrade.price_inr ?? PREMIUM_UPGRADE_FROM_REPORT_INR}
+          />
+        </motion.div>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════
           SECTION 1: THE BIG ANSWERS

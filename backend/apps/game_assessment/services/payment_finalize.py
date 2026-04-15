@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Literal, Tuple
 
+from django.conf import settings
 from django.utils import timezone
 
 if TYPE_CHECKING:
@@ -53,3 +54,49 @@ def finalize_report_order_payment(
         src,
     )
     return "ok", "Payment recorded."
+
+
+def finalize_premium_upgrade_payment(
+    order: "ReportOrder",
+    razorpay_payment_id: str,
+    razorpay_signature: str,
+) -> Tuple[Literal["already_paid", "ok"], str]:
+    """
+    After ₹49 report-only payment, user pays the bundle delta (₹50) — convert order to premium bundle
+    and unlock premium extension on the session.
+    Idempotent if order is already premium_bundle.
+    """
+    from apps.game_assessment.models import ReportOrder
+
+    if order.product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
+        return "already_paid", "Upgrade already applied."
+
+    if order.product_type != ReportOrder.ProductType.REPORT or order.status != "paid":
+        return "already_paid", "Invalid order state for upgrade."
+
+    order.product_type = ReportOrder.ProductType.PREMIUM_BUNDLE
+    order.amount = settings.PREMIUM_BUNDLE_PRICE_INR
+    order.upgrade_razorpay_payment_id = razorpay_payment_id[:100]
+    order.upgrade_razorpay_order_id = ""
+    order.save(
+        update_fields=[
+            "product_type",
+            "amount",
+            "upgrade_razorpay_payment_id",
+            "upgrade_razorpay_order_id",
+        ]
+    )
+
+    sess = order.session
+    if not sess.premium_unlocked:
+        sess.premium_unlocked = True
+        sess.save(update_fields=["premium_unlocked"])
+
+    src = "webhook" if razorpay_signature.startswith("webhook:") else "client"
+    logger.info(
+        "payment.premium_upgrade order=%s session=%s source=%s",
+        order.id,
+        order.session_id,
+        src,
+    )
+    return "ok", "Upgrade recorded."

@@ -186,7 +186,11 @@ RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 # Dashboard → Webhooks → signing secret (HMAC of raw body). Required for /api/.../payment/webhook/.
 RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "").strip()
-from ..pricing import PREMIUM_BUNDLE_PRICE_INR, REPORT_PRICE_INR
+from ..pricing import (
+    PREMIUM_BUNDLE_PRICE_INR,
+    PREMIUM_UPGRADE_FROM_REPORT_INR,
+    REPORT_PRICE_INR,
+)
 
 # Google OAuth (for Sign in with Google)
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")

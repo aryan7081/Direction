@@ -24,6 +24,7 @@ import {
   LANDING_STUDENTS_STAT_LABEL,
   LANDING_STUDENTS_STAT_VALUE,
   PREMIUM_BUNDLE_PRICE_INR,
+  PREMIUM_UPGRADE_FROM_REPORT_INR,
   PRODUCT_NAME,
   REPORT_PRICE_INR,
 } from '@/lib/productCopy';
@@ -182,7 +183,8 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const queryClient = useQueryClient();
   const setAuth = useAuthStore((s) => s.setAuth);
   const user = useAuthStore((s) => s.user);
-  const [paying, setPaying] = useState(false);
+  /** Which checkout is in progress — only that button shows a spinner. */
+  const [payingProduct, setPayingProduct] = useState<PaymentProductType | null>(null);
   const [showSignInStep, setShowSignInStep] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
   const [snack, setSnack] = useState<{ open: boolean; message: string; severity: 'error' | 'success' }>({
@@ -207,7 +209,9 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   }, []);
 
   useEffect(() => {
-    if (teaser?.report_accessible ?? teaser?.is_paid) {
+    const hasReport = teaser?.report_accessible ?? teaser?.is_paid;
+    /** Stay on this page when ₹49 report is paid so user can still choose premium upgrade (₹50). */
+    if (hasReport && !teaser?.premium_upgrade_available) {
       router.replace(`/report?session=${sessionId}`);
     }
   }, [teaser, sessionId, router]);
@@ -242,7 +246,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   };
 
   const handlePurchase = async (productType: PaymentProductType) => {
-    setPaying(true);
+    setPayingProduct(productType);
     try {
       const orderData = await createPaymentOrder(sessionId, { product_type: productType });
 
@@ -273,10 +277,13 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
         return;
       }
 
+      const isUpgrade = orderData.is_premium_upgrade === true;
       const desc =
-        productType === 'premium_bundle'
-          ? 'Premium assessment + full career report'
-          : 'Full career report (Phase 1 questionnaire)';
+        isUpgrade && productType === 'premium_bundle'
+          ? `Premium accuracy add-on — ₹${orderData.amount} (you already paid ₹${REPORT_PRICE_INR} toward ₹${PREMIUM_BUNDLE_PRICE_INR})`
+          : productType === 'premium_bundle'
+            ? 'Premium assessment + full career report'
+            : 'Full career report (Phase 1 questionnaire)';
 
       const options = {
         key: orderData.key_id,
@@ -311,7 +318,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
             showError('Payment verification failed. Please contact haryan458@gmail.com');
           }
         },
-        modal: { ondismiss: () => setPaying(false) },
+        modal: { ondismiss: () => setPayingProduct(null) },
       };
 
       if (!window.Razorpay) {
@@ -323,7 +330,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
     } catch {
       showError('Could not initiate payment. Please try again.');
     } finally {
-      setPaying(false);
+      setPayingProduct(null);
     }
   };
 
@@ -342,6 +349,8 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
 
   const reportPrice = teaser.report_price_inr ?? REPORT_PRICE_INR;
   const bundlePrice = teaser.premium_bundle_price_inr ?? PREMIUM_BUNDLE_PRICE_INR;
+  const upgradePrice = teaser.premium_upgrade_price_inr ?? PREMIUM_UPGRADE_FROM_REPORT_INR;
+  const showBundleAsUpgrade = !!teaser.premium_upgrade_available;
   const streamColor = STREAM_COLORS[teaser.stream_recommendation] || STREAM_COLORS.Science;
   const firstNameToken = teaser.student_name?.split(/\s+/)[0]?.trim();
   /** Paid ₹99 bundle but add-on not finished — do not show duplicate checkout. */
@@ -771,13 +780,17 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                         mx: 'auto',
                       }}
                     >
-                      Same full report either way — unlock now, or add a short assessment first for our strongest match read.
+                      {showBundleAsUpgrade
+                        ? 'You already unlocked the full report from Phase 1. Add the premium assignment below for our strongest match read.'
+                        : 'Same full report either way — unlock now, or add a short assessment first for our strongest match read.'}
                     </Typography>
 
                     <Box
                       sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr' },
+                        gridTemplateColumns: showBundleAsUpgrade
+                          ? '1fr'
+                          : { xs: '1fr 1fr', sm: '1fr 1fr' },
                         gap: { xs: 1, sm: 1.5, md: 2 },
                         width: '100%',
                       }}
@@ -813,7 +826,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                                   letterSpacing: '-0.02em',
                                 }}
                               >
-                                Premium bundle
+                                {showBundleAsUpgrade ? 'Premium accuracy add-on' : 'Premium bundle'}
                               </Typography>
                               <Chip
                                 label="Most accurate"
@@ -828,7 +841,9 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                               />
                             </Stack>
                             <Typography sx={{ fontSize: { xs: '0.65rem', sm: '0.78rem' }, color: '#64748b', lineHeight: 1.35 }}>
-                              Extra assessment + full report
+                              {showBundleAsUpgrade
+                                ? `You have the report — pay ₹${upgradePrice} more for the full ₹${bundlePrice} bundle`
+                                : 'Extra assessment + full report'}
                             </Typography>
                           </Box>
                           <Box sx={{ textAlign: 'right', flexShrink: 0, flexGrow: 0, ml: 'auto' }}>
@@ -842,10 +857,10 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                                 whiteSpace: 'nowrap',
                               }}
                             >
-                              ₹{bundlePrice}
+                              {showBundleAsUpgrade ? `₹${upgradePrice}` : `₹${bundlePrice}`}
                             </Typography>
                             <Typography sx={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                              one-time
+                              {showBundleAsUpgrade ? 'upgrade' : 'one-time'}
                             </Typography>
                           </Box>
                         </Stack>
@@ -859,7 +874,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                         <Button
                           variant="contained"
                           fullWidth
-                          disabled={paying}
+                          disabled={payingProduct !== null}
                           onClick={() => handleUnlockClick('premium_bundle')}
                           sx={{
                             py: { xs: 1.1, sm: 1.35 },
@@ -873,10 +888,17 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                             '&:hover': { bgcolor: '#1d4ed8', boxShadow: '0 10px 26px rgba(37,99,235,0.38)' },
                           }}
                         >
-                          {paying ? <ButtonSpinner size={22} /> : `Premium — ₹${bundlePrice}`}
+                          {payingProduct === 'premium_bundle' ? (
+                            <ButtonSpinner size={22} />
+                          ) : showBundleAsUpgrade ? (
+                            `Upgrade — ₹${upgradePrice}`
+                          ) : (
+                            `Premium — ₹${bundlePrice}`
+                          )}
                         </Button>
                       </Box>
 
+                      {!showBundleAsUpgrade && (
                       <Box
                         sx={{
                           borderRadius: 3,
@@ -932,7 +954,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                         <Button
                           variant="contained"
                           fullWidth
-                          disabled={paying}
+                          disabled={payingProduct !== null}
                           onClick={() => handleUnlockClick('report')}
                           sx={{
                             py: { xs: 1.1, sm: 1.35 },
@@ -949,9 +971,14 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                             },
                           }}
                         >
-                          {paying ? <ButtonSpinner size={22} /> : `Unlock — ₹${reportPrice}`}
+                          {payingProduct === 'report' ? (
+                            <ButtonSpinner size={22} />
+                          ) : (
+                            `Unlock — ₹${reportPrice}`
+                          )}
                         </Button>
                       </Box>
+                      )}
                     </Box>
                     <CheckoutTrustFooter compact />
                   </motion.div>

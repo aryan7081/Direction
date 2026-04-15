@@ -198,4 +198,9 @@ export interface CareerReport {
   readiness?: ReadinessInsight | null;
   assessment_snapshot?: AssessmentSnapshot | null;
   disclaimer: string;
+  /** Present on full report API — upgrade from ₹49 report to premium bundle (₹50 more). */
+  premium_upgrade?: {
+    available: boolean;
+    price_inr: number;
+  };
 }

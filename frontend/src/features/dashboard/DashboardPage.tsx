@@ -8,6 +8,7 @@ import { alpha } from '@mui/material/styles';
 import { useAuthStore } from '@/stores/authStore';
 import { fetchGameDashboard, fetchGameContent, fetchResumeSession } from '@/features/game-assessment/api';
 import { fetchReportTeaser } from '@/features/career-report/api';
+import { PREMIUM_UPGRADE_FROM_REPORT_INR } from '@/lib/productCopy';
 import { getCareers } from '@/features/careers/api';
 import { DashboardSkeleton } from '@/components/ui/Loaders';
 import {
@@ -259,6 +260,60 @@ export function DashboardPage() {
           </Box>
         </Box>
       </motion.div>
+
+      {latestSessionId && teaser?.premium_upgrade_available && (
+        <motion.div {...fadeUp(0.04)}>
+          <Box
+            sx={{
+              mb: 2.5,
+              p: { xs: 2, sm: 2.25 },
+              borderRadius: 3,
+              border: '1px solid #93c5fd',
+              background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+              boxShadow: `0 8px 28px ${alpha('#2563eb', 0.12)}`,
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                color: '#1d4ed8',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                mb: 0.75,
+              }}
+            >
+              Stronger accuracy
+            </Typography>
+            <Typography sx={{ fontWeight: 800, color: '#0f172a', fontSize: { xs: '0.95rem', sm: '1.05rem' }, mb: 1, lineHeight: 1.35 }}>
+              Want a more confident stream and career read?
+            </Typography>
+            <Typography sx={{ fontSize: '0.86rem', color: '#334155', lineHeight: 1.55, mb: 1.75 }}>
+              Your report is from Phase 1 only. Add the short premium assignment — pay{' '}
+              <Box component="span" sx={{ fontWeight: 800, color: '#1e40af' }}>
+                ₹{teaser.premium_upgrade_price_inr ?? PREMIUM_UPGRADE_FROM_REPORT_INR} more
+              </Box>{' '}
+              to complete the full bundle and refine your matches.
+            </Typography>
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={() => router.push(`/report?session=${latestSessionId}#premium-upgrade`)}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 800,
+                borderRadius: 2,
+                py: 1.15,
+                bgcolor: '#2563eb',
+                boxShadow: '0 6px 18px rgba(37,99,235,0.28)',
+                '&:hover': { bgcolor: '#1d4ed8' },
+              }}
+            >
+              Upgrade accuracy — ₹{teaser.premium_upgrade_price_inr ?? PREMIUM_UPGRADE_FROM_REPORT_INR}
+            </Button>
+          </Box>
+        </motion.div>
+      )}
 
       <Box
         sx={{

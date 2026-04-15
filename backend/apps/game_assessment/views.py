@@ -4,6 +4,7 @@ import hmac
 import logging
 
 from django.conf import settings
+from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import status
@@ -74,6 +75,18 @@ def _has_report_access(user, session) -> bool:
     if o.product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
         return session.premium_extension_complete
     return False
+
+
+def _premium_upgrade_available(user, session) -> bool:
+    """Paid ₹49 report only — can pay ₹50 more for the premium bundle add-on."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    po = _paid_order(user, session)
+    return bool(
+        po
+        and po.status == "paid"
+        and po.product_type == ReportOrder.ProductType.REPORT
+    )
 
 
 def _sync_session_premium_unlock_from_bundle_order(session: GameSession) -> None:
@@ -727,6 +740,10 @@ class ReportTeaserView(GenericAPIView):
         teaser = _build_teaser(session)
         teaser["report_price_inr"] = settings.REPORT_PRICE_INR
         teaser["premium_bundle_price_inr"] = settings.PREMIUM_BUNDLE_PRICE_INR
+        teaser["premium_upgrade_price_inr"] = settings.PREMIUM_UPGRADE_FROM_REPORT_INR
+        teaser["premium_upgrade_available"] = (
+            _premium_upgrade_available(session.user, session) if session.user else False
+        )
         teaser["report_accessible"] = report_accessible
         teaser["premium_unlocked"] = session.premium_unlocked
         teaser["premium_extension_complete"] = session.premium_extension_complete
@@ -780,6 +797,10 @@ class CareerReportView(GenericAPIView):
             )
 
         report = build_report(session)
+        report["premium_upgrade"] = {
+            "available": _premium_upgrade_available(request.user, session),
+            "price_inr": settings.PREMIUM_UPGRADE_FROM_REPORT_INR,
+        }
         return Response(report)
 
 
@@ -849,7 +870,7 @@ class CareerReportPDFView(GenericAPIView):
 # ── Payment endpoints ──────────────────────────────────────────────
 
 class CreatePaymentOrderView(GenericAPIView):
-    """POST — creates a Razorpay order for report (₹49) or premium bundle (₹99)."""
+    """POST — Razorpay order for report (₹49), bundle (₹99), or upgrade delta (₹50 after report)."""
 
     permission_classes = [IsAuthenticated]
     throttle_scope = "payment_create"
@@ -884,6 +905,80 @@ class CreatePaymentOrderView(GenericAPIView):
             )
 
         _sync_session_premium_unlock_from_bundle_order(session)
+
+        existing_paid = _paid_order(request.user, session)
+        if (
+            existing_paid
+            and existing_paid.status == "paid"
+            and existing_paid.product_type == ReportOrder.ProductType.REPORT
+            and product_type == ReportOrder.ProductType.PREMIUM_BUNDLE
+        ):
+            amount_inr = settings.PREMIUM_UPGRADE_FROM_REPORT_INR
+            order = existing_paid
+            if not settings.RAZORPAY_KEY_ID:
+                from .services.payment_finalize import finalize_premium_upgrade_payment
+
+                finalize_premium_upgrade_payment(
+                    order, "dev_upgrade", "dev:upgrade_finalize"
+                )
+                session.refresh_from_db()
+                return Response(
+                    {
+                        "is_paid": False,
+                        "detail": "Payment gateway not configured — upgrade applied for dev.",
+                        "product_type": ReportOrder.ProductType.PREMIUM_BUNDLE,
+                        "is_premium_upgrade": True,
+                    }
+                )
+
+            import razorpay
+
+            client = razorpay.Client(
+                auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
+            )
+
+            from apps.common.razorpay_text import (
+                razorpay_safe_customer_name,
+                razorpay_safe_email,
+                razorpay_safe_note_value,
+            )
+
+            rz_order = client.order.create(
+                {
+                    "amount": amount_inr * 100,
+                    "currency": "INR",
+                    "receipt": f"{order.id}-up"[:40],
+                    "notes": {
+                        "session_id": razorpay_safe_note_value(str(session.id), max_length=80),
+                        "user_email": razorpay_safe_note_value(
+                            request.user.email or "", max_length=254
+                        ),
+                        "product_type": "premium_bundle_upgrade",
+                    },
+                }
+            )
+
+            order.upgrade_razorpay_order_id = rz_order["id"]
+            order.save(update_fields=["upgrade_razorpay_order_id"])
+
+            safe_name = razorpay_safe_customer_name(
+                request.user.get_full_name() or request.user.email or ""
+            )
+            safe_email = razorpay_safe_email(request.user.email)
+
+            return Response(
+                {
+                    "order_id": rz_order["id"],
+                    "amount": amount_inr,
+                    "currency": "INR",
+                    "key_id": settings.RAZORPAY_KEY_ID,
+                    "user_email": safe_email,
+                    "user_name": safe_name,
+                    "product_type": ReportOrder.ProductType.PREMIUM_BUNDLE,
+                    "is_premium_upgrade": True,
+                },
+                status=status.HTTP_201_CREATED,
+            )
 
         if _has_paid_order(request.user, session):
             if _has_report_access(request.user, session):
@@ -998,17 +1093,25 @@ class VerifyPaymentView(GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            order = ReportOrder.objects.get(
-                razorpay_order_id=razorpay_order_id, user=request.user
+        order = (
+            ReportOrder.objects.filter(user=request.user)
+            .filter(
+                Q(razorpay_order_id=razorpay_order_id)
+                | Q(upgrade_razorpay_order_id=razorpay_order_id)
             )
-        except ReportOrder.DoesNotExist:
+            .first()
+        )
+        if not order:
             return Response(
                 {"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND
             )
 
-        if order.status == "paid":
-            return Response({"verified": True, "detail": "Already verified."})
+        is_upgrade_payment = (
+            bool(order.upgrade_razorpay_order_id)
+            and order.upgrade_razorpay_order_id == razorpay_order_id
+            and order.status == "paid"
+            and order.product_type == ReportOrder.ProductType.REPORT
+        )
 
         expected_sig = hmac.new(
             settings.RAZORPAY_KEY_SECRET.encode(),
@@ -1017,12 +1120,31 @@ class VerifyPaymentView(GenericAPIView):
         ).hexdigest()
 
         if not hmac.compare_digest(expected_sig, razorpay_signature):
-            order.status = "failed"
-            order.save()
+            if not is_upgrade_payment:
+                order.status = "failed"
+                order.save(update_fields=["status"])
             return Response(
                 {"detail": "Payment verification failed."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        if is_upgrade_payment:
+            from .services.payment_finalize import finalize_premium_upgrade_payment
+
+            finalize_premium_upgrade_payment(
+                order, razorpay_payment_id, razorpay_signature
+            )
+            return Response(
+                {
+                    "verified": True,
+                    "session_id": str(order.session_id),
+                    "product_type": ReportOrder.ProductType.PREMIUM_BUNDLE,
+                    "is_premium_upgrade": True,
+                }
+            )
+
+        if order.status == "paid":
+            return Response({"verified": True, "detail": "Already verified."})
 
         from .services.payment_finalize import finalize_report_order_payment
 
@@ -1101,14 +1223,31 @@ class RazorpayWebhookView(APIView):
             return Response({"ok": True, "ignored": "no_payment"})
 
         rz_order_id, rz_payment_id = extracted
-        try:
-            order = ReportOrder.objects.select_related("session").get(
-                razorpay_order_id=rz_order_id
+        order = (
+            ReportOrder.objects.select_related("session")
+            .filter(
+                Q(razorpay_order_id=rz_order_id)
+                | Q(upgrade_razorpay_order_id=rz_order_id)
             )
-        except ReportOrder.DoesNotExist:
+            .first()
+        )
+        if not order:
             logger.warning("razorpay.webhook unknown_rz_order_id=%s", rz_order_id)
             return Response({"ok": True})
 
         sig_note = f"webhook:{event}"[:200]
-        finalize_report_order_payment(order, rz_payment_id, sig_note)
+        is_upgrade = (
+            bool(order.upgrade_razorpay_order_id)
+            and order.upgrade_razorpay_order_id == rz_order_id
+            and order.status == "paid"
+            and order.product_type == ReportOrder.ProductType.REPORT
+        )
+        if is_upgrade:
+            from .services.payment_finalize import finalize_premium_upgrade_payment
+
+            finalize_premium_upgrade_payment(order, rz_payment_id, sig_note)
+        else:
+            if order.status == "paid":
+                return Response({"ok": True, "ignored": "already_paid"})
+            finalize_report_order_payment(order, rz_payment_id, sig_note)
         return Response({"ok": True})

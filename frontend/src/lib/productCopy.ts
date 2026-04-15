@@ -9,6 +9,8 @@ export const CAREER_CATALOG_LABEL = '100+';
 export const REPORT_PRICE_INR = 49;
 /** Premium bundle: extra questions + full report — match backend PREMIUM_BUNDLE_PRICE_INR. */
 export const PREMIUM_BUNDLE_PRICE_INR = 99;
+/** Delta when upgrading from report-only to bundle — match backend PREMIUM_UPGRADE_FROM_REPORT_INR. */
+export const PREMIUM_UPGRADE_FROM_REPORT_INR = PREMIUM_BUNDLE_PRICE_INR - REPORT_PRICE_INR;
 
 /** Match backend `_build_teaser` overview copy (game_assessment/views.py) for consistency. */
 export const DIRECTIONAL_SNAPSHOT_TITLE = 'Directional snapshot';

@@ -22,6 +22,9 @@ export interface ReportTeaser {
   premium_extension_complete?: boolean;
   report_price_inr?: number;
   premium_bundle_price_inr?: number;
+  /** ₹50 — only when user already paid for the ₹49 report. */
+  premium_upgrade_price_inr?: number;
+  premium_upgrade_available?: boolean;
   price?: number;
   pending_email?: string;
   assessment_tier?: 'free' | 'premium';
@@ -61,6 +64,8 @@ export async function createPaymentOrder(
     is_paid?: boolean;
     product_type?: PaymentProductType;
     premium_pending_extension?: boolean;
+    /** True when charging bundle delta (₹50) after ₹49 report purchase. */
+    is_premium_upgrade?: boolean;
     detail?: string;
   }
 > {
@@ -75,7 +80,7 @@ export async function verifyPayment(params: {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
-}): Promise<{ verified: boolean; session_id: string }> {
+}): Promise<{ verified: boolean; session_id: string; is_premium_upgrade?: boolean }> {
   const { data } = await api.post('/game/payment/verify/', params);
   return data;
 }

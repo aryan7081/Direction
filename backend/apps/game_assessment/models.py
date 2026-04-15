@@ -188,6 +188,9 @@ class ReportOrder(TimeStampedModel):
     razorpay_payment_id = models.CharField(max_length=100, blank=True, default="")
     razorpay_signature = models.CharField(max_length=200, blank=True, default="")
     paid_at = models.DateTimeField(null=True, blank=True)
+    # Second checkout when upgrading from paid report-only → premium bundle (₹50 delta).
+    upgrade_razorpay_order_id = models.CharField(max_length=100, blank=True, default="")
+    upgrade_razorpay_payment_id = models.CharField(max_length=100, blank=True, default="")
 
     class Meta:
         ordering = ["-created_at"]
