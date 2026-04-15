@@ -156,6 +156,96 @@ PAYMENT_STATUS_CHOICES = [
 ]
 
 
+class PaymentCoupon(TimeStampedModel):
+    """Admin-managed percentage discount codes for report / bundle checkout."""
+
+    code = models.CharField(
+        max_length=40,
+        unique=True,
+        db_index=True,
+        help_text="Stored uppercase. Shown to users as entered.",
+    )
+    discount_percent = models.PositiveSmallIntegerField(
+        help_text="0–100. Use 100 for a fully free checkout (no Razorpay charge).",
+    )
+    is_active = models.BooleanField(default=True, db_index=True)
+    valid_from = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="If set, code is not valid before this instant (UTC).",
+    )
+    valid_until = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="If set, code is not valid after this instant (UTC).",
+    )
+    max_redemptions = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Leave empty for unlimited total uses.",
+    )
+    max_redemptions_per_user = models.PositiveSmallIntegerField(
+        default=1,
+        help_text="How many successful checkouts per user can apply this code.",
+    )
+    internal_note = models.CharField(max_length=255, blank=True, default="")
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Payment coupon"
+        verbose_name_plural = "Payment coupons"
+
+    def __str__(self) -> str:
+        return f"{self.code} ({self.discount_percent}%)"
+
+    def clean(self):
+        super().clean()
+        d = int(self.discount_percent)
+        if d > 100:
+            raise ValidationError({"discount_percent": "Cannot exceed 100%."})
+
+    def save(self, *args, **kwargs):
+        self.code = (self.code or "").strip().upper()
+        super().save(*args, **kwargs)
+
+
+class CouponRedemption(TimeStampedModel):
+    """Audit trail: one row per successful discounted checkout (initial or upgrade)."""
+
+    class Context(models.TextChoices):
+        INITIAL = "initial", "Initial purchase"
+        UPGRADE = "upgrade", "Premium bundle upgrade"
+
+    coupon = models.ForeignKey(
+        PaymentCoupon,
+        on_delete=models.PROTECT,
+        related_name="redemptions",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="coupon_redemptions",
+    )
+    report_order = models.ForeignKey(
+        "ReportOrder",
+        on_delete=models.CASCADE,
+        related_name="coupon_redemptions",
+    )
+    context = models.CharField(max_length=16, choices=Context.choices)
+    list_price_inr = models.PositiveIntegerField()
+    final_amount_inr = models.PositiveIntegerField()
+    discount_percent = models.PositiveSmallIntegerField()
+
+    class Meta:
+        ordering = ["-created_at"]
+        unique_together = [("report_order", "context")]
+        verbose_name = "Coupon redemption"
+        verbose_name_plural = "Coupon redemptions"
+
+    def __str__(self) -> str:
+        return f"{self.coupon.code} · {self.context} · order {self.report_order_id}"
+
+
 class ReportOrder(TimeStampedModel):
     """Tracks payment for a career report or premium bundle."""
 
@@ -191,6 +281,23 @@ class ReportOrder(TimeStampedModel):
     # Second checkout when upgrading from paid report-only → premium bundle (₹50 delta).
     upgrade_razorpay_order_id = models.CharField(max_length=100, blank=True, default="")
     upgrade_razorpay_payment_id = models.CharField(max_length=100, blank=True, default="")
+    # Locked when user starts a checkout with a coupon; cleared after redemption or abandoned.
+    pending_coupon = models.ForeignKey(
+        PaymentCoupon,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="pending_orders",
+    )
+    pending_checkout_kind = models.CharField(
+        max_length=16,
+        blank=True,
+        default="",
+        help_text="initial | upgrade — matches CouponRedemption.context",
+    )
+    pending_list_price_inr = models.PositiveIntegerField(null=True, blank=True)
+    pending_final_amount_inr = models.PositiveIntegerField(null=True, blank=True)
+    pending_discount_percent = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         ordering = ["-created_at"]

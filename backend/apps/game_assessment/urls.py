@@ -49,6 +49,11 @@ urlpatterns = [
         name="payment-create-order",
     ),
     path(
+        "game/payment/validate-coupon/",
+        views.ValidatePaymentCouponView.as_view(),
+        name="payment-validate-coupon",
+    ),
+    path(
         "game/payment/verify/",
         views.VerifyPaymentView.as_view(),
         name="payment-verify",

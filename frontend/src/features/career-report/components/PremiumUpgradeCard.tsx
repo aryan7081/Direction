@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, Typography, TextField, Stack } from '@mui/material';
 import { ButtonSpinner } from '@/components/ui/Loaders';
-import { createPaymentOrder, verifyPayment } from '../api';
+import { createPaymentOrder, verifyPayment, validatePaymentCoupon } from '../api';
+import { CouponCelebrateDialog, type CouponCelebratePayload } from './CouponCelebrateDialog';
 import { PREMIUM_BUNDLE_PRICE_INR, REPORT_PRICE_INR } from '@/lib/productCopy';
 
 declare global {
@@ -27,6 +28,17 @@ export function PremiumUpgradeCard({ sessionId, upgradePriceInr }: PremiumUpgrad
   const queryClient = useQueryClient();
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponApplying, setCouponApplying] = useState(false);
+  const [couponFieldError, setCouponFieldError] = useState<string | null>(null);
+  const [celebrateOpen, setCelebrateOpen] = useState(false);
+  const [celebratePayload, setCelebratePayload] = useState<CouponCelebratePayload | null>(null);
+  const [couponPricePreview, setCouponPricePreview] = useState<CouponCelebratePayload | null>(null);
+
+  const payBundle = couponPricePreview?.premium_bundle.final_amount_inr ?? PREMIUM_BUNDLE_PRICE_INR;
+  const payUpgrade = couponPricePreview?.upgrade?.final_amount_inr ?? upgradePriceInr;
+  const hasCouponDiscount =
+    !!couponPricePreview && (couponPricePreview.discount_percent ?? 0) > 0;
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !document.getElementById('razorpay-script')) {
@@ -37,11 +49,45 @@ export function PremiumUpgradeCard({ sessionId, upgradePriceInr }: PremiumUpgrad
     }
   }, []);
 
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponFieldError('Enter a code.');
+      return;
+    }
+    setCouponApplying(true);
+    setCouponFieldError(null);
+    try {
+      const res = await validatePaymentCoupon(sessionId, {
+        coupon_code: couponCode.trim(),
+      });
+      if (!res.coupon_applied || !res.report || !res.premium_bundle) return;
+      const payload: CouponCelebratePayload = {
+        coupon_code: res.coupon_code ?? couponCode.trim().toUpperCase(),
+        discount_percent: res.discount_percent ?? 0,
+        report: res.report,
+        premium_bundle: res.premium_bundle,
+        upgrade: res.upgrade,
+      };
+      setCouponPricePreview(payload);
+      setCelebratePayload(payload);
+      setCelebrateOpen(true);
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { detail?: string } } };
+      setCouponFieldError(ax.response?.data?.detail || 'Invalid coupon.');
+      setCouponPricePreview(null);
+    } finally {
+      setCouponApplying(false);
+    }
+  };
+
   const startCheckout = async () => {
     setError(null);
     setPaying(true);
     try {
-      const orderData = await createPaymentOrder(sessionId, { product_type: 'premium_bundle' });
+      const orderData = await createPaymentOrder(sessionId, {
+        product_type: 'premium_bundle',
+        coupon_code: couponCode.trim(),
+      });
 
       if (orderData.premium_pending_extension) {
         queryClient.invalidateQueries({ queryKey: ['career-report', sessionId] });
@@ -105,8 +151,9 @@ export function PremiumUpgradeCard({ sessionId, upgradePriceInr }: PremiumUpgrad
       }
       const rzp = new window.Razorpay(options);
       rzp.open();
-    } catch {
-      setError('Could not start payment. Please try again.');
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { detail?: string } } };
+      setError(ax.response?.data?.detail || 'Could not start payment. Please try again.');
     } finally {
       setPaying(false);
     }
@@ -143,12 +190,43 @@ export function PremiumUpgradeCard({ sessionId, upgradePriceInr }: PremiumUpgrad
       <Typography sx={{ color: '#334155', fontSize: '0.88rem', lineHeight: 1.6, mb: 2 }}>
         Your report is based on Phase 1 only. Add a short premium assignment — we refine your profile first, then unlock
         the same full report with our most confident matches. You already paid ₹{REPORT_PRICE_INR} for the report; complete
-        the ₹{PREMIUM_BUNDLE_PRICE_INR} bundle by paying just{' '}
+        the ₹{payBundle} bundle by paying just{' '}
         <Box component="span" sx={{ fontWeight: 800, color: '#1e40af' }}>
-          ₹{upgradePriceInr} more
+          ₹{payUpgrade} more
         </Box>
         .
       </Typography>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
+        <TextField
+          size="small"
+          fullWidth
+          placeholder="Coupon code (optional)"
+          value={couponCode}
+          onChange={(e) => {
+            const v = e.target.value.toUpperCase();
+            setCouponCode(v);
+            setCouponFieldError(null);
+            if (
+              couponPricePreview &&
+              v.trim().toUpperCase() !== couponPricePreview.coupon_code
+            ) {
+              setCouponPricePreview(null);
+            }
+          }}
+          inputProps={{ 'aria-label': 'Coupon code' }}
+        />
+        <Button
+          variant="outlined"
+          disabled={couponApplying}
+          onClick={() => void applyCoupon()}
+          sx={{ textTransform: 'none', fontWeight: 800, flexShrink: 0 }}
+        >
+          {couponApplying ? <ButtonSpinner size={18} /> : 'Apply'}
+        </Button>
+      </Stack>
+      {couponFieldError && (
+        <Typography sx={{ fontSize: '0.8rem', color: 'error.main', mb: 1 }}>{couponFieldError}</Typography>
+      )}
       <Button
         variant="contained"
         fullWidth
@@ -170,7 +248,14 @@ export function PremiumUpgradeCard({ sessionId, upgradePriceInr }: PremiumUpgrad
             <ButtonSpinner size={20} /> Starting checkout…
           </>
         ) : (
-          `Add premium accuracy — ₹${upgradePriceInr}`
+          <>
+            {hasCouponDiscount && payUpgrade < upgradePriceInr && (
+              <Box component="span" sx={{ mr: 0.75, textDecoration: 'line-through', opacity: 0.75, fontWeight: 600 }}>
+                ₹{upgradePriceInr}
+              </Box>
+            )}
+            Add premium accuracy — ₹{payUpgrade}
+          </>
         )}
       </Button>
       {error && (
@@ -178,6 +263,11 @@ export function PremiumUpgradeCard({ sessionId, upgradePriceInr }: PremiumUpgrad
           {error}
         </Typography>
       )}
+      <CouponCelebrateDialog
+        open={celebrateOpen}
+        onClose={() => setCelebrateOpen(false)}
+        payload={celebratePayload}
+      />
     </Box>
   );
 }

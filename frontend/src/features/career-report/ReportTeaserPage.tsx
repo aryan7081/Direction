@@ -13,11 +13,13 @@ import {
   Typography,
   Stack,
   alpha,
+  TextField,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { PageLoader, ButtonSpinner } from '@/components/ui/Loaders';
 import { useAuthStore } from '@/stores/authStore';
-import { fetchReportTeaser, createPaymentOrder, verifyPayment } from './api';
+import { fetchReportTeaser, createPaymentOrder, verifyPayment, validatePaymentCoupon } from './api';
+import { CouponCelebrateDialog, type CouponCelebratePayload } from './components/CouponCelebrateDialog';
 import { googleAuth } from '@/features/auth/api';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
 import {
@@ -185,6 +187,14 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const user = useAuthStore((s) => s.user);
   /** Which checkout is in progress — only that button shows a spinner. */
   const [payingProduct, setPayingProduct] = useState<PaymentProductType | null>(null);
+
+  const [couponCode, setCouponCode] = useState('');
+  /** After successful Apply — drives card prices until code is edited. */
+  const [couponPricePreview, setCouponPricePreview] = useState<CouponCelebratePayload | null>(null);
+  const [couponApplying, setCouponApplying] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [celebrateOpen, setCelebrateOpen] = useState(false);
+  const [celebratePayload, setCelebratePayload] = useState<CouponCelebratePayload | null>(null);
   const [showSignInStep, setShowSignInStep] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
   const [snack, setSnack] = useState<{ open: boolean; message: string; severity: 'error' | 'success' }>({
@@ -231,6 +241,46 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
     }
   };
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('Enter a coupon code.');
+      return;
+    }
+    if (needsSignIn) {
+      setCouponError('Sign in to apply a coupon code.');
+      return;
+    }
+    setCouponApplying(true);
+    setCouponError(null);
+    try {
+      const res = await validatePaymentCoupon(sessionId, {
+        coupon_code: couponCode.trim(),
+      });
+      if (!res.coupon_applied || !res.report || !res.premium_bundle) {
+        setCelebratePayload(null);
+        setCouponPricePreview(null);
+        setCelebrateOpen(false);
+        return;
+      }
+      const payload: CouponCelebratePayload = {
+        coupon_code: res.coupon_code ?? couponCode.trim().toUpperCase(),
+        discount_percent: res.discount_percent ?? 0,
+        report: res.report,
+        premium_bundle: res.premium_bundle,
+        upgrade: res.upgrade,
+      };
+      setCelebratePayload(payload);
+      setCouponPricePreview(payload);
+      setCelebrateOpen(true);
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { detail?: string } } };
+      setCouponError(ax.response?.data?.detail || 'Invalid coupon.');
+      setCouponPricePreview(null);
+    } finally {
+      setCouponApplying(false);
+    }
+  };
+
   const handleGoogleSignInAndPurchase = async (credential: string) => {
     setSigningIn(true);
     try {
@@ -248,7 +298,10 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const handlePurchase = async (productType: PaymentProductType) => {
     setPayingProduct(productType);
     try {
-      const orderData = await createPaymentOrder(sessionId, { product_type: productType });
+      const orderData = await createPaymentOrder(sessionId, {
+        product_type: productType,
+        coupon_code: couponCode.trim(),
+      });
 
       if (orderData.premium_pending_extension) {
         // Paid premium bundle but add-on not done — same as successful bundle checkout (not an error).
@@ -327,8 +380,9 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
       }
       const rzp = new window.Razorpay(options);
       rzp.open();
-    } catch {
-      showError('Could not initiate payment. Please try again.');
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { detail?: string } } };
+      showError(ax.response?.data?.detail || 'Could not initiate payment. Please try again.');
     } finally {
       setPayingProduct(null);
     }
@@ -351,6 +405,15 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   const bundlePrice = teaser.premium_bundle_price_inr ?? PREMIUM_BUNDLE_PRICE_INR;
   const upgradePrice = teaser.premium_upgrade_price_inr ?? PREMIUM_UPGRADE_FROM_REPORT_INR;
   const showBundleAsUpgrade = !!teaser.premium_upgrade_available;
+
+  const payReport = couponPricePreview?.report.final_amount_inr ?? reportPrice;
+  const payBundle = couponPricePreview?.premium_bundle.final_amount_inr ?? bundlePrice;
+  const payUpgrade =
+    showBundleAsUpgrade
+      ? couponPricePreview?.upgrade?.final_amount_inr ?? upgradePrice
+      : upgradePrice;
+  const hasCouponDiscount =
+    !!couponPricePreview && (couponPricePreview.discount_percent ?? 0) > 0;
   const streamColor = STREAM_COLORS[teaser.stream_recommendation] || STREAM_COLORS.Science;
   const firstNameToken = teaser.student_name?.split(/\s+/)[0]?.trim();
   /** Paid ₹99 bundle but add-on not finished — do not show duplicate checkout. */
@@ -787,6 +850,64 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
 
                     <Box
                       sx={{
+                        mb: { xs: 1.5, sm: 2 },
+                        p: { xs: 1.25, sm: 1.5 },
+                        borderRadius: 2,
+                        bgcolor: alpha('#fff', 0.85),
+                        border: `1px solid ${alpha('#0f172a', 0.08)}`,
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontSize: '0.65rem',
+                          fontWeight: 800,
+                          color: '#64748b',
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          mb: 0.75,
+                        }}
+                      >
+                        Have a coupon?
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.72rem', color: '#64748b', mb: 1, lineHeight: 1.45 }}>
+                        Same code applies to report (₹{payReport}) or premium bundle (₹{payBundle}) — discount is a
+                        percentage off whichever you choose.
+                      </Typography>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }}>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          placeholder="Enter code"
+                          value={couponCode}
+                          onChange={(e) => {
+                            const v = e.target.value.toUpperCase();
+                            setCouponCode(v);
+                            setCouponError(null);
+                            if (
+                              couponPricePreview &&
+                              v.trim().toUpperCase() !== couponPricePreview.coupon_code
+                            ) {
+                              setCouponPricePreview(null);
+                            }
+                          }}
+                          inputProps={{ 'aria-label': 'Coupon code', style: { fontWeight: 600 } }}
+                        />
+                        <Button
+                          variant="outlined"
+                          disabled={couponApplying || !user}
+                          onClick={() => void handleApplyCoupon()}
+                          sx={{ textTransform: 'none', fontWeight: 800, minWidth: { sm: 100 }, flexShrink: 0 }}
+                        >
+                          {couponApplying ? <ButtonSpinner size={20} /> : 'Apply'}
+                        </Button>
+                      </Stack>
+                      {couponError && (
+                        <Typography sx={{ fontSize: '0.75rem', color: 'error.main', mt: 0.75 }}>{couponError}</Typography>
+                      )}
+                    </Box>
+
+                    <Box
+                      sx={{
                         display: 'grid',
                         gridTemplateColumns: showBundleAsUpgrade
                           ? '1fr'
@@ -842,11 +963,25 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                             </Stack>
                             <Typography sx={{ fontSize: { xs: '0.65rem', sm: '0.78rem' }, color: '#64748b', lineHeight: 1.35 }}>
                               {showBundleAsUpgrade
-                                ? `You have the report — pay ₹${upgradePrice} more for the full ₹${bundlePrice} bundle`
+                                ? `You have the report — pay ₹${payUpgrade} more for the full ₹${payBundle} bundle`
                                 : 'Extra assessment + full report'}
                             </Typography>
                           </Box>
                           <Box sx={{ textAlign: 'right', flexShrink: 0, flexGrow: 0, ml: 'auto' }}>
+                            {hasCouponDiscount &&
+                              (showBundleAsUpgrade ? payUpgrade < upgradePrice : payBundle < bundlePrice) && (
+                              <Typography
+                                sx={{
+                                  fontSize: '0.72rem',
+                                  fontWeight: 600,
+                                  color: '#94a3b8',
+                                  textDecoration: 'line-through',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                ₹{showBundleAsUpgrade ? upgradePrice : bundlePrice}
+                              </Typography>
+                            )}
                             <Typography
                               sx={{
                                 fontWeight: 800,
@@ -857,7 +992,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                                 whiteSpace: 'nowrap',
                               }}
                             >
-                              {showBundleAsUpgrade ? `₹${upgradePrice}` : `₹${bundlePrice}`}
+                              {showBundleAsUpgrade ? `₹${payUpgrade}` : `₹${payBundle}`}
                             </Typography>
                             <Typography sx={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 600, whiteSpace: 'nowrap' }}>
                               {showBundleAsUpgrade ? 'upgrade' : 'one-time'}
@@ -891,9 +1026,9 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                           {payingProduct === 'premium_bundle' ? (
                             <ButtonSpinner size={22} />
                           ) : showBundleAsUpgrade ? (
-                            `Upgrade — ₹${upgradePrice}`
+                            `Upgrade — ₹${payUpgrade}`
                           ) : (
-                            `Premium — ₹${bundlePrice}`
+                            `Premium — ₹${payBundle}`
                           )}
                         </Button>
                       </Box>
@@ -930,6 +1065,18 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                             </Typography>
                           </Box>
                           <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+                            {hasCouponDiscount && payReport < reportPrice && (
+                              <Typography
+                                sx={{
+                                  fontSize: '0.72rem',
+                                  fontWeight: 600,
+                                  color: '#94a3b8',
+                                  textDecoration: 'line-through',
+                                }}
+                              >
+                                ₹{reportPrice}
+                              </Typography>
+                            )}
                             <Typography
                               sx={{
                                 fontWeight: 800,
@@ -939,7 +1086,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                                 letterSpacing: '-0.03em',
                               }}
                             >
-                              ₹{reportPrice}
+                              ₹{payReport}
                             </Typography>
                             <Typography sx={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 600 }}>one-time</Typography>
                           </Box>
@@ -974,7 +1121,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                           {payingProduct === 'report' ? (
                             <ButtonSpinner size={22} />
                           ) : (
-                            `Unlock — ₹${reportPrice}`
+                            `Unlock — ₹${payReport}`
                           )}
                         </Button>
                       </Box>
@@ -1127,7 +1274,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                 <Typography sx={{ fontSize: '0.82rem', color: '#64748b', mt: 0.5, fontWeight: 500 }}>
                   {bundleAddOnPending
                     ? 'Same full report format — unlocks after you finish the short premium add-on above.'
-                    : `Included with both ₹${reportPrice} and ₹${bundlePrice} — same full report format.`}
+                    : `Included with both ₹${payReport} and ₹${payBundle} — same full report format.`}
                 </Typography>
               </Box>
               <Box sx={{ p: { xs: 2, sm: 2.5 }, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: { xs: 1.5, sm: 2 } }}>
@@ -1169,6 +1316,12 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
           </motion.div>
         </Container>
       </Box>
+
+      <CouponCelebrateDialog
+        open={celebrateOpen}
+        onClose={() => setCelebrateOpen(false)}
+        payload={celebratePayload}
+      />
 
       <Snackbar
         open={snack.open}

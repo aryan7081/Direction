@@ -151,6 +151,7 @@ REST_FRAMEWORK = {
         "report_json": _throttle_rate("THROTTLE_REPORT_JSON", "120/min"),
         "report_pdf": _throttle_rate("THROTTLE_REPORT_PDF", "30/hour"),
         "payment_create": _throttle_rate("THROTTLE_PAYMENT_CREATE", "30/min"),
+        "payment_coupon_validate": _throttle_rate("THROTTLE_PAYMENT_COUPON_VALIDATE", "30/min"),
         "payment_verify": _throttle_rate("THROTTLE_PAYMENT_VERIFY", "40/min"),
         "payment_webhook": _throttle_rate("THROTTLE_PAYMENT_WEBHOOK", "600/min"),
         # Legacy MCQ assessment + misc

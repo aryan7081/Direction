@@ -56,9 +56,37 @@ export async function fetchCareerReport(sessionId: string): Promise<CareerReport
 
 export type PaymentProductType = 'report' | 'premium_bundle';
 
+export type CouponPriceLine = {
+  list_price_inr: number;
+  final_amount_inr: number;
+  savings_inr: number;
+};
+
+/** Same % applies to report (₹49) and bundle (₹99); upgrade (₹50) when eligible. */
+export interface ValidateCouponResult {
+  valid: boolean;
+  coupon_applied?: boolean;
+  coupon_code?: string;
+  discount_percent?: number;
+  report?: CouponPriceLine;
+  premium_bundle?: CouponPriceLine;
+  upgrade?: CouponPriceLine | null;
+}
+
+export async function validatePaymentCoupon(
+  sessionId: string,
+  opts: { coupon_code: string }
+): Promise<ValidateCouponResult> {
+  const { data } = await api.post('/game/payment/validate-coupon/', {
+    session_id: sessionId,
+    coupon_code: opts.coupon_code.trim(),
+  });
+  return data;
+}
+
 export async function createPaymentOrder(
   sessionId: string,
-  opts?: { product_type?: PaymentProductType }
+  opts?: { product_type?: PaymentProductType; coupon_code?: string }
 ): Promise<
   PaymentOrder & {
     is_paid?: boolean;
@@ -67,11 +95,17 @@ export async function createPaymentOrder(
     /** True when charging bundle delta (₹50) after ₹49 report purchase. */
     is_premium_upgrade?: boolean;
     detail?: string;
+    coupon_applied?: boolean;
+    list_price_inr?: number;
+    final_amount_inr?: number;
+    savings_inr?: number;
+    discount_percent?: number;
   }
 > {
   const { data } = await api.post('/game/payment/create-order/', {
     session_id: sessionId,
     product_type: opts?.product_type ?? 'report',
+    ...(opts?.coupon_code?.trim() ? { coupon_code: opts.coupon_code.trim() } : {}),
   });
   return data;
 }

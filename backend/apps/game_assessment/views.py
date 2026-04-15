@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 import datetime
 import hashlib
 import hmac
 import logging
+from typing import Tuple
 
 from django.conf import settings
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
@@ -869,27 +873,45 @@ class CareerReportPDFView(GenericAPIView):
 
 # ── Payment endpoints ──────────────────────────────────────────────
 
-class CreatePaymentOrderView(GenericAPIView):
-    """POST — Razorpay order for report (₹49), bundle (₹99), or upgrade delta (₹50 after report)."""
+
+def _coupon_error_response(exc: DjangoValidationError) -> Response:
+    msg = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+    return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def _list_price_for_checkout(user, session, product_type: str) -> Tuple[int, str]:
+    """
+    Return (list_price_inr, checkout_kind) before any coupon.
+    checkout_kind is 'upgrade' only for ₹50 delta after report-only purchase.
+    """
+    existing_paid = _paid_order(user, session)
+    if (
+        existing_paid
+        and existing_paid.status == "paid"
+        and existing_paid.product_type == ReportOrder.ProductType.REPORT
+        and product_type == ReportOrder.ProductType.PREMIUM_BUNDLE
+    ):
+        return settings.PREMIUM_UPGRADE_FROM_REPORT_INR, "upgrade"
+    if product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
+        return settings.PREMIUM_BUNDLE_PRICE_INR, "initial"
+    return settings.REPORT_PRICE_INR, "initial"
+
+
+class ValidatePaymentCouponView(GenericAPIView):
+    """POST — preview coupon: same % applies to report (₹49), bundle (₹99), and upgrade (₹50) when relevant."""
 
     permission_classes = [IsAuthenticated]
-    throttle_scope = "payment_create"
+    throttle_scope = "payment_coupon_validate"
 
     def post(self, request):
         session_id = request.data.get("session_id")
+        code = (request.data.get("coupon_code") or "").strip()
+
         if not session_id:
             return Response(
                 {"detail": "session_id is required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        raw_pt = request.data.get("product_type", ReportOrder.ProductType.REPORT)
-        if raw_pt == ReportOrder.ProductType.PREMIUM_BUNDLE:
-            product_type = ReportOrder.ProductType.PREMIUM_BUNDLE
-            amount_inr = settings.PREMIUM_BUNDLE_PRICE_INR
-        else:
-            product_type = ReportOrder.ProductType.REPORT
-            amount_inr = settings.REPORT_PRICE_INR
 
         try:
             session = GameSession.objects.get(id=session_id, user=request.user)
@@ -906,6 +928,100 @@ class CreatePaymentOrderView(GenericAPIView):
 
         _sync_session_premium_unlock_from_bundle_order(session)
 
+        from .services.coupon import price_line_inr, validate_coupon_for_checkout
+
+        def _empty_previews():
+            z = 0
+            return {
+                "valid": True,
+                "coupon_applied": False,
+                "discount_percent": z,
+                "report": price_line_inr(settings.REPORT_PRICE_INR, z),
+                "premium_bundle": price_line_inr(settings.PREMIUM_BUNDLE_PRICE_INR, z),
+                "upgrade": (
+                    price_line_inr(settings.PREMIUM_UPGRADE_FROM_REPORT_INR, z)
+                    if _premium_upgrade_available(request.user, session)
+                    else None
+                ),
+            }
+
+        if not code:
+            return Response(_empty_previews())
+
+        try:
+            coupon, _, _ = validate_coupon_for_checkout(
+                code=code,
+                user=request.user,
+                list_price_inr=settings.REPORT_PRICE_INR,
+            )
+        except DjangoValidationError as e:
+            return _coupon_error_response(e)
+
+        dp = int(coupon.discount_percent)
+        body = {
+            "valid": True,
+            "coupon_applied": True,
+            "coupon_code": coupon.code,
+            "discount_percent": dp,
+            "report": price_line_inr(settings.REPORT_PRICE_INR, dp),
+            "premium_bundle": price_line_inr(settings.PREMIUM_BUNDLE_PRICE_INR, dp),
+        }
+        if _premium_upgrade_available(request.user, session):
+            body["upgrade"] = price_line_inr(settings.PREMIUM_UPGRADE_FROM_REPORT_INR, dp)
+        else:
+            body["upgrade"] = None
+        return Response(body)
+
+
+class CreatePaymentOrderView(GenericAPIView):
+    """POST — Razorpay order for report (₹49), bundle (₹99), or upgrade delta; optional coupon_code."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_scope = "payment_create"
+
+    def post(self, request):
+        session_id = request.data.get("session_id")
+        coupon_code = (request.data.get("coupon_code") or "").strip()
+        if not session_id:
+            return Response(
+                {"detail": "session_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        raw_pt = request.data.get("product_type", ReportOrder.ProductType.REPORT)
+        if raw_pt == ReportOrder.ProductType.PREMIUM_BUNDLE:
+            product_type = ReportOrder.ProductType.PREMIUM_BUNDLE
+        else:
+            product_type = ReportOrder.ProductType.REPORT
+
+        try:
+            session = GameSession.objects.get(id=session_id, user=request.user)
+        except GameSession.DoesNotExist:
+            return Response(
+                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not session.is_complete:
+            return Response(
+                {"detail": "Session not yet completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        _sync_session_premium_unlock_from_bundle_order(session)
+
+        list_price_inr, _checkout_kind = _list_price_for_checkout(
+            request.user, session, product_type
+        )
+
+        from .services.coupon import (
+            attach_pending_coupon_to_order,
+            validate_coupon_for_checkout,
+        )
+        from .services.payment_finalize import (
+            finalize_premium_upgrade_payment,
+            finalize_report_order_payment,
+        )
+
         existing_paid = _paid_order(request.user, session)
         if (
             existing_paid
@@ -913,11 +1029,36 @@ class CreatePaymentOrderView(GenericAPIView):
             and existing_paid.product_type == ReportOrder.ProductType.REPORT
             and product_type == ReportOrder.ProductType.PREMIUM_BUNDLE
         ):
-            amount_inr = settings.PREMIUM_UPGRADE_FROM_REPORT_INR
             order = existing_paid
-            if not settings.RAZORPAY_KEY_ID:
-                from .services.payment_finalize import finalize_premium_upgrade_payment
+            try:
+                coupon, final_amount, savings = validate_coupon_for_checkout(
+                    code=coupon_code,
+                    user=request.user,
+                    list_price_inr=list_price_inr,
+                )
+            except DjangoValidationError as e:
+                return _coupon_error_response(e)
+            dp = int(coupon.discount_percent) if coupon else 0
+            attach_pending_coupon_to_order(
+                order,
+                coupon=coupon,
+                checkout_kind="upgrade",
+                list_price_inr=list_price_inr,
+                final_amount_inr=final_amount,
+                discount_percent=dp,
+            )
+            order.save(
+                update_fields=[
+                    "pending_coupon",
+                    "pending_checkout_kind",
+                    "pending_list_price_inr",
+                    "pending_final_amount_inr",
+                    "pending_discount_percent",
+                ]
+            )
+            amount_inr = final_amount
 
+            if not settings.RAZORPAY_KEY_ID:
                 finalize_premium_upgrade_payment(
                     order, "dev_upgrade", "dev:upgrade_finalize"
                 )
@@ -928,6 +1069,29 @@ class CreatePaymentOrderView(GenericAPIView):
                         "detail": "Payment gateway not configured — upgrade applied for dev.",
                         "product_type": ReportOrder.ProductType.PREMIUM_BUNDLE,
                         "is_premium_upgrade": True,
+                        "list_price_inr": list_price_inr,
+                        "final_amount_inr": amount_inr,
+                        "savings_inr": list_price_inr - amount_inr,
+                        "discount_percent": dp,
+                    }
+                )
+
+            if amount_inr == 0:
+                finalize_premium_upgrade_payment(
+                    order, "COUPON_FREE", "coupon:free"
+                )
+                session.refresh_from_db()
+                return Response(
+                    {
+                        "is_paid": False,
+                        "detail": "Coupon applied — premium bundle unlocked.",
+                        "product_type": ReportOrder.ProductType.PREMIUM_BUNDLE,
+                        "is_premium_upgrade": True,
+                        "coupon_applied": True,
+                        "list_price_inr": list_price_inr,
+                        "final_amount_inr": 0,
+                        "savings_inr": list_price_inr,
+                        "discount_percent": dp,
                     }
                 )
 
@@ -976,6 +1140,10 @@ class CreatePaymentOrderView(GenericAPIView):
                     "user_name": safe_name,
                     "product_type": ReportOrder.ProductType.PREMIUM_BUNDLE,
                     "is_premium_upgrade": True,
+                    "list_price_inr": list_price_inr,
+                    "final_amount_inr": amount_inr,
+                    "savings_inr": list_price_inr - amount_inr,
+                    "discount_percent": dp,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -999,7 +1167,7 @@ class CreatePaymentOrderView(GenericAPIView):
             user=request.user,
             session=session,
             defaults={
-                "amount": amount_inr,
+                "amount": list_price_inr,
                 "product_type": product_type,
             },
         )
@@ -1007,23 +1175,69 @@ class CreatePaymentOrderView(GenericAPIView):
         if order.status == "paid":
             return Response({"detail": "Already paid.", "is_paid": True})
 
+        try:
+            coupon, final_amount, savings = validate_coupon_for_checkout(
+                code=coupon_code,
+                user=request.user,
+                list_price_inr=list_price_inr,
+            )
+        except DjangoValidationError as e:
+            return _coupon_error_response(e)
+        dp = int(coupon.discount_percent) if coupon else 0
+        attach_pending_coupon_to_order(
+            order,
+            coupon=coupon,
+            checkout_kind="initial",
+            list_price_inr=list_price_inr,
+            final_amount_inr=final_amount,
+            discount_percent=dp,
+        )
+        amount_inr = final_amount
         order.product_type = product_type
         order.amount = amount_inr
-        order.save(update_fields=["product_type", "amount"])
+        order.save(
+            update_fields=[
+                "product_type",
+                "amount",
+                "pending_coupon",
+                "pending_checkout_kind",
+                "pending_list_price_inr",
+                "pending_final_amount_inr",
+                "pending_discount_percent",
+            ]
+        )
+
+        extra = {
+            "list_price_inr": list_price_inr,
+            "final_amount_inr": amount_inr,
+            "savings_inr": list_price_inr - amount_inr,
+            "discount_percent": dp,
+        }
 
         if not settings.RAZORPAY_KEY_ID:
-            order.status = "paid"
-            order.paid_at = timezone.now()
-            order.save()
-            if product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
-                session.premium_unlocked = True
-                session.save(update_fields=["premium_unlocked"])
+            finalize_report_order_payment(order, "DEV", "dev:no_gateway")
+            session.refresh_from_db()
             return Response(
                 {
                     "is_paid": product_type == ReportOrder.ProductType.REPORT
                     or session.premium_extension_complete,
                     "detail": "Payment gateway not configured — unlocked for dev.",
                     "product_type": product_type,
+                    **extra,
+                }
+            )
+
+        if amount_inr == 0:
+            finalize_report_order_payment(order, "COUPON_FREE", "coupon:free")
+            session.refresh_from_db()
+            return Response(
+                {
+                    "is_paid": product_type == ReportOrder.ProductType.REPORT
+                    or session.premium_extension_complete,
+                    "detail": "Coupon applied — access unlocked.",
+                    "product_type": product_type,
+                    "coupon_applied": True,
+                    **extra,
                 }
             )
 
@@ -1071,6 +1285,7 @@ class CreatePaymentOrderView(GenericAPIView):
                 "user_email": safe_email,
                 "user_name": safe_name,
                 "product_type": product_type,
+                **extra,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -1208,10 +1423,22 @@ class RazorpayWebhookView(APIView):
         if event == "payment.failed":
             oid = extract_failed_order_id(payload)
             if oid:
-                updated = ReportOrder.objects.filter(
-                    razorpay_order_id=oid, status="pending"
-                ).update(status="failed")
-                if updated:
+                from .services.coupon import clear_pending_coupon
+
+                order = (
+                    ReportOrder.objects.filter(
+                        Q(razorpay_order_id=oid) | Q(upgrade_razorpay_order_id=oid)
+                    )
+                    .first()
+                )
+                if order:
+                    clear_pending_coupon(order)
+                    if order.status == "pending":
+                        ReportOrder.objects.filter(pk=order.pk).update(status="failed")
+                    elif order.upgrade_razorpay_order_id == oid:
+                        ReportOrder.objects.filter(pk=order.pk).update(
+                            upgrade_razorpay_order_id=""
+                        )
                     logger.info("razorpay.webhook payment_failed order rz=%s", oid)
             return Response({"ok": True})
 

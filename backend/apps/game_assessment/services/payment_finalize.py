@@ -39,6 +39,10 @@ def finalize_report_order_payment(
         update_fields=["status", "razorpay_payment_id", "razorpay_signature", "paid_at"]
     )
 
+    from apps.game_assessment.services.coupon import finalize_pending_coupon_redemption
+
+    finalize_pending_coupon_redemption(order)
+
     sess = order.session
     if order.product_type == _PREMIUM:
         if not sess.premium_unlocked:
@@ -91,6 +95,10 @@ def finalize_premium_upgrade_payment(
     if not sess.premium_unlocked:
         sess.premium_unlocked = True
         sess.save(update_fields=["premium_unlocked"])
+
+    from apps.game_assessment.services.coupon import finalize_pending_coupon_redemption
+
+    finalize_pending_coupon_redemption(order)
 
     src = "webhook" if razorpay_signature.startswith("webhook:") else "client"
     logger.info(

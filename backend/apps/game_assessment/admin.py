@@ -10,6 +10,8 @@ from .models import (
     CareerMatchScore,
     GameCareerTraitWeight,
     ReportOrder,
+    PaymentCoupon,
+    CouponRedemption,
 )
 
 
@@ -98,6 +100,55 @@ def mark_orders_unpaid(modeladmin, request, queryset):
     modeladmin.message_user(request, f"{updated} order(s) marked as unpaid. Report access revoked.")
 
 
+@admin.register(PaymentCoupon)
+class PaymentCouponAdmin(admin.ModelAdmin):
+    list_display = (
+        "code",
+        "discount_percent",
+        "is_active",
+        "valid_from",
+        "valid_until",
+        "max_redemptions",
+        "max_redemptions_per_user",
+        "created_at",
+    )
+    list_editable = ("is_active",)
+    list_filter = ("is_active", "created_at")
+    search_fields = ("code", "internal_note")
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (None, {"fields": ("code", "discount_percent", "is_active", "internal_note")}),
+        (
+            "Validity",
+            {"fields": ("valid_from", "valid_until")},
+        ),
+        (
+            "Limits",
+            {"fields": ("max_redemptions", "max_redemptions_per_user")},
+        ),
+        ("Timestamps", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+
+@admin.register(CouponRedemption)
+class CouponRedemptionAdmin(admin.ModelAdmin):
+    list_display = (
+        "coupon",
+        "user",
+        "context",
+        "list_price_inr",
+        "final_amount_inr",
+        "discount_percent",
+        "created_at",
+    )
+    list_filter = ("context", "created_at")
+    search_fields = ("coupon__code", "user__email", "report_order__id")
+    raw_id_fields = ("coupon", "user", "report_order")
+    readonly_fields = ("created_at", "updated_at")
+    ordering = ("-created_at",)
+
+
 @admin.register(ReportOrder)
 class ReportOrderAdmin(admin.ModelAdmin):
     list_display = (
@@ -131,7 +182,19 @@ class ReportOrderAdmin(admin.ModelAdmin):
             ),
         }),
         ("Payment details", {
-            "fields": ("razorpay_order_id", "razorpay_payment_id", "razorpay_signature", "paid_at"),
+            "fields": (
+                "razorpay_order_id",
+                "razorpay_payment_id",
+                "razorpay_signature",
+                "paid_at",
+                "pending_coupon",
+                "pending_checkout_kind",
+                "pending_list_price_inr",
+                "pending_final_amount_inr",
+                "pending_discount_percent",
+                "upgrade_razorpay_order_id",
+                "upgrade_razorpay_payment_id",
+            ),
             "classes": ("collapse",),
         }),
         ("Timestamps", {
