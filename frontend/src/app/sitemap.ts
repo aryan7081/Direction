@@ -6,7 +6,6 @@ const defaultSite = 'https://www.outcave.in';
 const PATHS = [
   '/',
   '/login',
-  '/register',
   '/forgot-password',
   '/game-assessment',
   '/careers',
