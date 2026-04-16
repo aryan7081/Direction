@@ -54,6 +54,16 @@ export async function fetchCareerReport(sessionId: string): Promise<CareerReport
   return data;
 }
 
+export async function requestCareerCounselingCall(
+  sessionId: string,
+  opts: { phone: string }
+): Promise<{ detail: string; phone: string; phone_masked: string }> {
+  const { data } = await api.post(`/game/report/${sessionId}/counseling-request/`, {
+    phone: opts.phone,
+  });
+  return data;
+}
+
 export type PaymentProductType = 'report' | 'premium_bundle';
 
 export type CouponPriceLine = {

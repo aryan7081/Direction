@@ -91,8 +91,9 @@ export function WorkingStyleSection({ items }: { items: WorkingStyleItem[] }) {
             Your Working Style
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            How you prefer to work, learn, and make decisions.
-            Understanding this helps you choose environments where you&apos;ll thrive.
+            Same five scores as Your Work DNA (earlier on this page), shown as sliders with practical tips for
+            school and teams. This is different from the four personality spectrums above, which use separate
+            behavioural axes from the same questionnaire.
           </Typography>
 
           <Box

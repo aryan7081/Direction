@@ -5,6 +5,8 @@ Report sections:
   RIASEC interests (6)
   Core work-style summary (5) — derived from interests + Big Five–style personality
   Personality style sliders (4)
+  Working style (5) — same scores as core work-style traits, with study/career-focused copy
+    (distinct from the personality spectrums above)
 
 Questionnaire sources include RIASEC items, personality (Big Five–style),
 career values, readiness, and aptitude. Career matching uses an internal
@@ -150,6 +152,22 @@ CORE_TRAIT_META = {
             "High curiosity means you're never satisfied with surface-level "
             "answers — you always want to know more."
         ),
+        "ws_label_low": "Depth on familiar topics",
+        "ws_label_high": "Breadth & question-asking",
+        "working_insights": {
+            "low": (
+                "You often prefer going deep on what already matters to you rather than chasing every new topic. "
+                "Use that focus for exam chapters and projects; add one small 'explore' slot per week so you do not miss electives that fit you."
+            ),
+            "mid": (
+                "You enjoy learning when you see the point, but you do not need novelty every day. "
+                "Pick subjects and clubs where curiosity is rewarded so motivation stays high."
+            ),
+            "high": (
+                "You learn fastest when you can ask why and try things out. "
+                "Look for projects, labs, and competitions that reward questions — pair that with light structure so deadlines stay under control."
+            ),
+        },
     },
     "trait_persistence": {
         "label": "Persistence",
@@ -160,6 +178,22 @@ CORE_TRAIT_META = {
             "High persistence means you don't give up easily — you push through "
             "challenges even when it's frustrating."
         ),
+        "ws_label_low": "Adjusts when it is hard",
+        "ws_label_high": "Pushes through setbacks",
+        "working_insights": {
+            "low": (
+                "When something feels stuck, you may move on sooner than peers. "
+                "Build stamina with short daily goals and quick wins before tackling big challenges."
+            ),
+            "mid": (
+                "You can stick with work when the goal is clear. "
+                "Break big goals into checkpoints so motivation stays steady through long syllabi."
+            ),
+            "high": (
+                "You push through boredom and setbacks — a strong advantage for boards and tough courses. "
+                "Watch for burnout; schedule real breaks and celebrate progress, not only outcomes."
+            ),
+        },
     },
     "trait_initiative": {
         "label": "Initiative",
@@ -170,6 +204,22 @@ CORE_TRAIT_META = {
             "initiative means you see something that needs doing and just do "
             "it — you don't wait for permission."
         ),
+        "ws_label_low": "Clear briefs first",
+        "ws_label_high": "Self-starter",
+        "working_insights": {
+            "low": (
+                "You work best when teachers or mentors spell out expectations. "
+                "Seek syllabi with milestones and rubrics so you can execute with confidence."
+            ),
+            "mid": (
+                "You will start on your own once you see why it matters. "
+                "Volunteer for one small leadership moment each term to stretch this habit safely."
+            ),
+            "high": (
+                "You spot what is needed and move without waiting. "
+                "Student leadership, events, and startup-style projects often fit — keep classroom routines on track so grades stay steady too."
+            ),
+        },
     },
     "trait_empathy_teamwork": {
         "label": "Empathy & Teamwork",
@@ -180,6 +230,22 @@ CORE_TRAIT_META = {
             "team. High empathy means you're the person friends come to for "
             "support — and teams work better when you're in them."
         ),
+        "ws_label_low": "Solo focus",
+        "ws_label_high": "People-aware & collaborative",
+        "working_insights": {
+            "low": (
+                "You often do your best thinking alone or in quiet pairs. "
+                "Roles with clear solo deliverables may suit you; still use brief check-ins in group work so marks do not suffer."
+            ),
+            "mid": (
+                "You are fine in teams when roles are fair. "
+                "Agree on who does what on day one of group projects so friction stays low."
+            ),
+            "high": (
+                "People trust you quickly and you notice how classmates feel. "
+                "Teaching, peer tutoring, and helping professions often align — protect your own time and boundaries too."
+            ),
+        },
     },
     "trait_planning": {
         "label": "Planning",
@@ -190,6 +256,22 @@ CORE_TRAIT_META = {
             "planning means you think ahead, make lists, and prefer having "
             "a clear roadmap before diving in."
         ),
+        "ws_label_low": "Flexible & spontaneous",
+        "ws_label_high": "Maps steps early",
+        "working_insights": {
+            "low": (
+                "You adapt fast when plans change. "
+                "Use light reminders and a single weekly calendar so deadlines do not sneak up while you stay flexible."
+            ),
+            "mid": (
+                "You plan when stakes are high. "
+                "A simple weekly template for homework usually beats over-engineering every day."
+            ),
+            "high": (
+                "You think in steps and timelines — strong for competitive exams and big projects. "
+                "Leave a little slack so last-minute changes do not spike stress."
+            ),
+        },
     },
 }
 
@@ -643,31 +725,37 @@ def recommend_subjects(
     }
 
 
-def derive_working_style(personality_scores: dict) -> list:
-    """Derive working style insights from personality dimensions."""
+def derive_working_style(core_trait_scores: dict) -> list:
+    """
+    Working-style section: the five core work-style traits (1–10), with
+    study- and environment-focused copy. Intentionally separate from
+    ``build_personality_style`` (four 1–5 Big Five–style sliders) so the
+    report does not repeat the same spectrums twice.
+    """
     insights = []
-    for slug in PERSONALITY_SLUGS:
-        meta = PERSONALITY_META[slug]
-        score = personality_scores.get(slug, 3.0)
+    for slug in CORE_TRAIT_SLUGS:
+        meta = CORE_TRAIT_META[slug]
+        score = float(core_trait_scores.get(slug, 5.0))
+        score = max(1.0, min(10.0, score))
 
-        if score <= 2.0:
+        if score < 4.0:
             level = "low"
-        elif score >= 4.0:
-            level = "high"
-        else:
+        elif score < 7.0:
             level = "mid"
+        else:
+            level = "high"
 
-        insight_text = meta["insights"][level]
+        position = int(round((score - 1.0) / 9.0 * 100))
 
         insights.append({
             "slug": slug,
-            "label_low": meta["label_low"],
-            "label_high": meta["label_high"],
+            "label_low": meta["ws_label_low"],
+            "label_high": meta["ws_label_high"],
             "emoji": meta["emoji"],
-            "score": score,
-            "max": 5.0,
-            "position": round((score - 1.0) / 4.0 * 100),  # 0-100 for spectrum
-            "insight": insight_text,
+            "score": round(score, 1),
+            "max": 10.0,
+            "position": max(0, min(100, position)),
+            "insight": meta["working_insights"][level],
         })
 
     return insights

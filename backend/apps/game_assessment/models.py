@@ -320,3 +320,39 @@ class ReportOrder(TimeStampedModel):
 
     def __str__(self):
         return f"Order {self.id} ({self.status}) — {self.user.email}"
+
+
+class CareerCounselingRequest(TimeStampedModel):
+    """Student requested a call from the team after viewing the paid career report."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        CONTACTED = "contacted", "Contacted"
+        CLOSED = "closed", "Closed"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="career_counseling_requests",
+    )
+    session = models.ForeignKey(
+        GameSession,
+        on_delete=models.CASCADE,
+        related_name="counseling_requests",
+    )
+    phone = models.CharField(max_length=15, db_index=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    admin_notes = models.TextField(blank=True, default="")
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Career counseling request"
+        verbose_name_plural = "Requested counselings"
+
+    def __str__(self) -> str:
+        return f"{self.phone} · {self.user_id} · {self.created_at:%Y-%m-%d %H:%M}"

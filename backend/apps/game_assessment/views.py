@@ -23,6 +23,7 @@ from .models import (
     TraitScore,
     CareerMatchScore,
     ReportOrder,
+    CareerCounselingRequest,
 )
 from .serializers import (
     LogEventSerializer,
@@ -32,6 +33,7 @@ from .serializers import (
     SessionResultSerializer,
     TraitScoreSerializer,
     CareerMatchSerializer,
+    CareerCounselingRequestSerializer,
 )
 from .services import run_scoring_pipeline
 from .services.report_builder import build_report
@@ -79,6 +81,29 @@ def _has_report_access(user, session) -> bool:
     if o.product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
         return session.premium_extension_complete
     return False
+
+
+def _mask_in_mobile_display(phone: str) -> str:
+    """Privacy-safe display for Indian mobile (10 digits)."""
+    digits = "".join(c for c in (phone or "") if c.isdigit())
+    if len(digits) == 10:
+        return f"+91 {digits[:5]}···{digits[-2:]}"
+    return "+91 ········"
+
+
+def _counseling_request_summary(user, session) -> dict:
+    """Latest counseling request for this session (for report UI persistence)."""
+    latest = (
+        CareerCounselingRequest.objects.filter(user=user, session=session)
+        .order_by("-created_at")
+        .first()
+    )
+    if not latest:
+        return {"submitted": False}
+    return {
+        "submitted": True,
+        "phone_masked": _mask_in_mobile_display(latest.phone),
+    }
 
 
 def _premium_upgrade_available(user, session) -> bool:
@@ -805,6 +830,7 @@ class CareerReportView(GenericAPIView):
             "available": _premium_upgrade_available(request.user, session),
             "price_inr": settings.PREMIUM_UPGRADE_FROM_REPORT_INR,
         }
+        report["counseling_request"] = _counseling_request_summary(request.user, session)
         return Response(report)
 
 
@@ -869,6 +895,68 @@ class CareerReportPDFView(GenericAPIView):
             f'attachment; filename="career-report-{session_id}.pdf"'
         )
         return response
+
+
+class CareerCounselingRequestCreateView(GenericAPIView):
+    """POST — student requests a callback (same access gate as full report)."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_scope = "career_counseling_request"
+
+    def post(self, request, session_id):
+        try:
+            session = GameSession.objects.get(id=session_id, user=request.user)
+        except GameSession.DoesNotExist:
+            return Response(
+                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not session.is_complete:
+            return Response(
+                {"detail": "Session not yet completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        _sync_session_premium_unlock_from_bundle_order(session)
+
+        if not _has_report_access(request.user, session):
+            if session.premium_unlocked and not session.premium_extension_complete:
+                return Response(
+                    {
+                        "detail": (
+                            "Complete your premium assessment to use this after your "
+                            "bundle report is ready."
+                        ),
+                        "code": "PREMIUM_EXTENSION_REQUIRED",
+                    },
+                    status=status.HTTP_402_PAYMENT_REQUIRED,
+                )
+            return Response(
+                {"detail": "Payment required.", "code": "PAYMENT_REQUIRED"},
+                status=status.HTTP_402_PAYMENT_REQUIRED,
+            )
+
+        ser = CareerCounselingRequestSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        phone = ser.validated_data["phone"]
+
+        CareerCounselingRequest.objects.create(
+            user=request.user,
+            session=session,
+            phone=phone,
+        )
+
+        return Response(
+            {
+                "detail": (
+                    "Thanks — someone from our team will connect with you soon "
+                    "on the number you shared."
+                ),
+                "phone": phone,
+                "phone_masked": _mask_in_mobile_display(phone),
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 # ── Payment endpoints ──────────────────────────────────────────────

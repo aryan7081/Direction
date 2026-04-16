@@ -12,6 +12,7 @@ from .models import (
     ReportOrder,
     PaymentCoupon,
     CouponRedemption,
+    CareerCounselingRequest,
 )
 
 
@@ -70,6 +71,40 @@ class GameSessionAdmin(admin.ModelAdmin):
         if order.status == "pending":
             return format_html('<span style="color:#f59e0b;">Pending</span>')
         return format_html('<span style="color:#dc2626;">Failed</span>')
+
+
+@admin.register(CareerCounselingRequest)
+class CareerCounselingRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "created_at",
+        "user",
+        "phone",
+        "session_short",
+        "status",
+    )
+    list_filter = ("status", "created_at")
+    search_fields = ("user__email", "user__first_name", "user__last_name", "phone", "session__id")
+    readonly_fields = ("created_at", "updated_at", "user", "session", "phone")
+    ordering = ("-created_at",)
+    date_hierarchy = "created_at"
+    list_editable = ("status",)
+    raw_id_fields = ("user", "session")
+
+    def has_add_permission(self, request):
+        return False
+    fieldsets = (
+        (None, {"fields": ("user", "session", "phone", "status")}),
+        ("Admin", {"fields": ("admin_notes",)}),
+        ("Timestamps", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+    @admin.display(description="Session")
+    def session_short(self, obj):
+        if not obj.session_id:
+            return "—"
+        url = reverse("admin:game_assessment_gamesession_change", args=[obj.session_id])
+        sid = str(obj.session_id)
+        return format_html('<a href="{}">{}…</a>', url, sid[:8])
 
 
 @admin.register(GameEventLog)

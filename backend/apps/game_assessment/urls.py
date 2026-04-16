@@ -42,6 +42,11 @@ urlpatterns = [
         views.CareerReportPDFView.as_view(),
         name="game-report-pdf",
     ),
+    path(
+        "game/report/<uuid:session_id>/counseling-request/",
+        views.CareerCounselingRequestCreateView.as_view(),
+        name="game-report-counseling-request",
+    ),
     # Payment
     path(
         "game/payment/create-order/",

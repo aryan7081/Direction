@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 
 from .models import GameSession, GameEventLog, TraitScore, CareerMatchScore
@@ -68,3 +70,21 @@ class GameContentSerializer(serializers.Serializer):
     risk_scenarios = serializers.ListField()
     planner_config = serializers.DictField()
     scenario_questions = serializers.ListField()
+
+
+class CareerCounselingRequestSerializer(serializers.Serializer):
+    """10-digit Indian mobile after normalisation."""
+
+    phone = serializers.CharField(max_length=20)
+
+    def validate_phone(self, value: str) -> str:
+        s = re.sub(r"[\s\-]", "", (value or "").strip())
+        if s.startswith("+91"):
+            s = s[3:]
+        elif len(s) == 12 and s.startswith("91") and s[2] in "6789":
+            s = s[2:]
+        if not re.fullmatch(r"[6-9]\d{9}", s):
+            raise serializers.ValidationError(
+                "Enter a valid 10-digit Indian mobile number."
+            )
+        return s

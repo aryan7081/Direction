@@ -707,7 +707,58 @@
 </div>
 {% endif %}
 
-<div class="section-band">Section 2 · Your profile</div>
+{% if report.careers %}
+<div class="page-break"></div>
+<div class="section-band">Section 2 · Career matches</div>
+
+<h2 class="section-title">Your Top Career Matches</h2>
+<p class="section-intro">Ranked by fit with your profile — same data as the interactive report. &ldquo;Why this match&rdquo; is personalised to your trait scores.</p>
+{% for c in report.careers %}
+<div class="career-card{% if c.rank == 2 %} r2{% elif c.rank == 3 %} r3{% endif %}">
+  <div class="career-card-header">
+    <div>
+      <span class="career-rank{% if c.rank == 2 %} r2{% elif c.rank == 3 %} r3{% endif %}">#{{ c.rank }}</span>
+      <span class="career-name-block">
+        {% if c.career_category %}
+        <span class="cat">{{ c.career_category }}</span>
+        <span class="nm">{{ c.career_name }}</span>
+        {% else %}
+        <span class="nm-only">{{ c.career_name }}</span>
+        {% endif %}
+      </span>
+    </div>
+    <span class="career-pct">{{ c.score_percent }}%</span>
+  </div>
+  <div class="career-meta"><strong>Stream:</strong> {{ c.stream }} &nbsp;|&nbsp; <strong>Confidence:</strong> {{ c.confidence }}</div>
+  {% if c.description %}<div class="career-desc">{{ c.description }}</div>{% endif %}
+  <div class="career-why">{{ c.why_match }}</div>
+  <div class="career-meta-grid">
+    <div style="margin-bottom:6px;"><strong>Work style</strong><br>{{ c.work_style }}</div>
+    <div style="margin-bottom:6px;"><strong>Education path</strong><br>{{ c.education_path }}</div>
+    {% if c.min_education %}<div style="margin-bottom:6px;"><strong>Minimum education</strong><br>{{ c.min_education }}</div>{% endif %}
+    {% if c.salary_range %}<div style="margin-bottom:6px;"><strong>Salary range</strong><br>{{ c.salary_range }}</div>{% endif %}
+    {% if c.growth_outlook %}<div><strong>Growth outlook</strong><br>{{ c.growth_outlook }}</div>{% endif %}
+  </div>
+</div>
+{% endfor %}
+
+<h2 class="section-title">Career Comparison</h2>
+{% if report.career_comparison_text %}<p class="section-intro">{{ report.career_comparison_text }}</p>{% else %}<p class="section-intro">Side-by-side comparison of your top career matches by compatibility percentage.</p>{% endif %}
+<div class="chart-container">{{ bar_chart_svg|safe }}</div>
+
+{% if report.less_natural_careers %}
+<h2 class="section-title">Careers That May Need Extra Effort</h2>
+<p class="section-intro">These are not closed doors — they are areas where deliberate skill-building would be needed. Understanding this helps you make informed decisions.</p>
+{% for item in report.less_natural_careers %}
+<div style="padding:12px 14px;border-radius:8px;background:#f9fafb;border:1px solid #e5e7eb;margin-bottom:10px;page-break-inside:avoid;">
+  <div style="font-size:11px;font-weight:600;color:#374151;margin-bottom:3px;">{{ item.domain }}</div>
+  <div style="font-size:10.5px;color:#374151;line-height:1.6;">{{ item.note }}</div>
+</div>
+{% endfor %}
+{% endif %}
+{% endif %}
+
+<div class="section-band">Section 3 · Your profile</div>
 
 {% if report.dominant_pattern %}
 <div class="dominant-card">
@@ -834,7 +885,7 @@
 {% if report.working_style %}
 <div class="outlined-card">
   <h2 class="section-title" style="margin-top:0;border:none;padding:0;">Your Working Style</h2>
-  <p class="section-intro">How you prefer to work, learn, and make decisions. Understanding this helps you choose environments where you&apos;ll thrive.</p>
+  <p class="section-intro">Same five scores as Your Work DNA (above), shown as sliders with practical tips for school and teams. Different from the four personality spectrums in the previous section, which use separate behavioural axes from the same questionnaire.</p>
   {% for w in report.working_style %}
   <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
     <div style="display:flex;align-items:center;gap:10px;">
@@ -861,7 +912,7 @@
   <h2 class="section-title" style="margin-top:0;border:none;padding:0;">Career-matching profile (8 traits)</h2>
   <p class="section-intro">
     These eight scores summarize your questionnaire for career matching (each 0–10). The sections above
-    show your 15 student-facing profile dimensions (RIASEC, work-style summary, and personality sliders).
+    show your 15 student-facing profile dimensions (RIASEC, core work-style traits, personality sliders, and a working-style slider view of those same five core traits).
     {% if report.assessment_snapshot and report.assessment_snapshot.answered_count %}
     Based on {{ report.assessment_snapshot.answered_count }} logged responses in this session.
     {% endif %}
@@ -902,55 +953,6 @@
     <span class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span>Growing (0–3)</span>
   </div>
 </div>
-{% endif %}
-
-<div class="page-break"></div>
-<div class="section-band">Section 3 · Career matches</div>
-
-<h2 class="section-title">Your Top Career Matches</h2>
-<p class="section-intro">Ranked by fit with your profile — same data as the interactive report. &ldquo;Why this match&rdquo; is personalised to your trait scores.</p>
-{% for c in report.careers %}
-<div class="career-card{% if c.rank == 2 %} r2{% elif c.rank == 3 %} r3{% endif %}">
-  <div class="career-card-header">
-    <div>
-      <span class="career-rank{% if c.rank == 2 %} r2{% elif c.rank == 3 %} r3{% endif %}">#{{ c.rank }}</span>
-      <span class="career-name-block">
-        {% if c.career_category %}
-        <span class="cat">{{ c.career_category }}</span>
-        <span class="nm">{{ c.career_name }}</span>
-        {% else %}
-        <span class="nm-only">{{ c.career_name }}</span>
-        {% endif %}
-      </span>
-    </div>
-    <span class="career-pct">{{ c.score_percent }}%</span>
-  </div>
-  <div class="career-meta"><strong>Stream:</strong> {{ c.stream }} &nbsp;|&nbsp; <strong>Confidence:</strong> {{ c.confidence }}</div>
-  {% if c.description %}<div class="career-desc">{{ c.description }}</div>{% endif %}
-  <div class="career-why">{{ c.why_match }}</div>
-  <div class="career-meta-grid">
-    <div style="margin-bottom:6px;"><strong>Work style</strong><br>{{ c.work_style }}</div>
-    <div style="margin-bottom:6px;"><strong>Education path</strong><br>{{ c.education_path }}</div>
-    {% if c.min_education %}<div style="margin-bottom:6px;"><strong>Minimum education</strong><br>{{ c.min_education }}</div>{% endif %}
-    {% if c.salary_range %}<div style="margin-bottom:6px;"><strong>Salary range</strong><br>{{ c.salary_range }}</div>{% endif %}
-    {% if c.growth_outlook %}<div><strong>Growth outlook</strong><br>{{ c.growth_outlook }}</div>{% endif %}
-  </div>
-</div>
-{% endfor %}
-
-<h2 class="section-title">Career Comparison</h2>
-{% if report.career_comparison_text %}<p class="section-intro">{{ report.career_comparison_text }}</p>{% else %}<p class="section-intro">Side-by-side comparison of your top career matches by compatibility percentage.</p>{% endif %}
-<div class="chart-container">{{ bar_chart_svg|safe }}</div>
-
-{% if report.less_natural_careers %}
-<h2 class="section-title">Careers That May Need Extra Effort</h2>
-<p class="section-intro">These are not closed doors — they are areas where deliberate skill-building would be needed. Understanding this helps you make informed decisions.</p>
-{% for item in report.less_natural_careers %}
-<div style="padding:12px 14px;border-radius:8px;background:#f9fafb;border:1px solid #e5e7eb;margin-bottom:10px;page-break-inside:avoid;">
-  <div style="font-size:11px;font-weight:600;color:#374151;margin-bottom:3px;">{{ item.domain }}</div>
-  <div style="font-size:10.5px;color:#374151;line-height:1.6;">{{ item.note }}</div>
-</div>
-{% endfor %}
 {% endif %}
 
 <div class="page-break"></div>

@@ -203,4 +203,9 @@ export interface CareerReport {
     available: boolean;
     price_inr: number;
   };
+  /** Whether user already requested a counseling call for this session (persisted). */
+  counseling_request?: {
+    submitted: boolean;
+    phone_masked?: string;
+  };
 }

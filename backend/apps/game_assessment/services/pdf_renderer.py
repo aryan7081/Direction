@@ -2,7 +2,7 @@
 Renders the career report as an A4 PDF using WeasyPrint.
 Falls back gracefully if WeasyPrint is not installed.
 
-Context mirrors the web CareerReportPage (hero → stream → profile → matches → growth).
+Context mirrors the web CareerReportPage (hero → stream → subjects → matches → profile → growth).
 """
 from __future__ import annotations
 

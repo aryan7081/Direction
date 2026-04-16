@@ -32,6 +32,7 @@ from .dimension_meta import (
     recommend_subjects,
     derive_working_style,
 )
+from ..content.career_education_paths_in import education_path_for_career
 
 # ── Trait metadata ──────────────────────────────────────────────────
 
@@ -545,25 +546,6 @@ WORK_STYLE = {
     "civil-engineer": "Site + office, project lifecycle, team coordination",
 }
 
-EDUCATION_PATH = {
-    "software-engineer": "PCM in 11-12 → B.Tech (CS/IT) from IIT/NIT/IIIT or equivalent → optional M.Tech or direct placement",
-    "data-scientist": "PCM in 11-12 → B.Tech (CS) or B.Sc (Stats/Math) → M.Sc/M.Tech in Data Science or ML",
-    "doctor": "PCB in 11-12 → NEET → MBBS (5.5 years) → MD/MS specialisation",
-    "chartered-accountant": "Commerce in 11-12 → CA Foundation after 12th → Intermediate → Articleship → CA Final",
-    "graphic-designer": "Any stream → BDes/B.Fine Arts from NID/NIFT or equivalent → portfolio-based career",
-    "writer": "Any stream (Arts preferred) → BA (English/Journalism) → MA or creative writing programs",
-    "marketing-manager": "Any stream → BBA/B.Com/BA → MBA (Marketing) from IIM or top B-school",
-    "business-analyst": "Commerce/Science → B.Tech or BBA → MBA or certifications (PMP, Six Sigma)",
-    "mechanical-engineer": "PCM in 11-12 → B.Tech (Mechanical) from IIT/NIT → M.Tech or industry placement",
-    "accountant": "Commerce in 11-12 → B.Com → M.Com or professional certifications (CMA, ACCA)",
-    "teacher": "Relevant subject graduation → B.Ed → NET/SET for college teaching, or direct school placement",
-    "psychologist": "Arts/Science → BA/B.Sc (Psychology) → MA (Psychology) → M.Phil (Clinical) for practice license",
-    "architect": "PCM in 11-12 → NATA exam → B.Arch (5 years) from IIT/SPA/NIT → Council registration",
-    "lawyer": "Any stream → CLAT exam → BA LLB (5 years) from NLU → LLM for specialisation",
-    "civil-engineer": "PCM in 11-12 → B.Tech (Civil) from IIT/NIT → M.Tech or GATE for PSU jobs",
-}
-
-
 # ── Stream recommendation ──────────────────────────────────────────
 
 def _recommend_stream(careers: list) -> dict:
@@ -600,7 +582,7 @@ def _build_roadmap(top_career: dict, traits: dict) -> dict:
         ),
         "class_11_12": (
             f"Choose the right stream aligned with {name}. "
-            f"{EDUCATION_PATH.get(slug, 'Pick subjects that keep your career options open.')} "
+            f"{education_path_for_career(slug, top_career.get('stream', '') or '')} "
             f"{'Work on strengthening ' + ' and '.join(develop_labels) + ' through practice and projects.' if develop_labels else ''}"
         ),
         "after_12th": (
@@ -802,7 +784,7 @@ def build_report(session: GameSession) -> dict:
             "confidence": _confidence_badge(pct),
             "why_match": _career_why_match(slug, c.name, traits, m.rank),
             "work_style": WORK_STYLE.get(slug, "Varies by organisation and role"),
-            "education_path": EDUCATION_PATH.get(slug, "Consult a guidance counsellor for personalised advice"),
+            "education_path": education_path_for_career(slug, c.stream or ""),
             "min_education": c.min_education or "",
             "salary_range": c.salary_range or "",
             "growth_outlook": c.growth_outlook or "",
@@ -862,7 +844,7 @@ def build_report(session: GameSession) -> dict:
     subject_rec = recommend_subjects(
         riasec_scores, core_trait_scores, personality_scores, recommended_stream,
     )
-    working_style = derive_working_style(personality_scores)
+    working_style = derive_working_style(core_trait_scores)
 
     return {
         "session_id": str(session.id),

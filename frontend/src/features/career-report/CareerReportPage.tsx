@@ -24,6 +24,7 @@ import { AreasToImprove } from './components/AreasToImprove';
 import { NextSteps } from './components/NextSteps';
 import { TraitRadarChart } from './components/TraitRadarChart';
 import { PremiumUpgradeCard } from './components/PremiumUpgradeCard';
+import { CounselingStickyCta } from './components/CounselingStickyCta';
 import { PREMIUM_UPGRADE_FROM_REPORT_INR } from '@/lib/productCopy';
 
 export function CareerReportPage({ sessionId }: { sessionId: string }) {
@@ -122,7 +123,15 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
       : 'Your questionnaire responses';
 
   return (
-    <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
+    <Container
+      maxWidth="md"
+      sx={{
+        py: { xs: 2, sm: 4 },
+        px: { xs: 2, sm: 3 },
+        /* Space for fixed counseling bar so footer content is not hidden */
+        pb: { xs: 18, sm: 16 },
+      }}
+    >
       {/* ── Back link ── */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}>
         <Button
@@ -258,6 +267,18 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
       )}
 
       {/* ══════════════════════════════════════════════════════════════
+          Career matches (immediately after subject recommendations)
+         ══════════════════════════════════════════════════════════════ */}
+
+      <CareerCards careers={report.careers} />
+
+      <CareerComparison careers={report.careers} comparisonText={report.career_comparison_text} />
+
+      {report.less_natural_careers && report.less_natural_careers.length > 0 && (
+        <LessNaturalCareers items={report.less_natural_careers} />
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
           SECTION 2: YOUR PROFILE
           Who you are across 15 dimensions
          ══════════════════════════════════════════════════════════════ */}
@@ -287,20 +308,7 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
       )}
 
       {/* ══════════════════════════════════════════════════════════════
-          SECTION 3: CAREER MATCHES
-          Detailed career cards and comparison
-         ══════════════════════════════════════════════════════════════ */}
-
-      <CareerCards careers={report.careers} />
-
-      <CareerComparison careers={report.careers} comparisonText={report.career_comparison_text} />
-
-      {report.less_natural_careers && report.less_natural_careers.length > 0 && (
-        <LessNaturalCareers items={report.less_natural_careers} />
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════
-          SECTION 4: YOUR GROWTH PATH
+          SECTION 3: YOUR GROWTH PATH
           Roadmap, areas to improve, next steps
          ══════════════════════════════════════════════════════════════ */}
 
@@ -380,6 +388,8 @@ export function CareerReportPage({ sessionId }: { sessionId: string }) {
           Explore All Careers
         </Button>
       </Box>
+
+      <CounselingStickyCta sessionId={sessionId} counselingRequest={report.counseling_request} />
     </Container>
   );
 }
