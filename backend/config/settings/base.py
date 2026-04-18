@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "apps.recommendations",
     "apps.reports",
     "apps.game_assessment",
+    "apps.analytics.apps.AnalyticsConfig",
 ]
 
 MIDDLEWARE = [
@@ -80,7 +81,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+# Display layer (admin, templates, forms): IST. Database datetimes remain UTC when USE_TZ is True.
+TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 
@@ -164,6 +166,7 @@ REST_FRAMEWORK = {
         "recommendations_read": _throttle_rate("THROTTLE_RECOMMENDATIONS", "120/min"),
         "careers_catalog": _throttle_rate("THROTTLE_CAREERS_CATALOG", "120/min"),
         "visitor_ping": _throttle_rate("THROTTLE_VISITOR_PING", "240/min"),
+        "analytics_dashboard": _throttle_rate("THROTTLE_ANALYTICS_DASHBOARD", "120/min"),
     },
     "EXCEPTION_HANDLER": "apps.common.exception_handler.custom_exception_handler",
 }

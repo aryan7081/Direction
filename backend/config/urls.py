@@ -14,6 +14,7 @@ urlpatterns = [
     path("api/", include("apps.recommendations.urls")),
     path("api/", include("apps.reports.urls")),
     path("api/", include("apps.game_assessment.urls")),
+    path("api/", include("apps.analytics.urls")),
 ]
 
 # OpenAPI / Swagger only in DEBUG — do not expose full schema in production

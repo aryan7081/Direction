@@ -1,0 +1,9 @@
+{% extends "admin/change_list.html" %}
+{% block content_title %}
+  {{ block.super }}
+  {% if instructions %}
+    <div style="max-width:820px;margin:12px 0 20px;padding:16px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;line-height:1.55;color:#334155;">
+      {{ instructions }}
+    </div>
+  {% endif %}
+{% endblock %}

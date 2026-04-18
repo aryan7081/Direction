@@ -1,30 +1,8 @@
 import axios, { AxiosError } from 'axios';
 import { useAuthStore } from '@/stores/authStore';
+import { getApiBase } from '@/lib/getApiBase';
 
 const DEFAULT_API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-
-// In browser: use env URL if set; otherwise same host as page (for mobile dev)
-function getApiBase(): string {
-  if (typeof window === 'undefined') return DEFAULT_API_BASE;
-  const envUrl = process.env.NEXT_PUBLIC_API_URL;
-  // Cloudflare tunnel (mobile): use Mac IP so phone can reach backend on same WiFi
-  if (typeof window !== 'undefined' && window.location.hostname?.includes('trycloudflare.com')) {
-    const tunnelUrl = process.env.NEXT_PUBLIC_API_URL_TUNNEL;
-    if (tunnelUrl) return tunnelUrl;
-  }
-  const host = window.location.hostname;
-  // Same-origin proxy: avoids browser console noise (and CORS) when the API is only reachable from the Next server
-  if (host === 'localhost' || host === '127.0.0.1') {
-    return '/api';
-  }
-  if (host.includes('vercel.app') || host === 'outcave.in' || host === 'www.outcave.in') {
-    return '/api';
-  }
-  // Always use env URL when set
-  if (envUrl) return envUrl;
-  // Fallback: same host as page (for mobile dev when env not set)
-  return `${window.location.protocol}//${window.location.hostname}:8000/api`;
-}
 
 export const api = axios.create({
   baseURL: DEFAULT_API_BASE,
