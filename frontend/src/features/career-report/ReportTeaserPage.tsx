@@ -49,7 +49,7 @@ declare global {
   }
 }
 
-const COUNSELLING_ANCHOR_LABEL = '₹3,000+';
+const COUNSELLING_ANCHOR_LABEL = '₹1,500+';
 
 const REPORT_BULLETS = [
   'Unlock the full report for this completed session — no need to retake the questionnaire',
