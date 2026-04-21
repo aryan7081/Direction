@@ -161,6 +161,10 @@ export interface AssessmentSnapshot {
 /* ── Full Report ─────────────────────────────────────────────────── */
 
 export interface CareerReport {
+  /** True when loaded from the public preview endpoint (teaser page). */
+  preview_mode?: boolean;
+  /** Server removed paywalled fields before sending (network-safe unpaid preview). */
+  preview_redacted?: boolean;
   session_id: string;
   completed_at: string | null;
   generated_at: string;

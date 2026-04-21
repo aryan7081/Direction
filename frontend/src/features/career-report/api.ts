@@ -54,6 +54,12 @@ export async function fetchCareerReport(sessionId: string): Promise<CareerReport
   return data;
 }
 
+/** Full report JSON for unpaid teaser UI (stream/career blurred on client). */
+export async function fetchCareerReportPreview(sessionId: string): Promise<CareerReport> {
+  const { data } = await api.get(`/game/report/${sessionId}/preview/`);
+  return data;
+}
+
 export async function requestCareerCounselingCall(
   sessionId: string,
   opts: { phone: string }
@@ -92,6 +98,21 @@ export async function validatePaymentCoupon(
     coupon_code: opts.coupon_code.trim(),
   });
   return data;
+}
+
+/**
+ * Only pass a coupon to checkout when the user clicked Apply and the field still
+ * matches that validated code — avoids charging a typed-but-not-applied code while UI shows list prices.
+ */
+export function couponCodeConfirmedForCheckout(
+  couponCode: string,
+  appliedPreview: { coupon_code: string } | null | undefined
+): string | undefined {
+  if (!appliedPreview) return undefined;
+  const typed = couponCode.trim().toUpperCase();
+  const applied = String(appliedPreview.coupon_code).trim().toUpperCase();
+  if (typed !== applied) return undefined;
+  return couponCode.trim();
 }
 
 export async function createPaymentOrder(

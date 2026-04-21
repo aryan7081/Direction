@@ -5,7 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Typography, TextField, Stack } from '@mui/material';
 import { ButtonSpinner } from '@/components/ui/Loaders';
-import { createPaymentOrder, verifyPayment, validatePaymentCoupon } from '../api';
+import {
+  couponCodeConfirmedForCheckout,
+  createPaymentOrder,
+  verifyPayment,
+  validatePaymentCoupon,
+} from '../api';
 import { CouponCelebrateDialog, type CouponCelebratePayload } from './CouponCelebrateDialog';
 import { PREMIUM_BUNDLE_PRICE_INR, REPORT_PRICE_INR } from '@/lib/productCopy';
 
@@ -86,7 +91,7 @@ export function PremiumUpgradeCard({ sessionId, upgradePriceInr }: PremiumUpgrad
     try {
       const orderData = await createPaymentOrder(sessionId, {
         product_type: 'premium_bundle',
-        coupon_code: couponCode.trim(),
+        coupon_code: couponCodeConfirmedForCheckout(couponCode, couponPricePreview),
       });
 
       if (orderData.premium_pending_extension) {

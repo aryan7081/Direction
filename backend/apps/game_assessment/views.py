@@ -36,7 +36,7 @@ from .serializers import (
     CareerCounselingRequestSerializer,
 )
 from .services import run_scoring_pipeline
-from .services.report_builder import build_report
+from .services.report_builder import build_report, redact_report_for_unpaid_preview
 from apps.careers.career_categories import category_label_for_slug
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -71,16 +71,66 @@ def _has_paid_order(user, session) -> bool:
     return _paid_order(user, session) is not None
 
 
-def _has_report_access(user, session) -> bool:
-    """User may open PDF / full JSON report."""
-    o = _paid_order(user, session)
-    if not o:
+def _user_has_paid_report_order_any(user) -> bool:
+    """True if user ever paid for the ₹49 report-only tier (any session)."""
+    if not user or not getattr(user, "is_authenticated", False):
         return False
-    if o.product_type == ReportOrder.ProductType.REPORT:
-        return True
-    if o.product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
+    return ReportOrder.objects.filter(
+        user=user,
+        status="paid",
+        product_type=ReportOrder.ProductType.REPORT,
+    ).exists()
+
+
+def _user_has_paid_premium_bundle_any(user) -> bool:
+    """True if user ever paid for the premium bundle (₹99 tier; any session)."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    return ReportOrder.objects.filter(
+        user=user,
+        status="paid",
+        product_type=ReportOrder.ProductType.PREMIUM_BUNDLE,
+    ).exists()
+
+
+def _has_report_access(user, session) -> bool:
+    """User may open PDF / full JSON report (this session or lifetime entitlement)."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    o = _paid_order(user, session)
+    if o:
+        if o.product_type == ReportOrder.ProductType.REPORT:
+            return True
+        if o.product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
+            return session.premium_extension_complete
+    # Retake / new session: same account already paid on an older session.
+    if _user_has_paid_premium_bundle_any(user):
         return session.premium_extension_complete
+    if _user_has_paid_report_order_any(user):
+        return True
     return False
+
+
+def _session_result_json_response(session, user, trait_list: list, career_matches: list) -> dict:
+    """
+    Full trait/career payloads only after report purchase (same rule as PDF / full report).
+    Prevents DevTools / network inspection from leaking #1 career and scores before payment.
+    """
+    _sync_session_premium_unlock_from_bundle_order(session)
+    if _has_report_access(user, session):
+        return {
+            "session_id": str(session.id),
+            "completed_at": session.completed_at,
+            "trait_scores": trait_list,
+            "career_matches": career_matches,
+        }
+    return {
+        "session_id": str(session.id),
+        "completed_at": session.completed_at,
+        "report_locked": True,
+        "trait_scores": [],
+        "career_matches": [],
+    }
 
 
 def _mask_in_mobile_display(phone: str) -> str:
@@ -110,18 +160,18 @@ def _premium_upgrade_available(user, session) -> bool:
     """Paid ₹49 report only — can pay ₹50 more for the premium bundle add-on."""
     if not user or not getattr(user, "is_authenticated", False):
         return False
+    if _user_has_paid_premium_bundle_any(user):
+        return False
     po = _paid_order(user, session)
-    return bool(
-        po
-        and po.status == "paid"
-        and po.product_type == ReportOrder.ProductType.REPORT
-    )
+    if po and po.status == "paid" and po.product_type == ReportOrder.ProductType.REPORT:
+        return True
+    return _user_has_paid_report_order_any(user)
 
 
 def _sync_session_premium_unlock_from_bundle_order(session: GameSession) -> None:
     """
     If a paid premium-bundle ReportOrder exists for this session, ensure premium_unlocked.
-    Single source of truth for bundle entitlement (covers admin mark-paid and stale session rows).
+    If the user paid for a bundle on any prior session, unlock premium on new sessions too.
     """
     if session.premium_unlocked or not session.pk:
         return
@@ -134,16 +184,33 @@ def _sync_session_premium_unlock_from_bundle_order(session: GameSession) -> None
             premium_unlocked=True
         )
         session.premium_unlocked = True
+        return
+    uid = getattr(session, "user_id", None)
+    if uid and ReportOrder.objects.filter(
+        user_id=uid,
+        status="paid",
+        product_type=ReportOrder.ProductType.PREMIUM_BUNDLE,
+    ).exists():
+        GameSession.objects.filter(pk=session.pk, premium_unlocked=False).update(
+            premium_unlocked=True
+        )
+        session.premium_unlocked = True
 
 
-def _build_teaser(session) -> dict:
-    """Build a partial report that reveals just enough to create desire.
-    Does NOT expose trait scores or career names — only labels and count.
+def _build_teaser(session, report_accessible: bool = False) -> dict:
+    """Build a partial report for the marketing teaser JSON.
+
+    When ``report_accessible`` is False (no paid report yet), do not expose #1 career
+    names, stream, or score gaps — only ranks and trait icons/labels.
     """
     report = build_report(session)
 
-    top_career = report["hero"]["career_name"]
-    top_category = report["hero"].get("career_category", "")
+    if report_accessible:
+        top_career = report["hero"]["career_name"]
+        top_category = report["hero"].get("career_category", "")
+    else:
+        top_career = "Unlock to reveal"
+        top_category = ""
     confidence = report["hero"]["confidence"]
     pattern = report.get("dominant_pattern") or {}
 
@@ -156,7 +223,7 @@ def _build_teaser(session) -> dict:
     career_count = min(3, len(careers))
     career_preview = []
     for i in range(career_count):
-        if i == 0 and careers:
+        if report_accessible and i == 0 and careers:
             career_preview.append({
                 "rank": 1,
                 "career_category": careers[0].get("career_category", ""),
@@ -167,7 +234,7 @@ def _build_teaser(session) -> dict:
             career_preview.append({"rank": i + 1})
 
     top_two_gap = None
-    if len(careers) >= 2:
+    if report_accessible and len(careers) >= 2:
         p1 = careers[0].get("score_percent") or 0
         p2 = careers[1].get("score_percent") or 0
         top_two_gap = round(abs(float(p1) - float(p2)), 1)
@@ -205,7 +272,7 @@ def _build_teaser(session) -> dict:
         "hero_confidence": confidence,
         "dominant_pattern": pattern.get("name", ""),
         "dominant_pattern_description": pattern.get("description", ""),
-        "stream_recommendation": stream_rec.get("stream", ""),
+        "stream_recommendation": stream_rec.get("stream", "") if report_accessible else "",
         "trait_preview": trait_preview,
         "career_preview": career_preview,
         "top_two_gap": top_two_gap,
@@ -478,12 +545,9 @@ class SubmitSessionView(GenericAPIView):
         ]
 
         return Response(
-            {
-                "session_id": str(session.id),
-                "completed_at": session.completed_at,
-                "trait_scores": trait_list,
-                "career_matches": result["career_matches"],
-            }
+            _session_result_json_response(
+                session, request.user, trait_list, result["career_matches"]
+            )
         )
 
 
@@ -634,12 +698,7 @@ class SessionResultView(GenericAPIView):
         ]
 
         return Response(
-            {
-                "session_id": str(session.id),
-                "completed_at": session.completed_at,
-                "trait_scores": trait_data,
-                "career_matches": career_data,
-            }
+            _session_result_json_response(session, request.user, trait_data, career_data)
         )
 
 
@@ -766,7 +825,7 @@ class ReportTeaserView(GenericAPIView):
         report_accessible = (
             _has_report_access(session.user, session) if session.user else False
         )
-        teaser = _build_teaser(session)
+        teaser = _build_teaser(session, report_accessible)
         teaser["report_price_inr"] = settings.REPORT_PRICE_INR
         teaser["premium_bundle_price_inr"] = settings.PREMIUM_BUNDLE_PRICE_INR
         teaser["premium_upgrade_price_inr"] = settings.PREMIUM_UPGRADE_FROM_REPORT_INR
@@ -782,6 +841,53 @@ class ReportTeaserView(GenericAPIView):
         else:
             teaser["is_paid"] = False
         return Response(teaser)
+
+
+class CareerReportPreviewView(GenericAPIView):
+    """
+    GET — same JSON shape as the paid report for the unpaid teaser page.
+    Stream/career sections are blurred on the client until purchase; PDF remains gated.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_scope = "game_teaser"
+
+    def get(self, request, session_id):
+        try:
+            session = GameSession.objects.get(id=session_id)
+        except GameSession.DoesNotExist:
+            return Response(
+                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not session.is_complete:
+            return Response(
+                {"detail": "Session not yet completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        _sync_session_premium_unlock_from_bundle_order(session)
+
+        report = build_report(session)
+        report["preview_mode"] = True
+        if not (
+            session.user
+            and getattr(session.user, "is_authenticated", False)
+            and _has_report_access(session.user, session)
+        ):
+            report = redact_report_for_unpaid_preview(report)
+        su = session.user
+        report["premium_upgrade"] = {
+            "available": _premium_upgrade_available(su, session)
+            if su and getattr(su, "is_authenticated", False)
+            else False,
+            "price_inr": settings.PREMIUM_UPGRADE_FROM_REPORT_INR,
+        }
+        if su and getattr(su, "is_authenticated", False):
+            report["counseling_request"] = _counseling_request_summary(su, session)
+        else:
+            report["counseling_request"] = {"submitted": False}
+        return Response(report)
 
 
 # ── Gated full report ──────────────────────────────────────────────
@@ -980,6 +1086,14 @@ def _list_price_for_checkout(user, session, product_type: str) -> Tuple[int, str
         and product_type == ReportOrder.ProductType.PREMIUM_BUNDLE
     ):
         return settings.PREMIUM_UPGRADE_FROM_REPORT_INR, "upgrade"
+    if (
+        product_type == ReportOrder.ProductType.PREMIUM_BUNDLE
+        and not existing_paid
+        and _user_has_paid_report_order_any(user)
+        and not _user_has_paid_premium_bundle_any(user)
+    ):
+        # New session after a prior ₹49 purchase — bundle add-on is still the delta price.
+        return settings.PREMIUM_UPGRADE_FROM_REPORT_INR, "upgrade"
     if product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
         return settings.PREMIUM_BUNDLE_PRICE_INR, "initial"
     return settings.REPORT_PRICE_INR, "initial"
@@ -1096,6 +1210,25 @@ class CreatePaymentOrderView(GenericAPIView):
             )
 
         _sync_session_premium_unlock_from_bundle_order(session)
+
+        # Do not charge again for a tier the user already purchased on any session.
+        if product_type == ReportOrder.ProductType.REPORT:
+            if _user_has_paid_premium_bundle_any(request.user):
+                return Response(
+                    {"detail": "Already purchased.", "is_paid": True},
+                    status=status.HTTP_200_OK,
+                )
+            if _user_has_paid_report_order_any(request.user):
+                return Response(
+                    {"detail": "Already purchased.", "is_paid": True},
+                    status=status.HTTP_200_OK,
+                )
+        if product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
+            if _user_has_paid_premium_bundle_any(request.user):
+                return Response(
+                    {"detail": "Already purchased.", "is_paid": True},
+                    status=status.HTTP_200_OK,
+                )
 
         list_price_inr, _checkout_kind = _list_price_for_checkout(
             request.user, session, product_type

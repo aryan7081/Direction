@@ -3,6 +3,7 @@
 import { Box, Card, CardContent, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import type { CareerReport } from '../types';
+import { PreviewSensitiveRegion } from './PreviewSensitiveRegion';
 
 const STEPS = [
   { key: 'class_10' as const, title: 'Class 10 — Build Your Foundation', color: '#16a34a' },
@@ -12,8 +13,10 @@ const STEPS = [
 
 export function DevelopmentRoadmap({
   roadmap,
+  previewLock = false,
 }: {
   roadmap: CareerReport['roadmap'];
+  previewLock?: boolean;
 }) {
   return (
     <Card variant="outlined" sx={{ borderRadius: 3, mb: 4 }}>
@@ -21,9 +24,11 @@ export function DevelopmentRoadmap({
         <Typography variant="h6" fontWeight={700} gutterBottom>
           Development Roadmap
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          A step-by-step guide tailored to your top career match.
-        </Typography>
+        <PreviewSensitiveRegion locked={previewLock}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            A step-by-step guide tailored to your top career match.
+          </Typography>
+        </PreviewSensitiveRegion>
 
         <Box sx={{ position: 'relative', pl: 3 }}>
           {/* Vertical line */}
@@ -72,9 +77,11 @@ export function DevelopmentRoadmap({
                   >
                     {step.title}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                    {text}
-                  </Typography>
+                  <PreviewSensitiveRegion locked={previewLock}>
+                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                      {text}
+                    </Typography>
+                  </PreviewSensitiveRegion>
                 </Box>
               </motion.div>
             );

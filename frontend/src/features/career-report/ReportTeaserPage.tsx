@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import {
@@ -18,7 +18,15 @@ import {
 import { motion } from 'framer-motion';
 import { PageLoader, ButtonSpinner } from '@/components/ui/Loaders';
 import { useAuthStore } from '@/stores/authStore';
-import { fetchReportTeaser, createPaymentOrder, verifyPayment, validatePaymentCoupon } from './api';
+import {
+  fetchReportTeaser,
+  fetchCareerReportPreview,
+  couponCodeConfirmedForCheckout,
+  createPaymentOrder,
+  verifyPayment,
+  validatePaymentCoupon,
+} from './api';
+import { CareerReportContent } from './CareerReportContent';
 import { CouponCelebrateDialog, type CouponCelebratePayload } from './components/CouponCelebrateDialog';
 import { googleAuth } from '@/features/auth/api';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
@@ -54,13 +62,6 @@ const PREMIUM_BULLETS = [
   'Then unlock the same full report with our most confident matches',
   'Ideal when two streams or careers feel “too close to call”',
 ];
-
-const STREAM_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  Science: { bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' },
-  Commerce: { bg: '#fefce8', text: '#a16207', border: '#fde68a' },
-  Arts: { bg: '#fdf2f8', text: '#be185d', border: '#fbcfe8' },
-  Humanities: { bg: '#fdf2f8', text: '#be185d', border: '#fbcfe8' },
-};
 
 const UNLOCK_FEATURES = [
   { icon: '📊', text: '15-dimension profile plus 8 career-matching trait scores with exact numbers' },
@@ -209,6 +210,88 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
     enabled: !!sessionId,
   });
 
+  const hasReportAccess = !!(teaser && (teaser.report_accessible ?? teaser.is_paid));
+  const bundleAddOnPending =
+    !!teaser &&
+    !teaser.report_accessible &&
+    !!teaser.premium_unlocked &&
+    !teaser.premium_extension_complete;
+
+  const { data: previewReport, isLoading: previewLoading, error: previewError } = useQuery({
+    queryKey: ['career-report-preview', sessionId],
+    queryFn: () => fetchCareerReportPreview(sessionId),
+    enabled: !!sessionId && !!teaser && !hasReportAccess && !bundleAddOnPending,
+  });
+
+  const reportPreviewScrollRef = useRef<HTMLDivElement>(null);
+  const paywallAnchorRef = useRef<HTMLDivElement>(null);
+  const bundleUnlockBtnRef = useRef<HTMLButtonElement>(null);
+  const reportUnlockBtnRef = useRef<HTMLButtonElement>(null);
+  /** True when a primary Unlock / Premium checkout button is visible in the viewport. */
+  const [paymentButtonsInView, setPaymentButtonsInView] = useState(false);
+  const [reportPreviewScroll, setReportPreviewScroll] = useState({ hasOverflow: false, atBottom: false });
+
+  const updateReportPreviewScrollMetrics = useCallback(() => {
+    const el = reportPreviewScrollRef.current;
+    if (!el) return;
+    const { scrollHeight, clientHeight, scrollTop } = el;
+    const hasOverflow = scrollHeight > clientHeight + 2;
+    const atBottom = scrollTop + clientHeight >= scrollHeight - 12;
+    setReportPreviewScroll({ hasOverflow, atBottom });
+  }, []);
+
+  useEffect(() => {
+    if (!previewReport && !previewLoading) return;
+    const t = window.setTimeout(() => updateReportPreviewScrollMetrics(), 120);
+    return () => window.clearTimeout(t);
+  }, [previewReport, previewLoading, updateReportPreviewScrollMetrics]);
+
+  useEffect(() => {
+    if (bundleAddOnPending) {
+      setPaymentButtonsInView(false);
+      return;
+    }
+    const sync = () => {
+      const vis = (el: HTMLElement | null) => {
+        if (!el) return false;
+        const r = el.getBoundingClientRect();
+        const vh = window.innerHeight;
+        const visibleHeight = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+        return visibleHeight > 16;
+      };
+      setPaymentButtonsInView(vis(bundleUnlockBtnRef.current) || vis(reportUnlockBtnRef.current));
+    };
+
+    const bundleEl = bundleUnlockBtnRef.current;
+    const reportEl = reportUnlockBtnRef.current;
+    const targets = [bundleEl, reportEl].filter((x): x is HTMLButtonElement => x != null);
+    if (targets.length === 0) {
+      setPaymentButtonsInView(false);
+      return;
+    }
+
+    const io = new IntersectionObserver(() => sync(), {
+      root: null,
+      threshold: [0, 0.05, 0.1, 0.2, 0.35, 0.5, 1],
+      rootMargin: '0px 0px 0px 0px',
+    });
+    targets.forEach((t) => io.observe(t));
+    sync();
+    return () => io.disconnect();
+  }, [bundleAddOnPending, teaser]);
+
+  useEffect(() => {
+    const el = reportPreviewScrollRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => updateReportPreviewScrollMetrics());
+    ro.observe(el);
+    window.addEventListener('resize', updateReportPreviewScrollMetrics);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', updateReportPreviewScrollMetrics);
+    };
+  }, [updateReportPreviewScrollMetrics, previewReport]);
+
   useEffect(() => {
     if (typeof window !== 'undefined' && !document.getElementById('razorpay-script')) {
       const script = document.createElement('script');
@@ -227,6 +310,10 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   }, [teaser, sessionId, router]);
 
   const showError = (message: string) => setSnack({ open: true, message, severity: 'error' });
+
+  const scrollToPaywall = useCallback(() => {
+    paywallAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   const needsSignIn = !user;
 
@@ -300,7 +387,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
     try {
       const orderData = await createPaymentOrder(sessionId, {
         product_type: productType,
-        coupon_code: couponCode.trim(),
+        coupon_code: couponCodeConfirmedForCheckout(couponCode, couponPricePreview),
       });
 
       if (orderData.premium_pending_extension) {
@@ -414,11 +501,9 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
       : upgradePrice;
   const hasCouponDiscount =
     !!couponPricePreview && (couponPricePreview.discount_percent ?? 0) > 0;
-  const streamColor = STREAM_COLORS[teaser.stream_recommendation] || STREAM_COLORS.Science;
   const firstNameToken = teaser.student_name?.split(/\s+/)[0]?.trim();
-  /** Paid ₹99 bundle but add-on not finished — do not show duplicate checkout. */
-  const bundleAddOnPending =
-    !teaser.report_accessible && !!teaser.premium_unlocked && !teaser.premium_extension_complete;
+
+  const showStickyUnlockCta = !bundleAddOnPending && !paymentButtonsInView;
 
   if (showSignInStep) {
     return (
@@ -469,20 +554,21 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
         sx={{
           minHeight: { xs: 'calc(100dvh - 56px)', sm: 'calc(100dvh - 64px)' },
           background: pageBg,
-          pb: { xs: 3, sm: 4 },
+          pb: showStickyUnlockCta ? { xs: 7, sm: 8 } : { xs: 3, sm: 4 },
+          transition: 'padding-bottom 0.35s ease',
         }}
       >
         <Container
           maxWidth="lg"
-          sx={{ pt: { xs: 2, sm: 2.5 }, pb: { xs: 1.25, sm: 1.75, md: 2 }, px: { xs: 1.5, sm: 2.5 } }}
+          sx={{ pt: { xs: 1.25, sm: 2.5 }, pb: { xs: 1.25, sm: 1.75, md: 2 }, px: { xs: 1.5, sm: 2.5 } }}
         >
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
-            <Box sx={{ mb: { xs: 2, sm: 2.5 } }}>
+            <Box sx={{ mb: { xs: 1.25, sm: 2.5 } }}>
               <Box
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: { xs: 1.75, sm: 2, md: 2.5 },
+                  gap: { xs: 1.15, sm: 2, md: 2.5 },
                   alignItems: 'stretch',
                   maxWidth: 720,
                   mx: 'auto',
@@ -492,6 +578,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                   {firstNameToken ? (
                     <Typography
                       sx={{
+                        display: { xs: 'none', sm: 'block' },
                         fontSize: '0.65rem',
                         fontWeight: 700,
                         color: '#94a3b8',
@@ -512,267 +599,249 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                       letterSpacing: '-0.03em',
                       fontSize: { xs: '1.35rem', sm: '1.55rem', md: '1.75rem' },
                       lineHeight: 1.15,
-                      mb: 0.5,
+                      mb: { xs: 0.35, sm: 0.5 },
                     }}
                   >
-                    Your career report is ready
+                    {firstNameToken ? (
+                      <>
+                        <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                          {firstNameToken}, your report is ready
+                        </Box>
+                        <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                          Your career report is ready
+                        </Box>
+                      </>
+                    ) : (
+                      'Your career report is ready'
+                    )}
                   </Typography>
                   <Typography
                     sx={{
+                      display: { xs: 'block', sm: 'none' },
                       color: '#64748b',
-                      fontSize: { xs: '0.8rem', sm: '0.85rem' },
+                      fontSize: '0.78rem',
+                      maxWidth: 480,
+                      mx: 'auto',
+                      lineHeight: 1.35,
+                      fontWeight: 500,
+                      mb: 1,
+                    }}
+                  >
+                    Full report &amp; PDF · one payment unlocks everything below.
+                  </Typography>
+                  <Typography
+                    sx={{
+                      display: { xs: 'none', sm: 'block' },
+                      color: '#64748b',
+                      fontSize: '0.85rem',
                       maxWidth: 480,
                       mx: 'auto',
                       lineHeight: 1.45,
                       fontWeight: 500,
-                      mb: { xs: 1.25, sm: 1.5 },
+                      mb: 1.5,
                     }}
                   >
                     Unlock the full breakdown, top matches, and PDF from {PRODUCT_NAME}. One payment — instant access.
                   </Typography>
 
-                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04, duration: 0.35 }}>
-                    <Box
-                      sx={{
-                        borderRadius: 3,
-                        overflow: 'hidden',
-                        border: '1px solid',
-                        borderColor: alpha('#0f172a', 0.08),
-                        bgcolor: '#fff',
-                        boxShadow: '0 4px 20px -8px rgba(15,23,42,0.12)',
-                        textAlign: 'left',
-                      }}
+                  {!bundleAddOnPending && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.04, duration: 0.35 }}
                     >
                       <Box
                         sx={{
-                          px: 1.5,
-                          py: 0.65,
-                          background: 'linear-gradient(90deg, #ecfdf5 0%, #f0fdf4 100%)',
-                          borderBottom: '1px solid',
-                          borderColor: alpha('#16a34a', 0.15),
+                          borderRadius: 3,
+                          overflow: 'hidden',
+                          border: '1px solid',
+                          borderColor: alpha('#0f172a', 0.08),
+                          bgcolor: '#fff',
+                          boxShadow: '0 4px 20px -8px rgba(15,23,42,0.12)',
+                          textAlign: 'left',
                         }}
                       >
-                        <Typography
+                        <Box
                           sx={{
-                            fontSize: '0.62rem',
-                            fontWeight: 800,
-                            color: '#15803d',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.1em',
+                            px: { xs: 1.15, sm: 1.5 },
+                            py: { xs: 0.5, sm: 0.65 },
+                            background: 'linear-gradient(90deg, #ecfdf5 0%, #f0fdf4 100%)',
+                            borderBottom: '1px solid',
+                            borderColor: alpha('#16a34a', 0.15),
                           }}
                         >
-                          Your free preview
-                        </Typography>
-                      </Box>
-
-                      <Box
-                        sx={{
-                          p: { xs: 1.15, sm: 1.35 },
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 1,
-                          textAlign: 'left',
-                          alignItems: 'stretch',
-                        }}
-                      >
-                        {teaser.stream_recommendation && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box
-                              sx={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 1.5,
-                                bgcolor: streamColor.bg,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: 18,
-                                flexShrink: 0,
-                                border: `1px solid ${streamColor.border}`,
-                              }}
-                            >
-                              🎓
-                            </Box>
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
-                              <Typography
-                                sx={{
-                                  fontSize: '0.62rem',
-                                  color: '#64748b',
-                                  fontWeight: 700,
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.05em',
-                                }}
-                              >
-                                Stream signal
-                              </Typography>
-                              <Stack direction="row" alignItems="center" gap={0.75} flexWrap="wrap">
-                                <Typography sx={{ fontSize: '0.98rem', fontWeight: 800, color: '#0f172a' }}>
-                                  {teaser.stream_recommendation}
-                                </Typography>
-                                <Chip
-                                  label="Preview"
-                                  size="small"
-                                  sx={{
-                                    height: 20,
-                                    fontSize: '0.6rem',
-                                    fontWeight: 800,
-                                    bgcolor: streamColor.bg,
-                                    color: streamColor.text,
-                                    border: `1px solid ${streamColor.border}`,
-                                  }}
-                                />
-                              </Stack>
-                            </Box>
-                          </Box>
-                        )}
-
-                        {teaser.dominant_pattern && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box
-                              sx={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 1.5,
-                                bgcolor: '#f5f3ff',
-                                border: '1px solid #ddd6fe',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: 18,
-                                flexShrink: 0,
-                              }}
-                            >
-                              🧠
-                            </Box>
-                            <Box sx={{ minWidth: 0 }}>
-                              <Typography
-                                sx={{
-                                  fontSize: '0.62rem',
-                                  color: '#64748b',
-                                  fontWeight: 700,
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.05em',
-                                }}
-                              >
-                                Working style
-                              </Typography>
-                              <Typography sx={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>
-                                {teaser.dominant_pattern}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        )}
-
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                          <Box
-                            sx={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: 1.5,
-                              bgcolor: '#ecfdf5',
-                              border: '1px solid #bbf7d0',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: 18,
-                              flexShrink: 0,
-                              mt: 0.15,
-                            }}
-                          >
-                            🏆
-                          </Box>
-                          <Box
-                            sx={{
-                              flex: 1,
-                              minWidth: 0,
-                              textAlign: 'left',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'flex-start',
-                            }}
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            justifyContent="space-between"
+                            spacing={1}
+                            sx={{ display: { xs: 'flex', sm: 'none' } }}
                           >
                             <Typography
                               sx={{
-                                fontSize: '0.62rem',
-                                color: '#64748b',
-                                fontWeight: 700,
+                                fontSize: '0.65rem',
+                                fontWeight: 800,
+                                color: '#15803d',
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                width: '100%',
-                                textAlign: 'left',
+                                letterSpacing: '0.08em',
                               }}
                             >
-                              Top career match (preview)
+                              Report preview
                             </Typography>
-                            <motion.div
-                              initial={{ opacity: 0, y: 4 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.15 }}
-                              style={{ width: '100%', textAlign: 'left' }}
-                            >
-                              {teaser.hero_career_category ? (
-                                <>
-                                  <Typography
-                                    sx={{
-                                      fontSize: '0.92rem',
-                                      fontWeight: 800,
-                                      color: '#15803d',
-                                      display: 'block',
-                                      mb: 0.2,
-                                      textAlign: 'left',
-                                      width: '100%',
-                                      lineHeight: 1.25,
-                                    }}
-                                  >
-                                    {teaser.hero_career_category}
-                                  </Typography>
-                                  <Typography
-                                    sx={{
-                                      fontSize: '0.72rem',
-                                      fontWeight: 600,
-                                      color: '#64748b',
-                                      textAlign: 'left',
-                                      width: '100%',
-                                      lineHeight: 1.3,
-                                    }}
-                                  >
-                                    {teaser.hero_career}
-                                  </Typography>
-                                </>
-                              ) : (
-                                <Typography
-                                  sx={{
-                                    fontSize: '0.92rem',
-                                    fontWeight: 800,
-                                    color: '#0f172a',
-                                    textAlign: 'left',
-                                    width: '100%',
-                                  }}
-                                >
-                                  {teaser.hero_career}
-                                </Typography>
-                              )}
-                            </motion.div>
-                          </Box>
-                          <Chip
-                            label={teaser.hero_confidence}
-                            size="small"
+                            <Chip
+                              size="small"
+                              label="Scroll ↓"
+                              sx={{
+                                height: 22,
+                                fontSize: '0.58rem',
+                                fontWeight: 700,
+                                bgcolor: alpha('#fff', 0.85),
+                                color: '#15803d',
+                                border: `1px solid ${alpha('#16a34a', 0.35)}`,
+                              }}
+                            />
+                          </Stack>
+                          <Typography
                             sx={{
-                              height: 22,
+                              display: { xs: 'none', sm: 'block' },
                               fontSize: '0.62rem',
                               fontWeight: 800,
-                              bgcolor: '#ecfdf5',
                               color: '#15803d',
-                              border: '1px solid #bbf7d0',
-                              flexShrink: 0,
-                              alignSelf: 'flex-start',
-                              mt: 0.15,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.1em',
                             }}
-                          />
+                          >
+                            Full report preview
+                          </Typography>
+                          <Typography
+                            sx={{
+                              display: { xs: 'none', sm: 'block' },
+                              fontSize: '0.65rem',
+                              color: '#64748b',
+                              fontWeight: 600,
+                              mt: 0.35,
+                            }}
+                          >
+                            Same layout as after payment — locked fields stay blurred until you unlock.
+                          </Typography>
+                          <Typography
+                            sx={{
+                              display: { xs: 'none', md: 'block' },
+                              fontSize: '0.62rem',
+                              color: '#94a3b8',
+                              fontWeight: 600,
+                              mt: 0.5,
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            Scroll inside this panel to explore; payment stays below — no need to read everything first.
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ position: 'relative' }}>
+                          <Box
+                            ref={reportPreviewScrollRef}
+                            onScroll={updateReportPreviewScrollMetrics}
+                            sx={{
+                              maxHeight: { xs: 'min(62vh, 520px)', sm: 'min(56vh, 560px)' },
+                              minHeight: { xs: 220, sm: 200 },
+                              overflowY: 'auto',
+                              overflowX: 'hidden',
+                              px: { xs: 0.9, sm: 1.35 },
+                              py: { xs: 0.85, sm: 1.35 },
+                              WebkitOverflowScrolling: 'touch',
+                              scrollbarGutter: 'stable',
+                              scrollbarWidth: 'thin',
+                              '&::-webkit-scrollbar': { width: 8 },
+                              '&::-webkit-scrollbar-track': {
+                                background: alpha('#f1f5f9', 0.95),
+                                borderRadius: 4,
+                                margin: '4px 0',
+                              },
+                              '&::-webkit-scrollbar-thumb': {
+                                background: alpha('#64748b', 0.42),
+                                borderRadius: 4,
+                                border: '2px solid transparent',
+                                backgroundClip: 'padding-box',
+                              },
+                              '&::-webkit-scrollbar-thumb:hover': {
+                                background: alpha('#475569', 0.55),
+                              },
+                            }}
+                          >
+                            {previewLoading && (
+                              <Box sx={{ py: 4, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                <ButtonSpinner size={28} />
+                              </Box>
+                            )}
+                            {previewError && (
+                              <Typography color="error" sx={{ fontSize: '0.85rem', textAlign: 'center', py: 2 }}>
+                                Couldn&apos;t load the preview. Refresh and try again.
+                              </Typography>
+                            )}
+                            {previewReport && (
+                              <CareerReportContent
+                                variant="preview"
+                                report={previewReport}
+                                sessionId={sessionId}
+                                onPreviewLockedClick={scrollToPaywall}
+                              />
+                            )}
+                          </Box>
+
+                          {reportPreviewScroll.hasOverflow && !reportPreviewScroll.atBottom && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                left: 0,
+                                right: 8,
+                                bottom: 0,
+                                height: 64,
+                                pointerEvents: 'none',
+                                background:
+                                  'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.75) 45%, #ffffff 100%)',
+                              }}
+                            />
+                          )}
+                          {reportPreviewScroll.hasOverflow && !reportPreviewScroll.atBottom && (
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              spacing={0.5}
+                              sx={{
+                                position: 'absolute',
+                                bottom: 8,
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                pointerEvents: 'none',
+                                px: 1.5,
+                                py: 0.45,
+                                borderRadius: 999,
+                                bgcolor: alpha('#fff', 0.97),
+                                border: `1px solid ${alpha('#0f172a', 0.1)}`,
+                                boxShadow: '0 4px 16px rgba(15,23,42,0.1)',
+                              }}
+                            >
+                              <Typography
+                                sx={{
+                                  fontSize: '0.6rem',
+                                  fontWeight: 800,
+                                  color: '#475569',
+                                  letterSpacing: '0.08em',
+                                  textTransform: 'uppercase',
+                                }}
+                              >
+                                Scroll for more
+                              </Typography>
+                              <Typography component="span" sx={{ fontSize: '0.85rem', color: '#16a34a', lineHeight: 1 }} aria-hidden>
+                                ↓
+                              </Typography>
+                            </Stack>
+                          )}
                         </Box>
                       </Box>
-                    </Box>
-                  </motion.div>
+                    </motion.div>
+                  )}
                 </Box>
 
                 <Box sx={{ minWidth: 0, width: '100%' }}>
@@ -818,6 +887,11 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                   )}
 
                   {!bundleAddOnPending && (
+                  <Box
+                    ref={paywallAnchorRef}
+                    id="report-paywall-options"
+                    sx={{ scrollMarginTop: { xs: 72, sm: 88 } }}
+                  >
                   <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.35 }}>
                     <Typography
                       component="h2"
@@ -1007,6 +1081,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                           ))}
                         </Stack>
                         <Button
+                          ref={bundleUnlockBtnRef}
                           variant="contained"
                           fullWidth
                           disabled={payingProduct !== null}
@@ -1099,6 +1174,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                           ))}
                         </Stack>
                         <Button
+                          ref={reportUnlockBtnRef}
                           variant="contained"
                           fullWidth
                           disabled={payingProduct !== null}
@@ -1129,82 +1205,10 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                     </Box>
                     <CheckoutTrustFooter compact />
                   </motion.div>
+                  </Box>
                   )}
                 </Box>
               </Box>
-            </Box>
-
-            <Box
-              sx={{
-                py: 2,
-                px: 2.5,
-                mb: 2,
-                borderRadius: 4,
-                bgcolor: '#fff',
-                border: '1px solid',
-                borderColor: alpha('#0f172a', 0.08),
-                boxShadow: '0 4px 20px -12px rgba(15,23,42,0.12)',
-              }}
-            >
-              <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f172a', mb: 0.5, textAlign: 'center', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Your top 3 career matches
-              </Typography>
-              <Typography sx={{ fontSize: '0.8rem', color: '#64748b', textAlign: 'center', mb: 2 }}>
-                #1 is unlocked above — see #2 and #3 in the full report
-              </Typography>
-              <Stack spacing={1}>
-                {teaser.career_preview.map((c) => {
-                  const isRevealed = 'career_name' in c && c.career_name;
-                  return (
-                    <Box
-                      key={c.rank}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1.5,
-                        py: 1,
-                        px: 1.5,
-                        borderRadius: 2,
-                        bgcolor: isRevealed ? alpha('#22c55e', 0.08) : alpha('#f1f5f9', 0.9),
-                        border: '1px solid',
-                        borderColor: isRevealed ? alpha('#22c55e', 0.2) : alpha('#cbd5e1', 0.6),
-                      }}
-                    >
-                      <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, color: isRevealed ? '#15803d' : '#94a3b8', minWidth: 28 }}>
-                        #{c.rank}
-                      </Typography>
-                      {isRevealed ? (
-                        <Box sx={{ flex: 1 }}>
-                          {c.career_category ? (
-                            <>
-                              <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: '#15803d', lineHeight: 1.25 }}>
-                                {c.career_category}
-                              </Typography>
-                              <Typography sx={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', mt: 0.1 }}>
-                                {c.career_name}
-                              </Typography>
-                            </>
-                          ) : (
-                            <Typography sx={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a' }}>{c.career_name}</Typography>
-                          )}
-                        </Box>
-                      ) : (
-                        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flex: 1, color: '#94a3b8' }}>
-                          <Typography sx={{ fontSize: 16 }} aria-hidden>
-                            🔒
-                          </Typography>
-                          <Typography sx={{ fontSize: '0.84rem', fontWeight: 600 }}>Unlock in full report</Typography>
-                        </Stack>
-                      )}
-                    </Box>
-                  );
-                })}
-              </Stack>
-              {teaser.top_two_gap != null && (
-                <Typography sx={{ fontSize: '0.75rem', color: '#4f46e5', fontWeight: 700, textAlign: 'center', mt: 2, lineHeight: 1.5 }}>
-                  #1 and #2 are only {teaser.top_two_gap}% apart — the breakdown in the report matters.
-                </Typography>
-              )}
             </Box>
 
             {teaser.profile_depth_detail && (
@@ -1328,6 +1332,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
         autoHideDuration={5000}
         onClose={() => setSnack((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        sx={{ zIndex: (t) => t.zIndex.modal + 2 }}
       >
         <Alert
           onClose={() => setSnack((s) => ({ ...s, open: false }))}
@@ -1338,6 +1343,69 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
           {snack.message}
         </Alert>
       </Snackbar>
+
+      {!bundleAddOnPending && (
+        <motion.div
+          initial={false}
+          animate={{
+            opacity: showStickyUnlockCta ? 1 : 0,
+            y: showStickyUnlockCta ? 0 : 120,
+          }}
+          transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+          style={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1300,
+            pointerEvents: showStickyUnlockCta ? 'auto' : 'none',
+          }}
+          aria-hidden={!showStickyUnlockCta}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              px: { xs: 1.5, sm: 2 },
+              pb: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+              pt: 0,
+              background: 'transparent',
+            }}
+          >
+            <Button
+              variant="contained"
+              onClick={scrollToPaywall}
+              aria-describedby="report-paywall-options"
+              aria-label={`Unlock full career report for ₹${payReport}`}
+              sx={{
+                py: 1.35,
+                px: { xs: 2.25, sm: 3 },
+                minHeight: 48,
+                maxWidth: 440,
+                width: { xs: '100%', sm: 'auto' },
+                borderRadius: 999,
+                textTransform: 'none',
+                fontWeight: 800,
+                fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                letterSpacing: '-0.01em',
+                lineHeight: 1.25,
+                whiteSpace: { xs: 'normal', sm: 'nowrap' },
+                background: 'linear-gradient(135deg, #059669 0%, #0d9488 52%, #2563eb 140%)',
+                boxShadow: '0 8px 28px -6px rgba(5, 150, 105, 0.55), 0 2px 8px -2px rgba(37, 99, 235, 0.35)',
+                border: '1px solid',
+                borderColor: alpha('#fff', 0.25),
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #047857 0%, #0f766e 52%, #1d4ed8 140%)',
+                  boxShadow: '0 12px 32px -6px rgba(5, 150, 105, 0.5)',
+                },
+              }}
+            >
+              {`₹${payReport} · Unlock full report`}
+            </Button>
+          </Box>
+        </motion.div>
+      )}
     </>
   );
 }

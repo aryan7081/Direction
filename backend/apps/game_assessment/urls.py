@@ -33,6 +33,11 @@ urlpatterns = [
         name="game-report-teaser",
     ),
     path(
+        "game/report/<uuid:session_id>/preview/",
+        views.CareerReportPreviewView.as_view(),
+        name="game-report-preview",
+    ),
+    path(
         "game/report/<uuid:session_id>/",
         views.CareerReportView.as_view(),
         name="game-report",

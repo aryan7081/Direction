@@ -9,6 +9,7 @@ The internal 8-trait scores power career matching and the radar summary.
 """
 from __future__ import annotations
 
+import copy
 from datetime import date
 
 from ..models import (
@@ -883,3 +884,95 @@ def build_report(session: GameSession) -> dict:
             "a parent or school counsellor."
         ),
     }
+
+
+def redact_report_for_unpaid_preview(report: dict) -> dict:
+    """
+    Strip paywalled career/stream text from full report JSON for GET /preview/.
+    Rank #3–#4 rows stay visible (teaser peek); #1–#2 and stream/roadmap are placeholders.
+    """
+    r = copy.deepcopy(report)
+
+    h = r.get("hero") or {}
+    r["hero"] = {
+        **h,
+        "career_name": "Unlock to reveal",
+        "career_category": "",
+        "score_percent": 0,
+        "confidence_explanation": (
+            "Unlock the full report to see what your confidence level means for your top match."
+        ),
+    }
+
+    careers_out = []
+    for c in r.get("careers") or []:
+        rank = int(c.get("rank") or 0)
+        if rank in (3, 4):
+            careers_out.append(c)
+            continue
+        careers_out.append(
+            {
+                **c,
+                "career_name": "Unlock to reveal",
+                "career_category": "",
+                "stream": "",
+                "description": "",
+                "why_match": (
+                    "Unlock the full report to read how this career matches your profile."
+                ),
+                "score_percent": 0,
+                "confidence": "Exploratory",
+                "work_style": "—",
+                "education_path": "—",
+                "min_education": "—",
+                "salary_range": "—",
+                "growth_outlook": "—",
+            }
+        )
+    r["careers"] = careers_out
+
+    r["stream_recommendation"] = {
+        "stream": "—",
+        "reasoning": (
+            "Unlock the full report to see your recommended academic stream and detailed reasoning."
+        ),
+    }
+    r["career_comparison_text"] = (
+        "Unlock the full report to see how your top matches compare side by side."
+    )
+    r["roadmap"] = {
+        "class_10": (
+            "Focus on building a strong academic foundation. Unlock the full report for "
+            "a personalised roadmap tied to your top career match."
+        ),
+        "class_11_12": (
+            "Unlock the full report to see stream and subject guidance aligned with your matches."
+        ),
+        "after_12th": (
+            "Unlock the full report for entrance-exam and pathway suggestions tailored to your profile."
+        ),
+    }
+    r["less_natural_careers"] = []
+
+    dp = r.get("dominant_pattern")
+    if isinstance(dp, dict):
+        r["dominant_pattern"] = {
+            **dp,
+            "career_examples": (
+                "Unlock the full report to see career examples aligned with your pattern."
+            ),
+        }
+
+    r["subject_recommendation"] = {
+        "primary": {
+            "subjects": [],
+            "label": "Unlock to reveal",
+            "best_for": "—",
+            "why": (
+                "Unlock the full report to see subject combinations recommended for you."
+            ),
+        },
+        "alternatives": [],
+    }
+    r["preview_redacted"] = True
+    return r
