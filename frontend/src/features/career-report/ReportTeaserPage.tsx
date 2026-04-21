@@ -21,6 +21,7 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   fetchReportTeaser,
   fetchCareerReportPreview,
+  couponCodeConfirmedForCheckout,
   createPaymentOrder,
   verifyPayment,
   validatePaymentCoupon,
@@ -386,7 +387,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
     try {
       const orderData = await createPaymentOrder(sessionId, {
         product_type: productType,
-        coupon_code: couponCode.trim(),
+        coupon_code: couponCodeConfirmedForCheckout(couponCode, couponPricePreview),
       });
 
       if (orderData.premium_pending_extension) {

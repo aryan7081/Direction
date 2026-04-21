@@ -100,6 +100,21 @@ export async function validatePaymentCoupon(
   return data;
 }
 
+/**
+ * Only pass a coupon to checkout when the user clicked Apply and the field still
+ * matches that validated code — avoids charging a typed-but-not-applied code while UI shows list prices.
+ */
+export function couponCodeConfirmedForCheckout(
+  couponCode: string,
+  appliedPreview: { coupon_code: string } | null | undefined
+): string | undefined {
+  if (!appliedPreview) return undefined;
+  const typed = couponCode.trim().toUpperCase();
+  const applied = String(appliedPreview.coupon_code).trim().toUpperCase();
+  if (typed !== applied) return undefined;
+  return couponCode.trim();
+}
+
 export async function createPaymentOrder(
   sessionId: string,
   opts?: { product_type?: PaymentProductType; coupon_code?: string }

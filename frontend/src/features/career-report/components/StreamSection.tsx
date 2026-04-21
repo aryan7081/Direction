@@ -14,6 +14,33 @@ const STREAM_THEME: Record<string, { bg: string; accent: string; border: string;
   General: { bg: '#f3f4f6', accent: '#374151', border: '#d1d5db', icon: '🎓' },
 };
 
+function LockIcon({ color }: { color: string }) {
+  return (
+    <Box
+      component="span"
+      sx={{
+        display: 'inline-flex',
+        flexShrink: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        color,
+        filter: `drop-shadow(0 1px 2px ${alpha(color, 0.35)})`,
+      }}
+      aria-hidden
+    >
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </Box>
+  );
+}
+
 export function StreamSection({
   streamRecommendation,
   previewLock = false,
@@ -128,9 +155,13 @@ export function StreamSection({
                     lineHeight: 1.45,
                   }}
                 >
-                  {isTeaser
-                    ? 'We picked a path that fits you—see the full name and story below.'
-                    : 'The direction we suggest for Class 11–12 and beyond, based on your profile.'}
+                  {previewLock
+                    ? isTeaser
+                      ? 'We picked a path that fits you—unlock to see your stream.'
+                      : 'Unlock below to see your stream and full reasoning.'
+                    : isTeaser
+                      ? 'We picked a path that fits you—see the full name and story below.'
+                      : 'The direction we suggest for Class 11–12 and beyond, based on your profile.'}
                 </Typography>
               </Box>
 
@@ -143,61 +174,91 @@ export function StreamSection({
                   boxShadow: `0 10px 32px -12px ${alpha(theme.accent, 0.4)}`,
                 }}
               >
-                <Box
-                  sx={{
-                    borderRadius: 2.35,
-                    px: isTeaser ? { xs: 1.5, sm: 1.75 } : { xs: 1.75, sm: 2 },
-                    py: isTeaser ? { xs: 1.35, sm: 1.5 } : { xs: 1.5, sm: 1.65 },
-                    bgcolor: '#fff',
-                    textAlign: 'center',
-                    background: 'linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)',
-                  }}
-                >
-                  {previewLock && (
-                    <Typography
-                      sx={{
-                        fontSize: '0.6rem',
-                        fontWeight: 800,
-                        letterSpacing: '0.16em',
-                        textTransform: 'uppercase',
-                        color: alpha(theme.accent, 0.85),
-                        mb: 0.75,
-                      }}
-                    >
-                      Hidden until you unlock
-                    </Typography>
-                  )}
-                  <PreviewSensitiveRegion
-                    locked={previewLock}
-                    onLockedClick={previewLock ? onPreviewLockedClick : undefined}
+                {previewLock ? (
+                  <Box
+                    component={onPreviewLockedClick ? 'button' : 'div'}
+                    type={onPreviewLockedClick ? 'button' : undefined}
+                    onClick={onPreviewLockedClick}
+                    sx={{
+                      borderRadius: 2.35,
+                      border: 'none',
+                      p: 0,
+                      m: 0,
+                      width: '100%',
+                      display: 'block',
+                      cursor: onPreviewLockedClick ? 'pointer' : 'default',
+                      font: 'inherit',
+                      textAlign: 'center',
+                      bgcolor: theme.bg,
+                      '&:focus-visible': {
+                        outline: '2px solid',
+                        outlineColor: 'primary.main',
+                        outlineOffset: 2,
+                      },
+                    }}
+                    aria-label="Go to payment options to unlock"
                   >
-                    <Typography
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="center"
+                      spacing={1.15}
                       sx={{
-                        fontWeight: 800,
-                        color: theme.accent,
-                        fontSize: isTeaser
-                          ? { xs: '1.45rem', sm: '1.65rem' }
-                          : { xs: '1.55rem', sm: '1.85rem' },
-                        lineHeight: 1.15,
-                        letterSpacing: '-0.03em',
+                        py: isTeaser ? { xs: 1.15, sm: 1.25 } : { xs: 1.25, sm: 1.35 },
+                        px: isTeaser ? { xs: 1.25, sm: 1.5 } : { xs: 1.5, sm: 1.75 },
                       }}
                     >
-                      {streamRecommendation.stream}
-                    </Typography>
-                  </PreviewSensitiveRegion>
-                  {previewLock && (
-                    <Typography
+                      <LockIcon color={theme.accent} />
+                      <Typography
+                        component="span"
+                        sx={{
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          lineHeight: 1.25,
+                          letterSpacing: '0.02em',
+                          color: '#334155',
+                          py: 0.45,
+                          px: 1.1,
+                          borderRadius: 1,
+                          border: `1px solid ${alpha(theme.accent, 0.4)}`,
+                        }}
+                      >
+                        Unlock to reveal stream
+                      </Typography>
+                    </Stack>
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      borderRadius: 2.35,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Box
                       sx={{
-                        mt: 1.1,
-                        fontSize: '0.68rem',
-                        fontWeight: 600,
-                        color: '#64748b',
+                        px: isTeaser ? { xs: 1.5, sm: 1.75 } : { xs: 1.75, sm: 2 },
+                        py: isTeaser ? { xs: 1.35, sm: 1.5 } : { xs: 1.5, sm: 1.65 },
+                        bgcolor: '#fff',
+                        textAlign: 'center',
+                        background: 'linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)',
                       }}
                     >
-                      Tap to reveal in full report →
-                    </Typography>
-                  )}
-                </Box>
+                      <Typography
+                        sx={{
+                          fontWeight: 800,
+                          color: theme.accent,
+                          fontSize: isTeaser
+                            ? { xs: '1.45rem', sm: '1.65rem' }
+                            : { xs: '1.55rem', sm: '1.85rem' },
+                          lineHeight: 1.15,
+                          letterSpacing: '-0.03em',
+                        }}
+                      >
+                        {streamRecommendation.stream}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
               </Box>
             </Stack>
           </Stack>

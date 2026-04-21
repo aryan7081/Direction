@@ -71,15 +71,43 @@ def _has_paid_order(user, session) -> bool:
     return _paid_order(user, session) is not None
 
 
-def _has_report_access(user, session) -> bool:
-    """User may open PDF / full JSON report."""
-    o = _paid_order(user, session)
-    if not o:
+def _user_has_paid_report_order_any(user) -> bool:
+    """True if user ever paid for the ₹49 report-only tier (any session)."""
+    if not user or not getattr(user, "is_authenticated", False):
         return False
-    if o.product_type == ReportOrder.ProductType.REPORT:
-        return True
-    if o.product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
+    return ReportOrder.objects.filter(
+        user=user,
+        status="paid",
+        product_type=ReportOrder.ProductType.REPORT,
+    ).exists()
+
+
+def _user_has_paid_premium_bundle_any(user) -> bool:
+    """True if user ever paid for the premium bundle (₹99 tier; any session)."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    return ReportOrder.objects.filter(
+        user=user,
+        status="paid",
+        product_type=ReportOrder.ProductType.PREMIUM_BUNDLE,
+    ).exists()
+
+
+def _has_report_access(user, session) -> bool:
+    """User may open PDF / full JSON report (this session or lifetime entitlement)."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    o = _paid_order(user, session)
+    if o:
+        if o.product_type == ReportOrder.ProductType.REPORT:
+            return True
+        if o.product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
+            return session.premium_extension_complete
+    # Retake / new session: same account already paid on an older session.
+    if _user_has_paid_premium_bundle_any(user):
         return session.premium_extension_complete
+    if _user_has_paid_report_order_any(user):
+        return True
     return False
 
 
@@ -132,23 +160,34 @@ def _premium_upgrade_available(user, session) -> bool:
     """Paid ₹49 report only — can pay ₹50 more for the premium bundle add-on."""
     if not user or not getattr(user, "is_authenticated", False):
         return False
+    if _user_has_paid_premium_bundle_any(user):
+        return False
     po = _paid_order(user, session)
-    return bool(
-        po
-        and po.status == "paid"
-        and po.product_type == ReportOrder.ProductType.REPORT
-    )
+    if po and po.status == "paid" and po.product_type == ReportOrder.ProductType.REPORT:
+        return True
+    return _user_has_paid_report_order_any(user)
 
 
 def _sync_session_premium_unlock_from_bundle_order(session: GameSession) -> None:
     """
     If a paid premium-bundle ReportOrder exists for this session, ensure premium_unlocked.
-    Single source of truth for bundle entitlement (covers admin mark-paid and stale session rows).
+    If the user paid for a bundle on any prior session, unlock premium on new sessions too.
     """
     if session.premium_unlocked or not session.pk:
         return
     if ReportOrder.objects.filter(
         session_id=session.pk,
+        status="paid",
+        product_type=ReportOrder.ProductType.PREMIUM_BUNDLE,
+    ).exists():
+        GameSession.objects.filter(pk=session.pk, premium_unlocked=False).update(
+            premium_unlocked=True
+        )
+        session.premium_unlocked = True
+        return
+    uid = getattr(session, "user_id", None)
+    if uid and ReportOrder.objects.filter(
+        user_id=uid,
         status="paid",
         product_type=ReportOrder.ProductType.PREMIUM_BUNDLE,
     ).exists():
@@ -1047,6 +1086,14 @@ def _list_price_for_checkout(user, session, product_type: str) -> Tuple[int, str
         and product_type == ReportOrder.ProductType.PREMIUM_BUNDLE
     ):
         return settings.PREMIUM_UPGRADE_FROM_REPORT_INR, "upgrade"
+    if (
+        product_type == ReportOrder.ProductType.PREMIUM_BUNDLE
+        and not existing_paid
+        and _user_has_paid_report_order_any(user)
+        and not _user_has_paid_premium_bundle_any(user)
+    ):
+        # New session after a prior ₹49 purchase — bundle add-on is still the delta price.
+        return settings.PREMIUM_UPGRADE_FROM_REPORT_INR, "upgrade"
     if product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
         return settings.PREMIUM_BUNDLE_PRICE_INR, "initial"
     return settings.REPORT_PRICE_INR, "initial"
@@ -1163,6 +1210,25 @@ class CreatePaymentOrderView(GenericAPIView):
             )
 
         _sync_session_premium_unlock_from_bundle_order(session)
+
+        # Do not charge again for a tier the user already purchased on any session.
+        if product_type == ReportOrder.ProductType.REPORT:
+            if _user_has_paid_premium_bundle_any(request.user):
+                return Response(
+                    {"detail": "Already purchased.", "is_paid": True},
+                    status=status.HTTP_200_OK,
+                )
+            if _user_has_paid_report_order_any(request.user):
+                return Response(
+                    {"detail": "Already purchased.", "is_paid": True},
+                    status=status.HTTP_200_OK,
+                )
+        if product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
+            if _user_has_paid_premium_bundle_any(request.user):
+                return Response(
+                    {"detail": "Already purchased.", "is_paid": True},
+                    status=status.HTTP_200_OK,
+                )
 
         list_price_inr, _checkout_kind = _list_price_for_checkout(
             request.user, session, product_type
