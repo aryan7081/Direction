@@ -48,14 +48,7 @@ export function CareerReportContent({
   const isFull = variant === 'full';
   const previewLock = variant === 'preview';
 
-  const studentName = report.student?.name || 'Student';
-  const snap = report.assessment_snapshot;
-  const nAnswered = snap?.answered_count;
-  const tierNote = snap?.premium_extension_complete ? 'Phase 1 + premium extension' : 'Phase 1';
-  const responseNote =
-    typeof nAnswered === 'number' && nAnswered > 0
-      ? `${nAnswered} questionnaire responses`
-      : 'Your questionnaire responses';
+  const nAnswered = report.assessment_snapshot?.answered_count;
 
   const readiness = report.readiness;
   const readinessBox = readiness ? (
@@ -223,87 +216,6 @@ export function CareerReportContent({
           </Button>
         </motion.div>
       )}
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: isFull ? 0.4 : 0.25 }}
-      >
-        <Box sx={{ textAlign: 'center', mb: previewLock ? { xs: 1.25, sm: 2 } : 3 }}>
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 800,
-              color: '#111827',
-              letterSpacing: '-0.02em',
-              fontSize: previewLock
-                ? { xs: '1.05rem', sm: '1.35rem' }
-                : { xs: '1.5rem', sm: '2rem' },
-            }}
-          >
-            {previewLock ? (
-              <>
-                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-                  Your career report
-                </Box>
-                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                  Career Intelligence Report
-                </Box>
-              </>
-            ) : (
-              'Career Intelligence Report'
-            )}
-          </Typography>
-          <Typography
-            sx={{
-              color: '#6b7280',
-              fontSize: previewLock ? { xs: '0.78rem', sm: '0.95rem' } : '0.95rem',
-              mt: previewLock ? { xs: 0.35, sm: 0.5 } : 0.5,
-              lineHeight: 1.35,
-            }}
-          >
-            Prepared for{' '}
-            <Box component="span" sx={{ fontWeight: 700, color: '#111827' }}>
-              {studentName}
-            </Box>
-            {report.student?.grade && (
-              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                {' '}
-                · {report.student.grade}
-              </Box>
-            )}
-            {report.student?.school && (
-              <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>
-                {' '}
-                · {report.student.school}
-              </Box>
-            )}
-          </Typography>
-          <Typography
-            sx={{
-              color: '#9ca3af',
-              fontSize: previewLock ? { xs: '0.68rem', sm: '0.8rem' } : '0.8rem',
-              mt: previewLock ? { xs: 0.25, sm: 0.5 } : 0.5,
-              display: previewLock ? { xs: 'none', sm: 'block' } : 'block',
-            }}
-          >
-            {report.generated_at && `Generated on ${report.generated_at}`}
-            {report.completed_at && ` · Assessment completed ${report.completed_at}`}
-          </Typography>
-          <Typography
-            sx={{
-              color: '#9ca3af',
-              fontSize: previewLock ? { xs: '0.62rem', sm: '0.72rem' } : '0.72rem',
-              mt: previewLock ? { xs: 0.25, sm: 0.5 } : 0.5,
-              display: previewLock ? { xs: 'none', md: 'block' } : 'block',
-              lineHeight: 1.45,
-            }}
-          >
-            15 profile dimensions · {responseNote} · {tierNote} · RIASEC, personality (Big Five–style), values,
-            readiness &amp; aptitude
-          </Typography>
-        </Box>
-      </motion.div>
 
       {isFull && (
         <>

@@ -7,7 +7,7 @@
     size: A4;
     margin: 20mm 18mm 25mm 18mm;
     @top-left { content: "Outcave"; font-size: 9px; color: #9ca3af; }
-    @top-right { content: "Career Intelligence Report"; font-size: 9px; color: #9ca3af; }
+    @top-right { content: ""; }
     @bottom-left { content: "Assessment {{ report.session_id|truncatechars:12 }}"; font-size: 8px; color: #9ca3af; }
     @bottom-center { content: counter(page) " / " counter(pages); font-size: 8px; color: #9ca3af; }
     @bottom-right { content: "Confidential"; font-size: 8px; color: #9ca3af; }
@@ -23,35 +23,6 @@
     font-size: 11px;
     line-height: 1.6;
     color: #1f2937;
-  }
-
-  .web-title-block {
-    text-align: center;
-    margin-bottom: 22px;
-    page-break-inside: avoid;
-  }
-  .web-title-block h1 {
-    font-size: 22px;
-    font-weight: 800;
-    color: #111827;
-    letter-spacing: -0.02em;
-    margin-bottom: 6px;
-  }
-  .web-title-block .prepared {
-    color: #6b7280;
-    font-size: 11px;
-  }
-  .web-title-block .prepared strong { color: #111827; font-weight: 700; }
-  .web-title-block .meta-muted {
-    color: #9ca3af;
-    font-size: 9px;
-    margin-top: 6px;
-  }
-  .web-title-block .meta-tiny {
-    color: #9ca3af;
-    font-size: 8.5px;
-    margin-top: 5px;
-    line-height: 1.5;
   }
 
   .section-band {
@@ -595,30 +566,6 @@
 </style>
 </head>
 <body>
-
-<!-- Title block (CareerReportPage) -->
-<div class="web-title-block">
-  <h1>Career Intelligence Report</h1>
-  <p class="prepared">
-    Prepared for <strong>{{ report.student.name|default:"Student" }}</strong>
-    {% if report.student.grade %} · {{ report.student.grade }}{% endif %}
-    {% if report.student.school %} · {{ report.student.school }}{% endif %}
-  </p>
-  <p class="meta-muted">
-    {% if report.generated_at %}Generated on {{ report.generated_at }}{% endif %}
-    {% if report.completed_at %} · Assessment completed {{ report.completed_at }}{% endif %}
-  </p>
-  <p class="meta-tiny">
-    15 profile dimensions ·
-    {% if report.assessment_snapshot and report.assessment_snapshot.answered_count %}
-      {{ report.assessment_snapshot.answered_count }} questionnaire responses
-    {% else %}
-      Your questionnaire responses
-    {% endif %}
-    · {% if report.assessment_snapshot and report.assessment_snapshot.premium_extension_complete %}Phase 1 + premium extension{% else %}Phase 1{% endif %}
-    · RIASEC, personality (Big Five–style), values, readiness &amp; aptitude
-  </p>
-</div>
 
 <div class="section-band">Section 1 · The big answers</div>
 

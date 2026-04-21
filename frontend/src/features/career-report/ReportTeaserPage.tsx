@@ -503,6 +503,14 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
     !!couponPricePreview && (couponPricePreview.discount_percent ?? 0) > 0;
   const firstNameToken = teaser.student_name?.split(/\s+/)[0]?.trim();
 
+  /** Sticky bar scrolls to paywall — wording must work for report-only and premium buyers. */
+  const stickyPaywallCtaLabel = showBundleAsUpgrade
+    ? `₹${payUpgrade} · Add premium accuracy`
+    : `From ₹${payReport} · See unlock options`;
+  const stickyPaywallCtaAriaLabel = showBundleAsUpgrade
+    ? `Scroll to payment options to add premium accuracy for ₹${payUpgrade}`
+    : `Scroll to unlock options — full report from ₹${payReport}, or premium bundle from ₹${payBundle}`;
+
   const showStickyUnlockCta = !bundleAddOnPending && !paymentButtonsInView;
 
   if (showSignInStep) {
@@ -597,8 +605,8 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                       fontWeight: 800,
                       color: '#0f172a',
                       letterSpacing: '-0.03em',
-                      fontSize: { xs: '1.35rem', sm: '1.55rem', md: '1.75rem' },
-                      lineHeight: 1.15,
+                      fontSize: { xs: '1.12rem', sm: '1.55rem', md: '1.75rem' },
+                      lineHeight: { xs: 1.2, sm: 1.15 },
                       mb: { xs: 0.35, sm: 0.5 },
                     }}
                   >
@@ -619,12 +627,13 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                     sx={{
                       display: { xs: 'block', sm: 'none' },
                       color: '#64748b',
-                      fontSize: '0.78rem',
+                      fontSize: '0.7rem',
                       maxWidth: 480,
                       mx: 'auto',
-                      lineHeight: 1.35,
+                      lineHeight: 1.4,
                       fontWeight: 500,
                       mb: 1,
+                      px: { xs: 0.5, sm: 0 },
                     }}
                   >
                     Full report &amp; PDF · one payment unlocks everything below.
@@ -1377,7 +1386,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
               variant="contained"
               onClick={scrollToPaywall}
               aria-describedby="report-paywall-options"
-              aria-label={`Unlock full career report for ₹${payReport}`}
+              aria-label={stickyPaywallCtaAriaLabel}
               sx={{
                 py: 1.35,
                 px: { xs: 2.25, sm: 3 },
@@ -1401,7 +1410,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                 },
               }}
             >
-              {`₹${payReport} · Unlock full report`}
+              {stickyPaywallCtaLabel}
             </Button>
           </Box>
         </motion.div>
