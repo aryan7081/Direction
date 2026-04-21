@@ -3,15 +3,18 @@
 import { Box, Card, CardContent, Chip, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import type { SubjectRecommendation as SubjectRecType } from '../types';
+import { PreviewSensitiveRegion } from './PreviewSensitiveRegion';
 
 function SubjectCard({
   combo,
   isPrimary,
   index,
+  previewLock = false,
 }: {
   combo: SubjectRecType['primary'];
   isPrimary: boolean;
   index: number;
+  previewLock?: boolean;
 }) {
   return (
     <motion.div
@@ -28,49 +31,51 @@ function SubjectCard({
           mb: isPrimary ? 2 : 1.5,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+        <PreviewSensitiveRegion locked={previewLock}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            {isPrimary && (
+              <Chip
+                label="Recommended"
+                size="small"
+                sx={{ height: 22, fontSize: '0.65rem', fontWeight: 700, bgcolor: '#16a34a', color: '#fff' }}
+              />
+            )}
+            <Typography sx={{ fontWeight: 700, color: isPrimary ? '#15803d' : '#374151', fontSize: '0.95rem' }}>
+              {combo.label}
+            </Typography>
+          </Box>
+
+          {/* Subject pills */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
+            {combo.subjects.map((subj) => (
+              <Chip
+                key={subj}
+                label={subj}
+                size="small"
+                sx={{
+                  height: 26,
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  bgcolor: isPrimary ? '#dcfce7' : '#f3f4f6',
+                  color: isPrimary ? '#166534' : '#374151',
+                }}
+              />
+            ))}
+          </Box>
+
+          {/* Best for */}
+          <Typography sx={{ fontSize: '0.75rem', color: '#6b7280', mb: 0.75 }}>
+            <Box component="span" sx={{ fontWeight: 600 }}>Best for: </Box>
+            {combo.best_for}
+          </Typography>
+
+          {/* Why */}
           {isPrimary && (
-            <Chip
-              label="Recommended"
-              size="small"
-              sx={{ height: 22, fontSize: '0.65rem', fontWeight: 700, bgcolor: '#16a34a', color: '#fff' }}
-            />
+            <Typography sx={{ fontSize: '0.8rem', color: '#374151', lineHeight: 1.6, mt: 1 }}>
+              {combo.why}
+            </Typography>
           )}
-          <Typography sx={{ fontWeight: 700, color: isPrimary ? '#15803d' : '#374151', fontSize: '0.95rem' }}>
-            {combo.label}
-          </Typography>
-        </Box>
-
-        {/* Subject pills */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
-          {combo.subjects.map((subj) => (
-            <Chip
-              key={subj}
-              label={subj}
-              size="small"
-              sx={{
-                height: 26,
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                bgcolor: isPrimary ? '#dcfce7' : '#f3f4f6',
-                color: isPrimary ? '#166534' : '#374151',
-              }}
-            />
-          ))}
-        </Box>
-
-        {/* Best for */}
-        <Typography sx={{ fontSize: '0.75rem', color: '#6b7280', mb: 0.75 }}>
-          <Box component="span" sx={{ fontWeight: 600 }}>Best for: </Box>
-          {combo.best_for}
-        </Typography>
-
-        {/* Why */}
-        {isPrimary && (
-          <Typography sx={{ fontSize: '0.8rem', color: '#374151', lineHeight: 1.6, mt: 1 }}>
-            {combo.why}
-          </Typography>
-        )}
+        </PreviewSensitiveRegion>
       </Box>
     </motion.div>
   );
@@ -79,9 +84,11 @@ function SubjectCard({
 export function SubjectRecommendationSection({
   recommendation,
   stream,
+  previewLock = false,
 }: {
   recommendation: SubjectRecType;
   stream: string;
+  previewLock?: boolean;
 }) {
   if (!recommendation?.primary) return null;
 
@@ -104,13 +111,15 @@ export function SubjectRecommendationSection({
           <Typography variant="h6" fontWeight={700} gutterBottom>
             📚 Recommended Subjects for Class 11-12
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Based on your interest profile and {stream} stream recommendation,
-            here are the specific subject combinations that align best with your strengths.
-          </Typography>
+          <PreviewSensitiveRegion locked={previewLock}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Based on your interest profile and {stream} stream recommendation,
+              here are the specific subject combinations that align best with your strengths.
+            </Typography>
+          </PreviewSensitiveRegion>
 
           {/* Primary recommendation */}
-          <SubjectCard combo={recommendation.primary} isPrimary index={0} />
+          <SubjectCard combo={recommendation.primary} isPrimary index={0} previewLock={previewLock} />
 
           {/* Alternatives */}
           {recommendation.alternatives.length > 0 && (
@@ -121,7 +130,7 @@ export function SubjectRecommendationSection({
                 Also worth considering:
               </Typography>
               {recommendation.alternatives.map((alt, i) => (
-                <SubjectCard key={alt.label} combo={alt} isPrimary={false} index={i + 1} />
+                <SubjectCard key={alt.label} combo={alt} isPrimary={false} index={i + 1} previewLock={previewLock} />
               ))}
             </>
           )}

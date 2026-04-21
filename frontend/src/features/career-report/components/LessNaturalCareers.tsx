@@ -3,8 +3,9 @@
 import { Box, Card, CardContent, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import type { LessNaturalCareer } from '../types';
+import { PreviewSensitiveRegion } from './PreviewSensitiveRegion';
 
-export function LessNaturalCareers({ items }: { items: LessNaturalCareer[] }) {
+export function LessNaturalCareers({ items, previewLock = false }: { items: LessNaturalCareer[]; previewLock?: boolean }) {
   if (!items || items.length === 0) return null;
 
   return (
@@ -23,32 +24,34 @@ export function LessNaturalCareers({ items }: { items: LessNaturalCareer[] }) {
             Understanding this helps you make informed decisions.
           </Typography>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {items.map((item, i) => (
-              <motion.div
-                key={item.domain}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * i }}
-              >
-                <Box
-                  sx={{
-                    p: 2.5,
-                    borderRadius: 2,
-                    bgcolor: '#f9fafb',
-                    border: '1px solid #e5e7eb',
-                  }}
+          <PreviewSensitiveRegion locked={previewLock}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {items.map((item, i) => (
+                <motion.div
+                  key={item.domain}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * i }}
                 >
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#374151', mb: 0.5 }}>
-                    {item.domain}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#6b7280', lineHeight: 1.7 }}>
-                    {item.note}
-                  </Typography>
-                </Box>
-              </motion.div>
-            ))}
-          </Box>
+                  <Box
+                    sx={{
+                      p: 2.5,
+                      borderRadius: 2,
+                      bgcolor: '#f9fafb',
+                      border: '1px solid #e5e7eb',
+                    }}
+                  >
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#374151', mb: 0.5 }}>
+                      {item.domain}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#6b7280', lineHeight: 1.7 }}>
+                      {item.note}
+                    </Typography>
+                  </Box>
+                </motion.div>
+              ))}
+            </Box>
+          </PreviewSensitiveRegion>
         </CardContent>
       </Card>
     </motion.div>

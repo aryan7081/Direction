@@ -784,6 +784,47 @@ class ReportTeaserView(GenericAPIView):
         return Response(teaser)
 
 
+class CareerReportPreviewView(GenericAPIView):
+    """
+    GET — same JSON shape as the paid report for the unpaid teaser page.
+    Stream/career sections are blurred on the client until purchase; PDF remains gated.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_scope = "game_teaser"
+
+    def get(self, request, session_id):
+        try:
+            session = GameSession.objects.get(id=session_id)
+        except GameSession.DoesNotExist:
+            return Response(
+                {"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not session.is_complete:
+            return Response(
+                {"detail": "Session not yet completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        _sync_session_premium_unlock_from_bundle_order(session)
+
+        report = build_report(session)
+        report["preview_mode"] = True
+        su = session.user
+        report["premium_upgrade"] = {
+            "available": _premium_upgrade_available(su, session)
+            if su and getattr(su, "is_authenticated", False)
+            else False,
+            "price_inr": settings.PREMIUM_UPGRADE_FROM_REPORT_INR,
+        }
+        if su and getattr(su, "is_authenticated", False):
+            report["counseling_request"] = _counseling_request_summary(su, session)
+        else:
+            report["counseling_request"] = {"submitted": False}
+        return Response(report)
+
+
 # ── Gated full report ──────────────────────────────────────────────
 
 class CareerReportView(GenericAPIView):

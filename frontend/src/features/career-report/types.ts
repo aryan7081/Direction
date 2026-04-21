@@ -161,6 +161,8 @@ export interface AssessmentSnapshot {
 /* ── Full Report ─────────────────────────────────────────────────── */
 
 export interface CareerReport {
+  /** True when loaded from the public preview endpoint (teaser page). */
+  preview_mode?: boolean;
   session_id: string;
   completed_at: string | null;
   generated_at: string;

@@ -54,6 +54,12 @@ export async function fetchCareerReport(sessionId: string): Promise<CareerReport
   return data;
 }
 
+/** Full report JSON for unpaid teaser UI (stream/career blurred on client). */
+export async function fetchCareerReportPreview(sessionId: string): Promise<CareerReport> {
+  const { data } = await api.get(`/game/report/${sessionId}/preview/`);
+  return data;
+}
+
 export async function requestCareerCounselingCall(
   sessionId: string,
   opts: { phone: string }

@@ -2,13 +2,16 @@
 
 import { Box, Card, CardContent, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
+import { PreviewSensitiveRegion } from './PreviewSensitiveRegion';
 
 export function NextSteps({
   stream,
   topCareer,
+  previewLock = false,
 }: {
   stream?: string;
   topCareer?: string;
+  previewLock?: boolean;
 }) {
   const steps = [
     {
@@ -44,13 +47,8 @@ export function NextSteps({
         </Typography>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {steps.map((step, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 * i }}
-            >
+          {steps.map((step, i) => {
+            const row = (
               <Box
                 sx={{
                   display: 'flex',
@@ -71,8 +69,19 @@ export function NextSteps({
                   </Typography>
                 </Box>
               </Box>
-            </motion.div>
-          ))}
+            );
+            const lockStep = previewLock && (i === 0 || i === 2);
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 * i }}
+              >
+                {lockStep ? <PreviewSensitiveRegion locked>{row}</PreviewSensitiveRegion> : row}
+              </motion.div>
+            );
+          })}
         </Box>
       </CardContent>
     </Card>
