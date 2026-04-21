@@ -223,6 +223,11 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   });
 
   const reportPreviewScrollRef = useRef<HTMLDivElement>(null);
+  const paywallAnchorRef = useRef<HTMLDivElement>(null);
+  const bundleUnlockBtnRef = useRef<HTMLButtonElement>(null);
+  const reportUnlockBtnRef = useRef<HTMLButtonElement>(null);
+  /** True when a primary Unlock / Premium checkout button is visible in the viewport. */
+  const [paymentButtonsInView, setPaymentButtonsInView] = useState(false);
   const [reportPreviewScroll, setReportPreviewScroll] = useState({ hasOverflow: false, atBottom: false });
 
   const updateReportPreviewScrollMetrics = useCallback(() => {
@@ -239,6 +244,40 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
     const t = window.setTimeout(() => updateReportPreviewScrollMetrics(), 120);
     return () => window.clearTimeout(t);
   }, [previewReport, previewLoading, updateReportPreviewScrollMetrics]);
+
+  useEffect(() => {
+    if (bundleAddOnPending) {
+      setPaymentButtonsInView(false);
+      return;
+    }
+    const sync = () => {
+      const vis = (el: HTMLElement | null) => {
+        if (!el) return false;
+        const r = el.getBoundingClientRect();
+        const vh = window.innerHeight;
+        const visibleHeight = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+        return visibleHeight > 16;
+      };
+      setPaymentButtonsInView(vis(bundleUnlockBtnRef.current) || vis(reportUnlockBtnRef.current));
+    };
+
+    const bundleEl = bundleUnlockBtnRef.current;
+    const reportEl = reportUnlockBtnRef.current;
+    const targets = [bundleEl, reportEl].filter((x): x is HTMLButtonElement => x != null);
+    if (targets.length === 0) {
+      setPaymentButtonsInView(false);
+      return;
+    }
+
+    const io = new IntersectionObserver(() => sync(), {
+      root: null,
+      threshold: [0, 0.05, 0.1, 0.2, 0.35, 0.5, 1],
+      rootMargin: '0px 0px 0px 0px',
+    });
+    targets.forEach((t) => io.observe(t));
+    sync();
+    return () => io.disconnect();
+  }, [bundleAddOnPending, teaser]);
 
   useEffect(() => {
     const el = reportPreviewScrollRef.current;
@@ -270,6 +309,10 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
   }, [teaser, sessionId, router]);
 
   const showError = (message: string) => setSnack({ open: true, message, severity: 'error' });
+
+  const scrollToPaywall = useCallback(() => {
+    paywallAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   const needsSignIn = !user;
 
@@ -459,6 +502,8 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
     !!couponPricePreview && (couponPricePreview.discount_percent ?? 0) > 0;
   const firstNameToken = teaser.student_name?.split(/\s+/)[0]?.trim();
 
+  const showStickyUnlockCta = !bundleAddOnPending && !paymentButtonsInView;
+
   if (showSignInStep) {
     return (
       <Box sx={{ minHeight: '100vh', background: pageBg }}>
@@ -508,7 +553,8 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
         sx={{
           minHeight: { xs: 'calc(100dvh - 56px)', sm: 'calc(100dvh - 64px)' },
           background: pageBg,
-          pb: { xs: 3, sm: 4 },
+          pb: showStickyUnlockCta ? { xs: 7, sm: 8 } : { xs: 3, sm: 4 },
+          transition: 'padding-bottom 0.35s ease',
         }}
       >
         <Container
@@ -839,6 +885,11 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                   )}
 
                   {!bundleAddOnPending && (
+                  <Box
+                    ref={paywallAnchorRef}
+                    id="report-paywall-options"
+                    sx={{ scrollMarginTop: { xs: 72, sm: 88 } }}
+                  >
                   <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.35 }}>
                     <Typography
                       component="h2"
@@ -1028,6 +1079,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                           ))}
                         </Stack>
                         <Button
+                          ref={bundleUnlockBtnRef}
                           variant="contained"
                           fullWidth
                           disabled={payingProduct !== null}
@@ -1120,6 +1172,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                           ))}
                         </Stack>
                         <Button
+                          ref={reportUnlockBtnRef}
                           variant="contained"
                           fullWidth
                           disabled={payingProduct !== null}
@@ -1150,6 +1203,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                     </Box>
                     <CheckoutTrustFooter compact />
                   </motion.div>
+                  </Box>
                   )}
                 </Box>
               </Box>
@@ -1276,6 +1330,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
         autoHideDuration={5000}
         onClose={() => setSnack((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        sx={{ zIndex: (t) => t.zIndex.modal + 2 }}
       >
         <Alert
           onClose={() => setSnack((s) => ({ ...s, open: false }))}
@@ -1286,6 +1341,69 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
           {snack.message}
         </Alert>
       </Snackbar>
+
+      {!bundleAddOnPending && (
+        <motion.div
+          initial={false}
+          animate={{
+            opacity: showStickyUnlockCta ? 1 : 0,
+            y: showStickyUnlockCta ? 0 : 120,
+          }}
+          transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+          style={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1300,
+            pointerEvents: showStickyUnlockCta ? 'auto' : 'none',
+          }}
+          aria-hidden={!showStickyUnlockCta}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              px: { xs: 1.5, sm: 2 },
+              pb: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+              pt: 0,
+              background: 'transparent',
+            }}
+          >
+            <Button
+              variant="contained"
+              onClick={scrollToPaywall}
+              aria-describedby="report-paywall-options"
+              aria-label={`Unlock full career report for ₹${payReport}`}
+              sx={{
+                py: 1.35,
+                px: { xs: 2.25, sm: 3 },
+                minHeight: 48,
+                maxWidth: 440,
+                width: { xs: '100%', sm: 'auto' },
+                borderRadius: 999,
+                textTransform: 'none',
+                fontWeight: 800,
+                fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                letterSpacing: '-0.01em',
+                lineHeight: 1.25,
+                whiteSpace: { xs: 'normal', sm: 'nowrap' },
+                background: 'linear-gradient(135deg, #059669 0%, #0d9488 52%, #2563eb 140%)',
+                boxShadow: '0 8px 28px -6px rgba(5, 150, 105, 0.55), 0 2px 8px -2px rgba(37, 99, 235, 0.35)',
+                border: '1px solid',
+                borderColor: alpha('#fff', 0.25),
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #047857 0%, #0f766e 52%, #1d4ed8 140%)',
+                  boxShadow: '0 12px 32px -6px rgba(5, 150, 105, 0.5)',
+                },
+              }}
+            >
+              {`₹${payReport} · Unlock full report`}
+            </Button>
+          </Box>
+        </motion.div>
+      )}
     </>
   );
 }
