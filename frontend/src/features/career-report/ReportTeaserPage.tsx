@@ -783,6 +783,7 @@ export function ReportTeaserPage({ sessionId }: { sessionId: string }) {
                                 variant="preview"
                                 report={previewReport}
                                 sessionId={sessionId}
+                                onPreviewLockedClick={scrollToPaywall}
                               />
                             )}
                           </Box>

@@ -18,15 +18,17 @@ export function HeroConfidenceExplanation({
   previewLock = false,
   /** Tighter spacing when shown under teaser hero+stream row. */
   compact = false,
+  onPreviewLockedClick,
 }: {
   hero: CareerReport['hero'];
   previewLock?: boolean;
   compact?: boolean;
+  onPreviewLockedClick?: () => void;
 }) {
   if (!hero.confidence_explanation) return null;
   const badge = BADGE_COLORS[hero.confidence] ?? BADGE_COLORS.Exploratory;
   return (
-    <PreviewSensitiveRegion locked={previewLock}>
+    <PreviewSensitiveRegion locked={previewLock} onLockedClick={previewLock ? onPreviewLockedClick : undefined}>
       <Box
         sx={{
           p: { xs: 2, sm: 2.25 },
@@ -57,17 +59,20 @@ export function HeroSection({
   layout = 'default',
   /** When set with layout=teaser, shows locked #1/#2 + peek #3/#4 instead of blurred #1 hero. */
   careers,
+  /** Preview: tap blurred hero or locked teaser slots to scroll to paywall. */
+  onPreviewLockedClick,
 }: {
   hero: CareerReport['hero'];
   previewLock?: boolean;
   layout?: 'default' | 'teaser';
   careers?: CareerReport['careers'];
+  onPreviewLockedClick?: () => void;
 }) {
   const badge = BADGE_COLORS[hero.confidence] ?? BADGE_COLORS.Exploratory;
   const isTeaser = layout === 'teaser';
 
   if (isTeaser && careers && careers.length > 0) {
-    return <TeaserHeroMatchesPanel careers={careers} />;
+    return <TeaserHeroMatchesPanel careers={careers} onLockedClick={onPreviewLockedClick} />;
   }
 
   return (
@@ -137,7 +142,7 @@ export function HeroSection({
           </Typography>
         )}
 
-        <PreviewSensitiveRegion locked={previewLock}>
+        <PreviewSensitiveRegion locked={previewLock} onLockedClick={previewLock ? onPreviewLockedClick : undefined}>
           <motion.div
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}

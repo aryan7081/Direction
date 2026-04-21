@@ -1,12 +1,10 @@
 'use client';
 
-import { Box, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { motion } from 'framer-motion';
 import type { CareerReport } from '../types';
 import { PreviewSensitiveRegion } from './PreviewSensitiveRegion';
-
-/** Matches teaser hero / career-matches headline — cohesive “premium” label. */
-const STREAM_HEADLINE_GRADIENT = 'linear-gradient(105deg, #059669 0%, #0d9488 45%, #2563eb 100%)';
 
 const STREAM_THEME: Record<string, { bg: string; accent: string; border: string; icon: string }> = {
   Science: { bg: '#eff6ff', accent: '#1d4ed8', border: '#bfdbfe', icon: '🔬' },
@@ -19,21 +17,22 @@ const STREAM_THEME: Record<string, { bg: string; accent: string; border: string;
 export function StreamSection({
   streamRecommendation,
   previewLock = false,
-  /** Teaser: shorter card next to hero — catchier label, clamped reasoning. */
   layout = 'default',
+  onPreviewLockedClick,
 }: {
   streamRecommendation: CareerReport['stream_recommendation'];
   previewLock?: boolean;
   layout?: 'default' | 'teaser';
+  onPreviewLockedClick?: () => void;
 }) {
   const theme = STREAM_THEME[streamRecommendation.stream] || STREAM_THEME.General;
   const isTeaser = layout === 'teaser';
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
+      transition={{ delay: 0.08, type: 'spring', stiffness: 420, damping: 32 }}
     >
       <Box
         sx={{
@@ -44,114 +43,192 @@ export function StreamSection({
           height: isTeaser ? '100%' : undefined,
           display: isTeaser ? 'flex' : undefined,
           flexDirection: isTeaser ? 'column' : undefined,
-          boxShadow: isTeaser ? '0 4px 20px -8px rgba(15, 23, 42, 0.08)' : undefined,
+          boxShadow: isTeaser
+            ? `0 4px 24px -10px ${alpha('#0f172a', 0.1)}, 0 0 0 1px ${alpha('#fff', 0.8)} inset`
+            : `0 10px 40px -16px ${alpha(theme.accent, 0.12)}, 0 1px 3px ${alpha('#0f172a', 0.06)}`,
         }}
       >
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: isTeaser ? 1.25 : 1.5,
+            position: 'relative',
             px: isTeaser ? { xs: 2, sm: 2.25 } : { xs: 2.5, sm: 3 },
-            py: isTeaser ? { xs: 1.75, sm: 2 } : 2,
-            bgcolor: theme.bg,
+            pt: isTeaser ? { xs: 2, sm: 2.25 } : { xs: 2.25, sm: 2.75 },
+            pb: isTeaser ? { xs: 2, sm: 2.25 } : { xs: 2.25, sm: 2.75 },
             flexShrink: 0,
+            background: `radial-gradient(120% 80% at 0% 0%, ${alpha(theme.accent, 0.14)} 0%, transparent 55%), linear-gradient(180deg, ${theme.bg} 0%, ${alpha(theme.bg, 0.65)} 100%)`,
+            borderBottom: `1px solid ${alpha(theme.border, 0.85)}`,
           }}
         >
-          <Typography sx={{ fontSize: isTeaser ? 24 : 28, lineHeight: 1 }}>{theme.icon}</Typography>
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            {isTeaser ? (
-              <Box sx={{ mb: 0.5 }}>
+          <Stack direction="row" spacing={isTeaser ? 1.5 : 2} alignItems="flex-start">
+            <Box
+              sx={{
+                width: isTeaser ? 52 : 58,
+                height: isTeaser ? 52 : 58,
+                borderRadius: 2.5,
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: isTeaser ? 26 : 30,
+                lineHeight: 1,
+                bgcolor: alpha('#fff', 0.85),
+                border: `1px solid ${alpha(theme.accent, 0.2)}`,
+                boxShadow: `
+                  0 6px 20px -8px ${alpha(theme.accent, 0.35)},
+                  inset 0 1px 0 ${alpha('#fff', 1)}
+                `,
+              }}
+              aria-hidden
+            >
+              {theme.icon}
+            </Box>
+
+            <Stack spacing={isTeaser ? 1.15 : 1.35} sx={{ minWidth: 0, flex: 1 }}>
+              <Box
+                sx={{
+                  alignSelf: 'flex-start',
+                  px: 1.1,
+                  py: 0.35,
+                  borderRadius: 999,
+                  bgcolor: alpha(theme.accent, 0.1),
+                  border: `1px solid ${alpha(theme.accent, 0.22)}`,
+                }}
+              >
                 <Typography
-                  component="span"
                   sx={{
-                    display: 'block',
+                    fontSize: '0.62rem',
                     fontWeight: 800,
-                    fontSize: { xs: '0.7rem', sm: '0.76rem' },
-                    letterSpacing: '0.16em',
+                    letterSpacing: '0.14em',
                     textTransform: 'uppercase',
-                    lineHeight: 1.35,
-                    background: STREAM_HEADLINE_GRADIENT,
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    color: 'transparent',
-                    WebkitTextFillColor: 'transparent',
+                    color: theme.accent,
+                  }}
+                >
+                  {isTeaser ? 'Your stream match' : 'Personalised stream'}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  sx={{
+                    fontWeight: 800,
+                    fontSize: isTeaser ? { xs: '1.05rem', sm: '1.12rem' } : { xs: '1.12rem', sm: '1.22rem' },
+                    letterSpacing: '-0.03em',
+                    lineHeight: 1.25,
+                    color: '#0f172a',
                   }}
                 >
                   Your recommended stream
                 </Typography>
-                <Box
-                  sx={{
-                    mt: 0.65,
-                    width: { xs: 40, sm: 48 },
-                    height: 3,
-                    borderRadius: 2,
-                    background: STREAM_HEADLINE_GRADIENT,
-                    opacity: 0.85,
-                    boxShadow: '0 1px 8px rgba(5, 150, 105, 0.35)',
-                  }}
-                  aria-hidden
-                />
-              </Box>
-            ) : (
-              <Box sx={{ mb: 0.5 }}>
                 <Typography
-                  component="span"
                   sx={{
-                    display: 'block',
-                    fontWeight: 800,
-                    fontSize: { xs: '0.72rem', sm: '0.78rem' },
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase',
-                    lineHeight: 1.4,
-                    background: STREAM_HEADLINE_GRADIENT,
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    color: 'transparent',
-                    WebkitTextFillColor: 'transparent',
+                    mt: 0.5,
+                    fontSize: isTeaser ? '0.72rem' : '0.78rem',
+                    fontWeight: 500,
+                    color: '#64748b',
+                    lineHeight: 1.45,
                   }}
                 >
-                  Recommended Stream
+                  {isTeaser
+                    ? 'We picked a path that fits you—see the full name and story below.'
+                    : 'The direction we suggest for Class 11–12 and beyond, based on your profile.'}
                 </Typography>
-                <Box
-                  sx={{
-                    mt: 0.75,
-                    width: 56,
-                    height: 3,
-                    borderRadius: 2,
-                    background: STREAM_HEADLINE_GRADIENT,
-                    opacity: 0.85,
-                    boxShadow: '0 1px 8px rgba(5, 150, 105, 0.3)',
-                  }}
-                  aria-hidden
-                />
               </Box>
-            )}
-            <PreviewSensitiveRegion locked={previewLock}>
-              <Typography
-                variant="h4"
+
+              <Box
                 sx={{
-                  fontWeight: 800,
-                  color: theme.accent,
-                  fontSize: isTeaser ? { xs: '1.35rem', sm: '1.55rem' } : { xs: '1.5rem', sm: '1.8rem' },
-                  lineHeight: 1.2,
+                  mt: 0.25,
+                  p: '1.5px',
+                  borderRadius: 2.5,
+                  background: `linear-gradient(135deg, ${theme.accent} 0%, ${alpha(theme.accent, 0.55)} 50%, ${alpha(theme.accent, 0.85)} 100%)`,
+                  boxShadow: `0 10px 32px -12px ${alpha(theme.accent, 0.4)}`,
                 }}
               >
-                {streamRecommendation.stream}
-              </Typography>
-            </PreviewSensitiveRegion>
-          </Box>
+                <Box
+                  sx={{
+                    borderRadius: 2.35,
+                    px: isTeaser ? { xs: 1.5, sm: 1.75 } : { xs: 1.75, sm: 2 },
+                    py: isTeaser ? { xs: 1.35, sm: 1.5 } : { xs: 1.5, sm: 1.65 },
+                    bgcolor: '#fff',
+                    textAlign: 'center',
+                    background: 'linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)',
+                  }}
+                >
+                  {previewLock && (
+                    <Typography
+                      sx={{
+                        fontSize: '0.6rem',
+                        fontWeight: 800,
+                        letterSpacing: '0.16em',
+                        textTransform: 'uppercase',
+                        color: alpha(theme.accent, 0.85),
+                        mb: 0.75,
+                      }}
+                    >
+                      Hidden until you unlock
+                    </Typography>
+                  )}
+                  <PreviewSensitiveRegion
+                    locked={previewLock}
+                    onLockedClick={previewLock ? onPreviewLockedClick : undefined}
+                  >
+                    <Typography
+                      sx={{
+                        fontWeight: 800,
+                        color: theme.accent,
+                        fontSize: isTeaser
+                          ? { xs: '1.45rem', sm: '1.65rem' }
+                          : { xs: '1.55rem', sm: '1.85rem' },
+                        lineHeight: 1.15,
+                        letterSpacing: '-0.03em',
+                      }}
+                    >
+                      {streamRecommendation.stream}
+                    </Typography>
+                  </PreviewSensitiveRegion>
+                  {previewLock && (
+                    <Typography
+                      sx={{
+                        mt: 1.1,
+                        fontSize: '0.68rem',
+                        fontWeight: 600,
+                        color: '#64748b',
+                      }}
+                    >
+                      Tap to reveal in full report →
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            </Stack>
+          </Stack>
         </Box>
+
         <Box
           sx={{
             px: isTeaser ? { xs: 2, sm: 2.25 } : { xs: 2.5, sm: 3 },
-            py: isTeaser ? 1.25 : 2,
+            py: isTeaser ? 1.35 : 2,
             bgcolor: '#fff',
             flex: isTeaser ? 1 : undefined,
             minHeight: 0,
+            borderTop: `1px solid ${alpha('#e2e8f0', 0.9)}`,
           }}
         >
-          <PreviewSensitiveRegion locked={previewLock}>
+          <Typography
+            sx={{
+              fontSize: '0.62rem',
+              fontWeight: 800,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: '#94a3b8',
+              mb: 0.75,
+            }}
+          >
+            Why this stream fits you
+          </Typography>
+          <PreviewSensitiveRegion
+            locked={previewLock}
+            onLockedClick={previewLock ? onPreviewLockedClick : undefined}
+          >
             <Typography
               variant="body2"
               sx={{

@@ -31,6 +31,8 @@ export interface CareerReportContentProps {
   downloading?: boolean;
   downloadError?: string | null;
   onDownloadPdf?: () => void;
+  /** Preview: tap blurred areas or locked career cards to scroll to payment options. */
+  onPreviewLockedClick?: () => void;
 }
 
 export function CareerReportContent({
@@ -40,6 +42,7 @@ export function CareerReportContent({
   downloading = false,
   downloadError = null,
   onDownloadPdf,
+  onPreviewLockedClick,
 }: CareerReportContentProps) {
   const router = useRouter();
   const isFull = variant === 'full';
@@ -119,17 +122,29 @@ export function CareerReportContent({
             }}
           >
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <HeroSection hero={report.hero} previewLock layout="teaser" careers={report.careers} />
+              <HeroSection
+                hero={report.hero}
+                previewLock
+                layout="teaser"
+                careers={report.careers}
+                onPreviewLockedClick={onPreviewLockedClick}
+              />
             </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <StreamSection
                 streamRecommendation={report.stream_recommendation}
                 previewLock
                 layout="teaser"
+                onPreviewLockedClick={onPreviewLockedClick}
               />
             </Box>
           </Box>
-          <HeroConfidenceExplanation hero={report.hero} previewLock compact />
+          <HeroConfidenceExplanation
+            hero={report.hero}
+            previewLock
+            compact
+            onPreviewLockedClick={onPreviewLockedClick}
+          />
         </>
       ) : (
         <>
@@ -145,7 +160,11 @@ export function CareerReportContent({
           previewLock={previewLock}
         />
       )}
-      <CareerCards careers={report.careers} previewLock={previewLock} />
+      <CareerCards
+        careers={report.careers}
+        previewLock={previewLock}
+        onPreviewLockedClick={onPreviewLockedClick}
+      />
       <CareerComparison careers={report.careers} comparisonText={report.career_comparison_text} previewLock={previewLock} />
       {report.less_natural_careers && report.less_natural_careers.length > 0 && (
         <LessNaturalCareers items={report.less_natural_careers} previewLock={previewLock} />

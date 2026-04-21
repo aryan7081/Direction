@@ -36,7 +36,7 @@ from .serializers import (
     CareerCounselingRequestSerializer,
 )
 from .services import run_scoring_pipeline
-from .services.report_builder import build_report
+from .services.report_builder import build_report, redact_report_for_unpaid_preview
 from apps.careers.career_categories import category_label_for_slug
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -81,6 +81,28 @@ def _has_report_access(user, session) -> bool:
     if o.product_type == ReportOrder.ProductType.PREMIUM_BUNDLE:
         return session.premium_extension_complete
     return False
+
+
+def _session_result_json_response(session, user, trait_list: list, career_matches: list) -> dict:
+    """
+    Full trait/career payloads only after report purchase (same rule as PDF / full report).
+    Prevents DevTools / network inspection from leaking #1 career and scores before payment.
+    """
+    _sync_session_premium_unlock_from_bundle_order(session)
+    if _has_report_access(user, session):
+        return {
+            "session_id": str(session.id),
+            "completed_at": session.completed_at,
+            "trait_scores": trait_list,
+            "career_matches": career_matches,
+        }
+    return {
+        "session_id": str(session.id),
+        "completed_at": session.completed_at,
+        "report_locked": True,
+        "trait_scores": [],
+        "career_matches": [],
+    }
 
 
 def _mask_in_mobile_display(phone: str) -> str:
@@ -136,14 +158,20 @@ def _sync_session_premium_unlock_from_bundle_order(session: GameSession) -> None
         session.premium_unlocked = True
 
 
-def _build_teaser(session) -> dict:
-    """Build a partial report that reveals just enough to create desire.
-    Does NOT expose trait scores or career names — only labels and count.
+def _build_teaser(session, report_accessible: bool = False) -> dict:
+    """Build a partial report for the marketing teaser JSON.
+
+    When ``report_accessible`` is False (no paid report yet), do not expose #1 career
+    names, stream, or score gaps — only ranks and trait icons/labels.
     """
     report = build_report(session)
 
-    top_career = report["hero"]["career_name"]
-    top_category = report["hero"].get("career_category", "")
+    if report_accessible:
+        top_career = report["hero"]["career_name"]
+        top_category = report["hero"].get("career_category", "")
+    else:
+        top_career = "Unlock to reveal"
+        top_category = ""
     confidence = report["hero"]["confidence"]
     pattern = report.get("dominant_pattern") or {}
 
@@ -156,7 +184,7 @@ def _build_teaser(session) -> dict:
     career_count = min(3, len(careers))
     career_preview = []
     for i in range(career_count):
-        if i == 0 and careers:
+        if report_accessible and i == 0 and careers:
             career_preview.append({
                 "rank": 1,
                 "career_category": careers[0].get("career_category", ""),
@@ -167,7 +195,7 @@ def _build_teaser(session) -> dict:
             career_preview.append({"rank": i + 1})
 
     top_two_gap = None
-    if len(careers) >= 2:
+    if report_accessible and len(careers) >= 2:
         p1 = careers[0].get("score_percent") or 0
         p2 = careers[1].get("score_percent") or 0
         top_two_gap = round(abs(float(p1) - float(p2)), 1)
@@ -205,7 +233,7 @@ def _build_teaser(session) -> dict:
         "hero_confidence": confidence,
         "dominant_pattern": pattern.get("name", ""),
         "dominant_pattern_description": pattern.get("description", ""),
-        "stream_recommendation": stream_rec.get("stream", ""),
+        "stream_recommendation": stream_rec.get("stream", "") if report_accessible else "",
         "trait_preview": trait_preview,
         "career_preview": career_preview,
         "top_two_gap": top_two_gap,
@@ -478,12 +506,9 @@ class SubmitSessionView(GenericAPIView):
         ]
 
         return Response(
-            {
-                "session_id": str(session.id),
-                "completed_at": session.completed_at,
-                "trait_scores": trait_list,
-                "career_matches": result["career_matches"],
-            }
+            _session_result_json_response(
+                session, request.user, trait_list, result["career_matches"]
+            )
         )
 
 
@@ -634,12 +659,7 @@ class SessionResultView(GenericAPIView):
         ]
 
         return Response(
-            {
-                "session_id": str(session.id),
-                "completed_at": session.completed_at,
-                "trait_scores": trait_data,
-                "career_matches": career_data,
-            }
+            _session_result_json_response(session, request.user, trait_data, career_data)
         )
 
 
@@ -766,7 +786,7 @@ class ReportTeaserView(GenericAPIView):
         report_accessible = (
             _has_report_access(session.user, session) if session.user else False
         )
-        teaser = _build_teaser(session)
+        teaser = _build_teaser(session, report_accessible)
         teaser["report_price_inr"] = settings.REPORT_PRICE_INR
         teaser["premium_bundle_price_inr"] = settings.PREMIUM_BUNDLE_PRICE_INR
         teaser["premium_upgrade_price_inr"] = settings.PREMIUM_UPGRADE_FROM_REPORT_INR
@@ -811,6 +831,12 @@ class CareerReportPreviewView(GenericAPIView):
 
         report = build_report(session)
         report["preview_mode"] = True
+        if not (
+            session.user
+            and getattr(session.user, "is_authenticated", False)
+            and _has_report_access(session.user, session)
+        ):
+            report = redact_report_for_unpaid_preview(report)
         su = session.user
         report["premium_upgrade"] = {
             "available": _premium_upgrade_available(su, session)

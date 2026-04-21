@@ -5,7 +5,7 @@ import { Box, Button, Card, CardContent, Chip, Collapse, Divider, Typography } f
 import { alpha, keyframes } from '@mui/material/styles';
 import { motion } from 'framer-motion';
 import type { ReportCareer } from '../types';
-import { sortCareersByRank } from '../utils/careerRankHelpers';
+import { isAcademicStreamBucketLabel, sortCareersByRank } from '../utils/careerRankHelpers';
 import { PreviewSensitiveRegion } from './PreviewSensitiveRegion';
 
 const RANK_COLORS = ['#16a34a', '#3b82f6', '#f59e0b'];
@@ -26,7 +26,15 @@ const pulseSoft = keyframes`
   50% { opacity: 1; transform: scale(1.06); }
 `;
 
-function LockedTopMatchMysteryCard({ rank, accentColor }: { rank: 1 | 2; accentColor: string }) {
+function LockedTopMatchMysteryCard({
+  rank,
+  accentColor,
+  onClick,
+}: {
+  rank: 1 | 2;
+  accentColor: string;
+  onClick?: () => void;
+}) {
   const isFirst = rank === 1;
   return (
     <motion.div
@@ -37,6 +45,17 @@ function LockedTopMatchMysteryCard({ rank, accentColor }: { rank: 1 | 2; accentC
     >
       <Card
         elevation={0}
+        onClick={onClick}
+        onKeyDown={(e) => {
+          if (!onClick) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
+        aria-label={onClick ? 'Go to payment options to unlock this match' : undefined}
         sx={{
           height: '100%',
           borderRadius: 3,
@@ -45,6 +64,10 @@ function LockedTopMatchMysteryCard({ rank, accentColor }: { rank: 1 | 2; accentC
           border: `2px solid ${alpha(accentColor, 0.55)}`,
           background: `linear-gradient(155deg, ${alpha('#0f172a', 0.97)} 0%, ${alpha('#1e293b', 0.95)} 42%, ${alpha('#334155', 0.88)} 100%)`,
           boxShadow: `0 12px 40px -12px ${alpha(accentColor, 0.35)}, inset 0 1px 0 ${alpha('#fff', 0.08)}`,
+          cursor: onClick ? 'pointer' : 'default',
+          '&:focus-visible': onClick
+            ? { outline: '2px solid', outlineColor: accentColor, outlineOffset: 2 }
+            : undefined,
         }}
       >
         <Box
@@ -150,7 +173,13 @@ function LockedTopMatchMysteryCard({ rank, accentColor }: { rank: 1 | 2; accentC
   );
 }
 
-function CareerPreviewTeaserSection({ careers }: { careers: ReportCareer[] }) {
+function CareerPreviewTeaserSection({
+  careers,
+  onPreviewLockedClick,
+}: {
+  careers: ReportCareer[];
+  onPreviewLockedClick?: () => void;
+}) {
   const sorted = sortCareersByRank(careers);
   const r1 = sorted[0];
   const r2 = sorted[1];
@@ -197,8 +226,12 @@ function CareerPreviewTeaserSection({ careers }: { careers: ReportCareer[] }) {
           alignItems: 'stretch',
         }}
       >
-        {r1 && <LockedTopMatchMysteryCard rank={1} accentColor={RANK_COLORS[0]} />}
-        {r2 && <LockedTopMatchMysteryCard rank={2} accentColor={RANK_COLORS[1]} />}
+        {r1 && (
+          <LockedTopMatchMysteryCard rank={1} accentColor={RANK_COLORS[0]} onClick={onPreviewLockedClick} />
+        )}
+        {r2 && (
+          <LockedTopMatchMysteryCard rank={2} accentColor={RANK_COLORS[1]} onClick={onPreviewLockedClick} />
+        )}
       </Box>
 
       {hasPeek && (
@@ -266,6 +299,9 @@ function CareerCard({
   displayRank?: number;
 }) {
   const color = RANK_COLORS[index] ?? '#6b7280';
+  const isTeaserPeek34 = displayRank === 3 || displayRank === 4;
+  const showCategory =
+    !!career.career_category && !(isTeaserPeek34 && isAcademicStreamBucketLabel(career.career_category));
 
   return (
     <motion.div
@@ -295,19 +331,21 @@ function CareerCard({
                       color: '#15803d',
                       fontSize: '1.1rem',
                       lineHeight: 1.25,
-                      mb: career.career_category ? 0.35 : 0,
+                      mb: showCategory ? 0.35 : 0,
                     }}
                   >
                     {career.career_name}
                   </Typography>
-                  {career.career_category ? (
+                  {showCategory ? (
                     <Typography sx={{ fontWeight: 600, color: '#64748b', fontSize: '0.875rem', lineHeight: 1.35, mb: 0.15 }}>
                       {career.career_category}
                     </Typography>
                   ) : null}
-                  <Typography variant="caption" color="text.secondary">
-                    {career.stream}
-                  </Typography>
+                  {!isTeaserPeek34 ? (
+                    <Typography variant="caption" color="text.secondary">
+                      {career.stream}
+                    </Typography>
+                  ) : null}
                 </Box>
               </Box>
               <Box sx={{ textAlign: 'right' }}>
@@ -366,12 +404,20 @@ function MetaItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function CareerCards({ careers, previewLock = false }: { careers: ReportCareer[]; previewLock?: boolean }) {
+export function CareerCards({
+  careers,
+  previewLock = false,
+  onPreviewLockedClick,
+}: {
+  careers: ReportCareer[];
+  previewLock?: boolean;
+  onPreviewLockedClick?: () => void;
+}) {
   const [showAll, setShowAll] = useState(false);
   const sorted = sortCareersByRank(careers);
 
   if (previewLock) {
-    return <CareerPreviewTeaserSection careers={sorted} />;
+    return <CareerPreviewTeaserSection careers={sorted} onPreviewLockedClick={onPreviewLockedClick} />;
   }
 
   const hasMore = sorted.length > 3;

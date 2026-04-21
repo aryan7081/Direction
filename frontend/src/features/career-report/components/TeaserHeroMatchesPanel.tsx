@@ -4,7 +4,7 @@ import { Box, Chip, Typography } from '@mui/material';
 import { alpha, keyframes } from '@mui/material/styles';
 import { motion } from 'framer-motion';
 import type { ReportCareer } from '../types';
-import { sortCareersByRank } from '../utils/careerRankHelpers';
+import { isAcademicStreamBucketLabel, sortCareersByRank } from '../utils/careerRankHelpers';
 
 const RANK_COLORS = ['#16a34a', '#3b82f6', '#f59e0b', '#d97706'];
 
@@ -14,14 +14,34 @@ const shimmer = keyframes`
   100% { transform: translateX(200%) skewX(-10deg); opacity: 0; }
 `;
 
-function MiniLockedSlot({ rank, accent }: { rank: 1 | 2; accent: string }) {
+function MiniLockedSlot({
+  rank,
+  accent,
+  onClick,
+}: {
+  rank: 1 | 2;
+  accent: string;
+  onClick?: () => void;
+}) {
   const isFirst = rank === 1;
   return (
     <Box
+      component={onClick ? 'button' : 'div'}
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      aria-label={onClick ? `Go to payment options to unlock #${rank} match` : undefined}
       sx={{
         position: 'relative',
         borderRadius: 2,
         overflow: 'hidden',
+        boxSizing: 'border-box',
+        outline: 'none',
+        font: 'inherit',
+        textAlign: 'center',
+        width: '100%',
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        cursor: onClick ? 'pointer' : 'default',
         border: `1.5px solid ${alpha(accent, 0.45)}`,
         background: `linear-gradient(150deg, ${alpha('#0f172a', 0.96)} 0%, ${alpha('#1e293b', 0.94)} 100%)`,
         minHeight: { xs: 104, sm: 112 },
@@ -32,6 +52,9 @@ function MiniLockedSlot({ rank, accent }: { rank: 1 | 2; accent: string }) {
         px: 1,
         py: 1.25,
         boxShadow: `inset 0 1px 0 ${alpha('#fff', 0.06)}`,
+        '&:focus-visible': onClick
+          ? { outline: '2px solid', outlineColor: accent, outlineOffset: 2 }
+          : undefined,
       }}
     >
       <Box
@@ -112,6 +135,8 @@ function MiniPeekSlot({
   listPosition: 3 | 4;
 }) {
   const accent = RANK_COLORS[colorIndex] ?? '#6b7280';
+  const showCategory =
+    !!career.career_category && !isAcademicStreamBucketLabel(career.career_category);
   return (
     <Box
       sx={{
@@ -157,7 +182,7 @@ function MiniPeekSlot({
         >
           {career.career_name}
         </Typography>
-        {career.career_category ? (
+        {showCategory ? (
           <Typography
             sx={{
               fontWeight: 600,
@@ -175,9 +200,6 @@ function MiniPeekSlot({
           </Typography>
         ) : null}
       </Box>
-      <Typography variant="caption" sx={{ fontSize: '0.58rem', color: '#94a3b8', fontWeight: 600, mt: 0.5 }}>
-        {career.stream}
-      </Typography>
     </Box>
   );
 }
@@ -185,7 +207,14 @@ function MiniPeekSlot({
 /**
  * Teaser-only: left column — locked #1 & #2, visible peek at #3 & #4 (matches CareerCards strategy).
  */
-export function TeaserHeroMatchesPanel({ careers }: { careers: ReportCareer[] }) {
+export function TeaserHeroMatchesPanel({
+  careers,
+  onLockedClick,
+}: {
+  careers: ReportCareer[];
+  /** Preview: tap locked #1/#2 to scroll to paywall. */
+  onLockedClick?: () => void;
+}) {
   const sorted = sortCareersByRank(careers);
   const r1 = sorted[0];
   const r2 = sorted[1];
@@ -243,8 +272,8 @@ export function TeaserHeroMatchesPanel({ careers }: { careers: ReportCareer[] })
             gap: { xs: 1, sm: 1.25 },
           }}
         >
-          {r1 ? <MiniLockedSlot rank={1} accent={RANK_COLORS[0]} /> : null}
-          {r2 ? <MiniLockedSlot rank={2} accent={RANK_COLORS[1]} /> : null}
+          {r1 ? <MiniLockedSlot rank={1} accent={RANK_COLORS[0]} onClick={onLockedClick} /> : null}
+          {r2 ? <MiniLockedSlot rank={2} accent={RANK_COLORS[1]} onClick={onLockedClick} /> : null}
           {r3 ? <MiniPeekSlot career={r3} colorIndex={2} listPosition={3} /> : null}
           {r4 ? <MiniPeekSlot career={r4} colorIndex={3} listPosition={4} /> : null}
         </Box>

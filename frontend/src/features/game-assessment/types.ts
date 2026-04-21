@@ -102,6 +102,8 @@ export interface SessionResult {
   completed_at: string;
   trait_scores: TraitScore[];
   career_matches: CareerMatch[];
+  /** Present when server withheld scores until the report is purchased */
+  report_locked?: boolean;
 }
 
 // ─── Assessment State ───
